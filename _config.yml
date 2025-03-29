@@ -100,7 +100,7 @@ ignore:
 # Extensions
 # Plugins: https://hexo.io/plugins/
 # theme: jekyll-theme-primer
-theme: fluid
+# theme: fluid
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
