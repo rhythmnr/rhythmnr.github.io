@@ -101,6 +101,9 @@ ignore:
 # Plugins: https://hexo.io/plugins/
 # theme: jekyll-theme-primer
 # theme: fluid
+remote_theme: fluid-dev/hexo-theme-fluid
+plugins:
+  - jekyll-remote-theme
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
