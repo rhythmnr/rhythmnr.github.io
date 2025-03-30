@@ -1,0 +1,768 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本人中都是在github action中自动化操作时的一些小tips，没有什么整体大纲，所以以平铺的标题展开。 if中无法使用env123456env:  COMMENT_TO_RELEASE: &amp;#x27;run tests&amp;#x27;jobs: pr-comment:   runs-on: self-hosted   if: github.event.comment.body &#x3D;&#x3D; &amp;#x27">
+<meta property="og:type" content="article">
+<meta property="og:title" content="github action的一些小tips">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/11/10/github%20action%E7%9A%84%E4%B8%80%E4%BA%9B%E5%B0%8Ftips/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="本人中都是在github action中自动化操作时的一些小tips，没有什么整体大纲，所以以平铺的标题展开。 if中无法使用env123456env:  COMMENT_TO_RELEASE: &amp;#x27;run tests&amp;#x27;jobs: pr-comment:   runs-on: self-hosted   if: github.event.comment.body &#x3D;&#x3D; &amp;#x27">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20250216162659218.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20250216162918647.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241031133455327.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20250216163007414.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241108094351309.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20250216163418963.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241118102931276.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241118131411356.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241107090633984.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241107090934974.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20241107091141664.png">
+<meta property="article:published_time" content="2024-11-09T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.712Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="Devops">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20250216162659218.png">
+  
+  
+  <title>github action的一些小tips - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="github action的一些小tips"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-11-10 00:00" pubdate>
+          2024年11月10日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          96 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">github action的一些小tips</h1>
+            
+            <div class="markdown-body">
+              
+              <p>本人中都是在github action中自动化操作时的一些小tips，没有什么整体大纲，所以以平铺的标题展开。</p>
+<h2 id="if中无法使用env"><a href="#if中无法使用env" class="headerlink" title="if中无法使用env"></a>if中无法使用env</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs shell">env:<br>  COMMENT_TO_RELEASE: &#x27;run tests&#x27;<br>jobs:<br> pr-comment:<br>   runs-on: self-hosted<br>   if: github.event.comment.body == &#x27;$&#123;&#123;env.COMMENT_TO_RELEASE&#125;&#125;&#x27;<br></code></pre></td></tr></table></figure>
+
+<p>比如这里，执行到最后一行会报错：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">Invalid workflow file: .github/workflows/demo1.yml#L12<br>The workflow is not valid. .github/workflows/demo1.yml (Line: 12, Col: 8): Unrecognized named-value: &#x27;env&#x27;. Located at position 1 within expression: env.COMMENT_TO_RELEASE<br></code></pre></td></tr></table></figure>
+
+<p>即时换成其他写法，比如<code>$&#123;&#123;env.COMMENT_TO_RELEASE&#125;&#125;</code>或者<code>env.COMMENT_TO_RELEASE</code>等等。除非我改成<code>if: github.event.comment.body == &#39;run tests&#39;</code>，搜寻了下发现，github好像不太支持：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/actions/runner/issues/1661">https://github.com/actions/runner/issues/1661</a></p>
+<p>算了，还是在if里不用env吧。</p>
+<h2 id="打印action里所有内容"><a href="#打印action里所有内容" class="headerlink" title="打印action里所有内容"></a>打印action里所有内容</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs shell">print-event:<br> runs-on: ubuntu-latest<br> steps:<br>   - name: Checkout repository<br>     uses: actions/checkout@v2<br><br>   - name: Dump GitHub context<br>     env:<br>       GITHUB_CONTEXT: $&#123;&#123; toJson(github) &#125;&#125;<br>     run: echo &quot;$GITHUB_CONTEXT&quot;<br><br>   - name: Dump event payload<br>     run: |<br>       echo &quot;Event payload:&quot;<br>       echo &quot;$&#123;&#123; toJson(github.event) &#125;&#125;&quot;<br></code></pre></td></tr></table></figure>
+
+<h2 id="复用action"><a href="#复用action" class="headerlink" title="复用action"></a>复用action</h2><p>参考：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/71458189/github-action-workflow-call-does-not-use-up-to-date-input-values">https://stackoverflow.com/questions/71458189/github-action-workflow-call-does-not-use-up-to-date-input-values</a></p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">name:</span> <span class="hljs-string">Main</span> <span class="hljs-string">Workflow</span><br><br><span class="hljs-attr">on:</span> [<span class="hljs-string">push</span>]<br><br><span class="hljs-attr">jobs:</span><br>  <span class="hljs-attr">use-reusable-workflow:</span><br>    <span class="hljs-attr">uses:</span> <span class="hljs-string">./.github/workflows/reusable_workflow.yml</span><br>    <span class="hljs-attr">with:</span><br>      <span class="hljs-attr">example_input:</span> <span class="hljs-string">&#x27;Hello, World!&#x27;</span><br>      <span class="hljs-attr">some_other_value:</span> <span class="hljs-string">&#x27;2323&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">name:</span> <span class="hljs-string">Reusable</span> <span class="hljs-string">Workflow</span><br><br><span class="hljs-attr">on:</span> <br>  <span class="hljs-attr">workflow_call:</span><br>    <span class="hljs-attr">inputs:</span><br>      <span class="hljs-attr">example_input:</span><br>        <span class="hljs-attr">type:</span> <span class="hljs-string">string</span><br>        <span class="hljs-attr">required:</span> <span class="hljs-literal">true</span><br>      <span class="hljs-attr">some_other_value:</span><br>        <span class="hljs-attr">type:</span> <span class="hljs-string">string</span><br>        <span class="hljs-attr">required:</span> <span class="hljs-literal">true</span><br><br><span class="hljs-attr">jobs:</span><br>  <span class="hljs-attr">my-job:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">ubuntu-latest</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Print</span> <span class="hljs-string">Inputs</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          echo &quot;Release Type: $&#123;&#123; inputs.example_input &#125;&#125;&quot;</span><br><span class="hljs-string">          echo &quot;Release Type: $&#123;&#123; inputs.some_other_value &#125;&#125;&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<p><img src="/../images/image-20250216162659218.png" srcset="/img/loading.gif" lazyload alt="image-20250216162659218"></p>
+<h2 id="配置定时任务"><a href="#配置定时任务" class="headerlink" title="配置定时任务"></a>配置定时任务</h2><p>Github毕竟是国外的产品，<strong>这里的定时任务指定的时间和我们中国的时区是有时差的</strong>。北京时间比Github所使用时区快8个小时。比如7月1号23点，github时间是7月1号15点。所以我们可以配置成15点或16点执行（对应北京时间的夜里11点、12点）。</p>
+<p>github官方文档：<a target="_blank" rel="noopener" href="https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onschedule">https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#onschedule</a> You can use <code>on.schedule</code> to define a time schedule for your workflows. You can schedule a workflow to run at specific UTC times using <a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07">POSIX cron syntax</a>. </p>
+<p>The shortest interval you can run scheduled workflows is once every 5 minutes.</p>
+<p>This example triggers the workflow every day at 5:30 and 17:30 UTC:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">on:</span><br>  <span class="hljs-attr">schedule:</span><br>    <span class="hljs-comment"># * is a special character in YAML so you have to quote this string</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">cron:</span>  <span class="hljs-string">&#x27;30 5,17 * * *&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>cron的写法参考 <a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07%EF%BC%8C%E6%A0%BC%E5%BC%8F%E4%B8%BA%EF%BC%9A">https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07，格式为：</a></p>
+<blockquote>
+<p>In the POSIX locale, the user or application shall ensure that a crontab entry is a text file consisting of lines of six fields each. The fields shall be separated by <blank> characters. The first five fields shall be integer patterns that specify the following:</blank></p>
+<ol>
+<li>Minute [0,59]</li>
+<li>Hour [0,23]</li>
+<li>Day of the month [1,31]</li>
+<li>Month of the year [1,12]</li>
+<li>Day of the week ([0,6] with 0&#x3D;Sunday)</li>
+</ol>
+</blockquote>
+<p>我写的是这样写不知道为什么到了11:25（东八区时间）的时候没有触发</p>
+<p><img src="/../images/image-20250216162918647.png" srcset="/img/loading.gif" lazyload alt="image-20250216162918647"></p>
+<p>查询说：有时候，GitHub Actions 的定时触发器可能会有几分钟的延迟。如果你的工作流程没有在预期时间立即运行，建议再等待几分钟来观察是否会触发。</p>
+<p>测试了一下，会运行的，我是这样写的：</p>
+<p><img src="/../images/image-20241031133455327.png" srcset="/img/loading.gif" lazyload alt="image-20241031133455327"></p>
+<p>定义的是20分钟的时候触发，但是真正触发延迟了十几分钟，具体可以看下图的日志，延迟了13分钟：</p>
+<p><img src="/../images/image-20250216163007414.png" srcset="/img/loading.gif" lazyload alt="image-20250216163007414"></p>
+<p>我测了下，有时候甚至延迟半小时任务才运行，不止13分钟了。</p>
+<h2 id="workflow-dispatch-手动发布的时候传递参数"><a href="#workflow-dispatch-手动发布的时候传递参数" class="headerlink" title="workflow_dispatch 手动发布的时候传递参数"></a>workflow_dispatch 手动发布的时候传递参数</h2><p>写法参考</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_"># </span><span class="language-bash">手动选择分支，执行自动化发布 QA 测试环境的流程，使用分支为手动选择的分支</span><br>name: Manual Dev Release<br><br>on:<br>  workflow_dispatch:<br>   inputs:<br>     environment:<br>       description: &#x27;Deployment environment&#x27; # TODO: 修改注释<br>       required: true<br>       default: &#x27;dev&#x27;<br>       type: choice<br>       options:<br>         - dev  # admin<br>         - staging    # customer<br>         - production # both<br>jobs:<br>  Echo:<br>    runs-on: self-hosted<br>    steps:<br>     - name: Print environment<br>       run: echo  $&#123;&#123; github.event.inputs.environment &#125;&#125;<br>  EchoOnlyDevOrStaging:<br>    if: $&#123;&#123; github.event.inputs.environment == &#x27;dev&#x27; || github.event.inputs.environment == &#x27;staging&#x27; &#125;&#125;<br>    runs-on: self-hosted<br>    steps:<br>     - name: Print environment<br>       run: echo  $&#123;&#123; github.event.inputs.environment &#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>最终实现效果为：</p>
+<p><img src="/../images/image-20241108094351309.png" srcset="/img/loading.gif" lazyload alt="image-20241108094351309"></p>
+<h2 id="job-amp-step之间共享变量"><a href="#job-amp-step之间共享变量" class="headerlink" title="job&amp;step之间共享变量"></a>job&amp;step之间共享变量</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs shell">name: &quot;Only test&quot;<br>on:<br> push:<br>   branches: <br>     - main <br> workflow_dispatch: # 手动选择分支触发<br><span class="hljs-meta prompt_"># </span><span class="language-bash"> schedule:</span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">    - cron: <span class="hljs-string">&#x27;0 14 * * *&#x27;</span> <span class="hljs-comment"># 这是需要写UTC时间，实际上会在北京时间运行每天晚上10点开始调度运行</span></span><br><br>jobs:<br>  setter:<br>    runs-on: self-hosted<br>    outputs:<br>      new-key: $&#123;&#123; steps.set-value.outputs.new-key &#125;&#125;<br>    steps:<br>      - id: set-value # 这个ID一定要指定，下面都是会用到它的<br>        name: Generate a value<br>        run: |<br>          value=$((RANDOM))<br>          echo &quot;new-key=$value&quot; &gt;&gt; &quot;$GITHUB_OUTPUT&quot;<br>      - id: read-value<br>        name: Read a value<br>        run: |<br>          echo &quot;the secret number is $&#123;&#123; steps.set-value.outputs.new-key &#125;&#125;&quot; # 因为是在一个job里，所以用step，要指定step id<br>  getter:<br>    runs-on: self-hosted<br>    needs: setter<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br>  getter222:<br>    runs-on: self-hosted<br>    needs: <br>    - getter<br>    - setter # 可以写成两行<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br><br>  getter333:<br>    runs-on: self-hosted<br>    needs: [getter222, setter] # 也可以这样写，注意一定要setter needed<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br></code></pre></td></tr></table></figure>
+
+<p>运行显示效果：</p>
+<p>（图上我的鼠标放在了getter222上，会直接显示它引用了setter）</p>
+<p><img src="/../images/image-20250216163418963.png" srcset="/img/loading.gif" lazyload alt="image-20250216163418963"></p>
+<p><img src="/../images/image-20241118102931276.png" srcset="/img/loading.gif" lazyload alt="image-20241118102931276"></p>
+<h2 id="add-mask的作用"><a href="#add-mask的作用" class="headerlink" title="add-mask的作用"></a>add-mask的作用</h2><p>可以让关键信息不在终端显示</p>
+<p>没有mask的时候，显示结果为：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">name:</span> <span class="hljs-string">&quot;Only test&quot;</span><br><span class="hljs-attr">on:</span><br> <span class="hljs-attr">push:</span><br>   <span class="hljs-attr">branches:</span> <br>     <span class="hljs-bullet">-</span> <span class="hljs-string">main</span> <br> <span class="hljs-attr">workflow_dispatch:</span> <span class="hljs-comment"># 手动选择分支触发</span><br><span class="hljs-comment">#  schedule:</span><br><span class="hljs-comment">#     - cron: &#x27;0 14 * * *&#x27; # 这是需要写UTC时间，实际上会在北京时间运行每天晚上10点开始调度运行</span><br><br><span class="hljs-attr">jobs:</span><br>  <span class="hljs-attr">setter:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">self-hosted</span><br>    <span class="hljs-attr">outputs:</span><br>      <span class="hljs-attr">new-key:</span> <span class="hljs-string">$&#123;&#123;</span> <span class="hljs-string">steps.set-value.outputs.new-key</span> <span class="hljs-string">&#125;&#125;</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">id:</span> <span class="hljs-string">set-value</span> <span class="hljs-comment"># 这个ID一定要指定，下面都是会用到它的</span><br>        <span class="hljs-attr">name:</span> <span class="hljs-string">Generate</span> <span class="hljs-string">a</span> <span class="hljs-string">value</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          value=$((RANDOM))</span><br><span class="hljs-string">          echo &quot;new-key=$value&quot; &gt;&gt; &quot;$GITHUB_OUTPUT&quot;</span><br><span class="hljs-string"></span>      <span class="hljs-comment"># - id: read-value</span><br>      <span class="hljs-comment">#   name: Read a value</span><br>      <span class="hljs-comment">#   run: |</span><br>      <span class="hljs-comment">#     p=$&#123;&#123; steps.set-value.outputs.new-key &#125;&#125;</span><br>      <span class="hljs-comment">#     echo &quot;::add-mask::$p&quot;</span><br>      <span class="hljs-comment">#     echo &quot;the secret number is $p&quot; # 因为是在一个job里，所以用step，要指定step id</span><br>  <span class="hljs-attr">getter:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">self-hosted</span><br>    <span class="hljs-attr">needs:</span> <span class="hljs-string">setter</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Access</span> <span class="hljs-string">it</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          # echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br><span class="hljs-string">          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br><span class="hljs-string"></span>  <span class="hljs-attr">getter222:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">self-hosted</span><br>    <span class="hljs-attr">needs:</span> <br>    <span class="hljs-bullet">-</span> <span class="hljs-string">getter</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">setter</span> <span class="hljs-comment"># 可以写成两行</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Access</span> <span class="hljs-string">it</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          # echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br><span class="hljs-string">          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br><span class="hljs-string"></span><br>  <span class="hljs-attr">getter333:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">self-hosted</span><br>    <span class="hljs-attr">needs:</span> [<span class="hljs-string">getter222</span>, <span class="hljs-string">setter</span>] <span class="hljs-comment"># 也可以这样写，注意一定要setter needed</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Access</span> <span class="hljs-string">it</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          # echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br><span class="hljs-string">          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><img src="/../images/image-20241118131411356.png" srcset="/img/loading.gif" lazyload alt="image-20241118131411356"></p>
+<p>添加mask，</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs shell">name: &quot;Only test&quot;<br>on:<br> push:<br>   branches: <br>     - main <br> workflow_dispatch: # 手动选择分支触发<br><span class="hljs-meta prompt_"># </span><span class="language-bash"> schedule:</span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">    - cron: <span class="hljs-string">&#x27;0 14 * * *&#x27;</span> <span class="hljs-comment"># 这是需要写UTC时间，实际上会在北京时间运行每天晚上10点开始调度运行</span></span><br><br>jobs:<br>  setter:<br>    runs-on: self-hosted<br>    outputs:<br>      new-key: $&#123;&#123; steps.set-value.outputs.new-key &#125;&#125;<br>    steps:<br>      - id: set-value # 这个ID一定要指定，下面都是会用到它的<br>        name: Generate a value<br>        run: |<br>          value=$((RANDOM))<br>          echo &quot;new-key=$value&quot; &gt;&gt; &quot;$GITHUB_OUTPUT&quot;<br>      # - id: read-value<br>      #   name: Read a value<br>      #   run: |<br>      #     p=$&#123;&#123; steps.set-value.outputs.new-key &#125;&#125;<br>      #     echo &quot;::add-mask::$p&quot;<br>      #     echo &quot;the secret number is $p&quot; # 因为是在一个job里，所以用step，要指定step id<br>  getter:<br>    runs-on: self-hosted<br>    needs: setter<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br>  getter222:<br>    runs-on: self-hosted<br>    needs: <br>    - getter<br>    - setter # 可以写成两行<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br><br>  getter333:<br>    runs-on: self-hosted<br>    needs: [getter222, setter] # 也可以这样写，注意一定要setter needed<br>    steps:<br>      - name: Access it<br>        run: |<br>          echo &quot;::add-mask::$&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br>          echo &quot;the secret number is $&#123;&#123; needs.setter.outputs.new-key &#125;&#125;&quot;<br></code></pre></td></tr></table></figure>
+
+<h2 id="使用cache-action"><a href="#使用cache-action" class="headerlink" title="使用cache action"></a>使用cache action</h2><p>参考 <a target="_blank" rel="noopener" href="https://dwye.dev/post/github-action-npm-cache/">https://dwye.dev/post/github-action-npm-cache/</a></p>
+<p>对于前端项目，可以使用action存储node_modules，在package.json没有变化的时候，直接用存储好的node_modules然后build。当package.json变化了，再执行install然后build。github action的配置文件如下：</p>
+<p>大部分都在4分钟内，写法参考如下</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">jobs:</span><br>  <span class="hljs-attr">Build:</span><br>    <span class="hljs-attr">runs-on:</span> <span class="hljs-string">self-hosted</span><br>    <span class="hljs-attr">steps:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Checkout</span> <span class="hljs-string">repository</span><br>        <span class="hljs-attr">uses:</span> <span class="hljs-string">actions/checkout@v4</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Cache</span> <span class="hljs-string">Node</span> <span class="hljs-string">Modules</span><br>        <span class="hljs-attr">uses:</span> <span class="hljs-string">actions/cache@v4</span><br>        <span class="hljs-attr">with:</span><br>          <span class="hljs-attr">path:</span> <span class="hljs-string">node_modules</span><br>          <span class="hljs-comment"># cache key 包含了所有我們希望固定的資訊：OS，node 版本，以及 package-lock.json 的檔案內容，使用 hashFiles 將檔案內容轉換成字串</span><br>          <span class="hljs-attr">key:</span> <span class="hljs-string">node-modules-$&#123;&#123;</span> <span class="hljs-string">runner.os</span> <span class="hljs-string">&#125;&#125;-$&#123;&#123;</span> <span class="hljs-string">matrix.node-version</span> <span class="hljs-string">&#125;&#125;-$&#123;&#123;</span> <span class="hljs-string">hashFiles(&#x27;package-lock.json&#x27;)</span> <span class="hljs-string">&#125;&#125;</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Set</span> <span class="hljs-string">up</span> <span class="hljs-string">node</span><br>        <span class="hljs-attr">uses:</span> <span class="hljs-string">actions/setup-node@v4</span><br>        <span class="hljs-attr">with:</span><br>          <span class="hljs-attr">node-version:</span> <span class="hljs-string">$&#123;&#123;</span> <span class="hljs-string">inputs.node_version</span> <span class="hljs-string">&#125;&#125;</span><br>          <span class="hljs-attr">check-latest:</span> <span class="hljs-literal">false</span> <span class="hljs-comment"># 确保使用预安装的版本</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Install</span> <span class="hljs-string">Packages</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">test</span> <span class="hljs-string">-d</span> <span class="hljs-string">node_modules</span> <span class="hljs-string">&amp;&amp;</span> <span class="hljs-string">echo</span> <span class="hljs-string">&quot;node_modules exists&quot;</span> <span class="hljs-string">||</span> <span class="hljs-string">npm</span> <span class="hljs-string">install</span> <span class="hljs-string">--legacy-peer-deps</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Build</span><br>        <span class="hljs-attr">shell:</span> <span class="hljs-string">bash</span><br>        <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">          echo &quot;The current node version is $(node -v)&quot;</span><br><span class="hljs-string">          npm run build:$&#123;&#123; inputs.env &#125;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>但是实际运行的时候发现每次加载上一次运行时的缓存内容都要2分钟左右：</p>
+<p><img src="/../images/image-20241107090633984.png" srcset="/img/loading.gif" lazyload alt="image-20241107090633984"></p>
+<h2 id="不让set-up-node插件缓存"><a href="#不让set-up-node插件缓存" class="headerlink" title="不让set-up node插件缓存"></a>不让set-up node插件缓存</h2><p>基于上一条，然后我想着不要使用cache存node_modules，直接install，修改后如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs shell">jobs:<br>  Build:<br>    runs-on: self-hosted<br>    steps:<br>      - name: Checkout repository<br>        uses: actions/checkout@v4<br>      - name: Set up node<br>        uses: actions/setup-node@v4<br>        with:<br>          node-version: $&#123;&#123; inputs.node_version &#125;&#125;<br>          # cache: &#x27;npm&#x27;<br>      - name: Build<br>        shell: bash<br>        run: |<br>          echo &quot;The current node version is $(node -v)&quot;<br>          # [ -d &quot;node_modules&quot; ] &amp;&amp; rm -rf &quot;node_modules&quot;<br>          ls -a<br>          npm install --legacy-peer-deps<br>          npm run build:$&#123;&#123; inputs.env &#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这次只要两分钟</p>
+<p>主要修改就是如下：</p>
+<p><img src="/../images/image-20241107090934974.png" srcset="/img/loading.gif" lazyload alt="image-20241107090934974"></p>
+<p>修改完了主要的变更就是：</p>
+<p><img src="/../images/image-20241107091141664.png" srcset="/img/loading.gif" lazyload alt="image-20241107091141664"></p>
+<p>之前的效果是图上，修改完了红色的这个部分没有了。</p>
+<p>之前红色的这个部分特别耗时。</p>
+<p>所以# cache: ‘npm’这个注释掉可以让set-up node这个插件不再每次加载npm的缓存，加载npm缓存真的很费事，居然要5分钟左右，直接npm install不缓存node_modules居然更快</p>
+<p>总结：<strong>加载缓存真的很耗时，虽然这个缓存文件就在runner服务器上，加载缓存有点类似解压文件，但是比解压文件慢多了。所有有时候不使用缓存直接下载是比使用缓存更快的。</strong></p>
+<h2 id="用户评论触发workflow"><a href="#用户评论触发workflow" class="headerlink" title="用户评论触发workflow"></a>用户评论触发workflow</h2><p>有什么方法可以实现用户触发某个规则（比如在PR下评论）后才启动workflow？</p>
+<p>在GitHub Actions中，可以通过使用GitHub的Webhooks和特定的事件触发器来实现这一目标。具体来说，可以利用<code>issue_comment</code>事件来检测PR下的评论，然后根据评论内容决定是否启动特定的workflow。</p>
+<p>以下是一个示例工作流程，展示了如何在PR下的评论触发特定的workflow：</p>
+<ol>
+<li>创建一个GitHub Actions workflow文件（例如：<code>.github/workflows/pr-comment-trigger.yml</code>）。</li>
+</ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">PR</span> <span class="hljs-string">Comment</span> <span class="hljs-string">Trigger</span><br><br><span class="hljs-attr">on:</span><br> <span class="hljs-attr">issue_comment:</span><br>   <span class="hljs-attr">types:</span> [<span class="hljs-string">created</span>]<br><br><span class="hljs-attr">jobs:</span><br> <span class="hljs-attr">check-comment:</span><br>   <span class="hljs-attr">runs-on:</span> <span class="hljs-string">ubuntu-latest</span><br>   <span class="hljs-attr">steps:</span><br>     <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Check</span> <span class="hljs-string">if</span> <span class="hljs-string">comment</span> <span class="hljs-string">contains</span> <span class="hljs-string">trigger</span> <span class="hljs-string">phrase</span><br>       <span class="hljs-attr">if:</span> <span class="hljs-string">github.event.comment.body</span> <span class="hljs-string">==</span> <span class="hljs-string">&#x27;run workflow&#x27;</span><br>       <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">         echo &quot;Trigger phrase detected, starting workflow...&quot;</span><br><span class="hljs-string">         # 在这里可以添加希望执行的命令或调用另一个工作流程</span><br><span class="hljs-string"></span>     <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Comment</span> <span class="hljs-string">does</span> <span class="hljs-string">not</span> <span class="hljs-string">contain</span> <span class="hljs-string">trigger</span> <span class="hljs-string">phrase</span><br>       <span class="hljs-attr">if:</span> <span class="hljs-string">github.event.comment.body</span> <span class="hljs-type">!=</span> <span class="hljs-string">&#x27;run workflow&#x27;</span><br>       <span class="hljs-attr">run:</span> <span class="hljs-string">echo</span> <span class="hljs-string">&quot;No trigger phrase detected, skipping workflow.&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>在这个示例中，workflow会在任何issue或pull request的评论创建时触发。<code>check-comment</code> job会检查评论内容是否包含特定的触发短语（如<code>run workflow</code>）。如果评论包含该短语，则会执行指定的命令或进一步的工作流程。</p>
+<ol>
+<li>将这个workflow文件添加到你的GitHub仓库中，并推送到你的远程仓库。</li>
+<li>在一个PR下添加评论，内容为<code>run workflow</code>，以触发该workflow。</li>
+</ol>
+<p>通过这种方式，你可以根据特定的评论内容来控制workflow的启动。你也可以根据需要修改触发短语和执行的命令，以满足你的特定</p>
+<p>那么在已经close的PR下评论会触发吗</p>
+<p>在GitHub中，即使一个Pull Request（PR）已经关闭，评论事件仍然可以触发GitHub Actions工作流程。<code>issue_comment</code>事件会在任何新的评论被添加到issue或PR时触发，不论该issue或PR是否处于打开（open）状态。</p>
+<p>这意味着可以在一个已经关闭的PR下添加评论，并且如果该评论符合触发条件，相关的workflow仍然会被启动。</p>
+<p>以下是一个示例工作流程，展示了如何在PR下的评论触发特定的workflow，即便PR已经关闭：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">name:</span> <span class="hljs-string">PR</span> <span class="hljs-string">Comment</span> <span class="hljs-string">Trigger</span><br><br><span class="hljs-attr">on:</span><br> <span class="hljs-attr">issue_comment:</span><br>   <span class="hljs-attr">types:</span> [<span class="hljs-string">created</span>]<br><br><span class="hljs-attr">jobs:</span><br> <span class="hljs-attr">check-comment:</span><br>   <span class="hljs-attr">runs-on:</span> <span class="hljs-string">ubuntu-latest</span><br>   <span class="hljs-attr">steps:</span><br>     <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Check</span> <span class="hljs-string">if</span> <span class="hljs-string">comment</span> <span class="hljs-string">contains</span> <span class="hljs-string">trigger</span> <span class="hljs-string">phrase</span><br>       <span class="hljs-attr">if:</span> <span class="hljs-string">github.event.comment.body</span> <span class="hljs-string">==</span> <span class="hljs-string">&#x27;run workflow&#x27;</span><br>       <span class="hljs-attr">run:</span> <span class="hljs-string">|</span><br><span class="hljs-string">         echo &quot;Trigger phrase detected, starting workflow...&quot;</span><br><span class="hljs-string">         # 在这里可以添加希望执行的命令或调用另一个工作流程</span><br><span class="hljs-string"></span>     <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">Comment</span> <span class="hljs-string">does</span> <span class="hljs-string">not</span> <span class="hljs-string">contain</span> <span class="hljs-string">trigger</span> <span class="hljs-string">phrase</span><br>       <span class="hljs-attr">if:</span> <span class="hljs-string">github.event.comment.body</span> <span class="hljs-type">!=</span> <span class="hljs-string">&#x27;run workflow&#x27;</span><br>       <span class="hljs-attr">run:</span> <span class="hljs-string">echo</span> <span class="hljs-string">&quot;No trigger phrase detected, skipping workflow.&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>这个workflow会在任何新的评论被添加到issue或PR时触发，不论该issue或PR是否处于关闭状态。如果评论内容包含特定的触发短语（如<code>run workflow</code>），则会执行指定的命令或进一步的工作流程。</p>
+<p>总结来说，即使PR已经关闭，在其下的评论仍然可以触发相应的GitHub Actions工作流程。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Devops/">#Devops</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>github action的一些小tips</div>
+      <div>https://rhythmnr.github.io/2024/11/10/github action的一些小tips/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年11月10日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/12/01/SSO%E9%9B%86%E6%88%90%E4%BB%8B%E7%BB%8D/" title="SSO集成介绍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SSO集成介绍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/11/07/flutter%E9%A1%B9%E7%9B%AE%E4%B8%AD%E5%85%B3%E4%BA%8E%E7%B3%BB%E7%BB%9F%E6%9D%83%E9%99%90%E7%9A%84%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" title="flutter项目中关于系统权限的配置文件">
+                        <span class="hidden-mobile">flutter项目中关于系统权限的配置文件</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

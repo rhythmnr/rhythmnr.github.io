@@ -1,0 +1,779 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="简介IPMI（Intelligent Platform Management Interface）是一种由Intel开发的远程管理技术，通常用于管理和监视计算机系统。可以通过IPMI监控服务器的物理特征，如温度，电压等。只要机器接通电源即可，即使没有启动操作系统，就可以进行监控。目前最新版本是IPMI2.0。 IPMI可以让管理员通过网络连接访问计算机系统，以便在操作系统不可用或发生故障的情况下进">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ipmi带外管理">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/04/11/ipmi%E5%B8%A6%E5%A4%96%E7%AE%A1%E7%90%86/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="简介IPMI（Intelligent Platform Management Interface）是一种由Intel开发的远程管理技术，通常用于管理和监视计算机系统。可以通过IPMI监控服务器的物理特征，如温度，电压等。只要机器接通电源即可，即使没有启动操作系统，就可以进行监控。目前最新版本是IPMI2.0。 IPMI可以让管理员通过网络连接访问计算机系统，以便在操作系统不可用或发生故障的情况下进">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230320151138038.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230329104945232.png">
+<meta property="article:published_time" content="2023-04-10T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.728Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230320151138038.png">
+  
+  
+  <title>ipmi带外管理 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="ipmi带外管理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-04-11 00:00" pubdate>
+          2023年4月11日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">ipmi带外管理</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>IPMI（Intelligent Platform Management Interface）是一种由Intel开发的远程管理技术，通常用于管理和监视计算机系统。可以通过IPMI监控服务器的物理特征，如温度，电压等。只要机器接通电源即可，即使没有启动操作系统，就可以进行监控。目前最新版本是IPMI2.0。</p>
+<p>IPMI可以让管理员通过网络连接访问计算机系统，以便在操作系统不可用或发生故障的情况下进行管理和维护。比如服务器宕机的时候，无法通过SSH连接的话可以通过IPMI来重启。</p>
+<p>在计算机领域，带外管理（Out-of-band management）是指使用独立管理通道进行设备维护。它允许系统管理员远程监控和管理服务器、路由器、网络交换机和其他网络设备。带外管理通过部署与数据通道物理隔离的管理通道来解决这个限制。带外网管是指通过专门的网管通道实现对网络的管理，<strong>将网管数据与业务数据分开</strong>，为网管数据建立独立通道。</p>
+<p>常见的设备管理方式有SNMP、RMON、Web、TELNET，这些管理方式属于带内管理。</p>
+<p>相对的，带内管理是指使用常规数据通道（例如以太网、互联网）来管理设备。带内管理的明显限制是这种管理容易受到被管理设备受攻击或损害的影响。带内管理使得网络中的网管数据和业务数据在相同的链路中传输，当管理数据（包括SNMP，Netflow，Radius，计费等）较多时，将会影响到整个网络的性能；管理数据的流量较少，对整个网络的性能影响不明显，可采用带内管理。带内网管，网管系统必须通过网络来管理设备。如果无法通过网络访问被管理对象，带内网管系统就失效了，这时候带外网管系统就排上用场了。</p>
+<p>尽管 IPMI 和 HTTP 没有直接的关系，但是<strong>有些服务器供应商提供了基于 HTTP 协议的 IPMI 远程管理界面</strong>，这意味着管理员可以使用 Web 浏览器来访问服务器的 IPMI 远程管理功能。在这种情况下，HTTP 协议被用于提供 IPMI 远程管理功能的 Web 接口，以便管理员可以通过 Web 界面来管理服务器硬件。</p>
+<p>wireshark中可以抓到IPMI的数据</p>
+<h2 id="确认是否支持IPMI"><a href="#确认是否支持IPMI" class="headerlink" title="确认是否支持IPMI"></a>确认是否支持IPMI</h2><p>大部分厂商的服务器如戴尔，NEC的都支持IPMI2.0，<strong>第一步就是应该先查看产品手册或者在BIOS查看服务器是否支持IPMI。</strong></p>
+<p>大多数现代的Linux操作系统都支持IPMI技术。mac不支持IPMI协议。</p>
+<p>Linux机器执行：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">dmidecode -t 38<br></code></pre></td></tr></table></figure>
+
+<p>如果命令返回IPMI版本和其他相关信息，则说明系统具有IPMI硬件，即支持IPMI技术。</p>
+<blockquote>
+<p>这里我的Linux机器（Red Hat版本）上执行了这个命令返回了如下结果。</p>
+<p><img src="/../images/image-20230320151138038.png" srcset="/img/loading.gif" lazyload alt="image-20230320151138038"></p>
+</blockquote>
+<p>下面的操作基于我的机器</p>
+<p>安装ipmitool和OpenIPMI工具包，这两个都是支持IPMI管理的必备工具包</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo yum install ipmitool OpenIPMI<br></code></pre></td></tr></table></figure>
+
+<p>加载IPMI驱动程序：使用以下命令加载IPMI驱动程序：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">sudo modprobe ipmi_devintf</span><br></code></pre></td></tr></table></figure>
+
+<p>启动IPMI服务：使用以下命令启动IPMI服务：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs crmsh">sudo systemctl <span class="hljs-literal">start</span> ipmi.service<br></code></pre></td></tr></table></figure>
+
+<p>设置IPMI用户：使用以下命令设置IPMI用户：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">sudo ipmitool <span class="hljs-keyword">user</span> <span class="hljs-keyword">set</span> <span class="hljs-type">name</span> <span class="hljs-number">1</span> <span class="hljs-keyword">admin</span><br></code></pre></td></tr></table></figure>
+
+<p>执行这个报错了。。。。。。。。。。。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gradle">Could not open device at <span class="hljs-regexp">/dev/i</span>pmi0 or <span class="hljs-regexp">/dev/i</span>pmi<span class="hljs-regexp">/0 or /</span>dev<span class="hljs-regexp">/ipmidev/</span><span class="hljs-number">0</span>: No such <span class="hljs-keyword">file</span> or directory<br></code></pre></td></tr></table></figure>
+
+<p>之前启动IPMI服务时，需要内核加载命令，命令报错了</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">sudo modprobe ipmi_si</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">modprobe: ERROR: could <span class="hljs-keyword">not</span> <span class="hljs-keyword">insert</span> <span class="hljs-string">&#x27;ipmi_si&#x27;</span>: <span class="hljs-keyword">No</span> such device<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果出现 “no such device” 错误消息，则表示系统中没有找到名为 ipmi_si 的内核模块。这可能是因为系统中没有安装这个模块，或者是因为这个模块并不适用于当前系统的内核版本。</p>
+<p>如果您希望使用 ipmi_si 模块，可以尝试检查当前系统是否安装了这个模块，或者尝试在系统中安装这个模块。您还可以尝试检查内核版本，看看这个模块是否与当前内核版本兼容。</p>
+<p><a target="_blank" rel="noopener" href="https://juejin.cn/s/modprobe%20ipmi_si%20no%20such%20device">参考</a></p>
+</blockquote>
+<p>ipmi_si 仅适用于真实硬件，不可以在虚拟机上。 你可以使用类似 virt-manager 的东西来查看 VM 控制台</p>
+<blockquote>
+<p>如何判断机器是物理机还是虚拟机</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">systemd-detect-virt</span><br></code></pre></td></tr></table></figure>
+
+<p>如果输出none表示为物理机，否则为虚拟机</p>
+<p>我的机器上执行的结果是，因为我的机器是虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">systemd-detect-virt<br>kvm<br></code></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="IPMI管理工具"><a href="#IPMI管理工具" class="headerlink" title="IPMI管理工具"></a>IPMI管理工具</h2><p>这里使用的IPMI管理工具为ipmitool，在mac上的安装方法为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">brew install ipmitool<br></code></pre></td></tr></table></figure>
+
+<p>确定IPMI的地址：查看BIOS设置或IPMI配置实用程序</p>
+<p>服务器需要本身支持IPMI，还需要额外安装ipmi驱动和工具，</p>
+<p>命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs shell">ipmitool -H (BMC管理的IP地址) -U (BMC的登录用户名) -P (BMC的登录用户密码)  COMMAND<br><br>command有以下项：<br>* raw：发送一个原始的IPMI请求，并且打印回复信息。<br>* Lan：配置网络（lan）信道(channel)<br>* chassis ：查看底盘的状态和设置电源<br>* event：向BMC发送一个已经定义的事件（event），可用于测试配置的SNMP是否成功<br>* mc：查看MC（Management Contollor）状态和各种允许的项<br>* sdr：打印传感器仓库中的所有监控项和从传感器读取到的值。<br>* Sensor：打印详细的传感器信息。<br>* Fru：打印内建的Field Replaceable Unit (FRU)信息<br>* Sel：打印 System Event Log (SEL)<br>* Pef：设置 Platform Event Filtering (PEF)，事件过滤平台用于在监控系统发现有event时候，用PEF中的策略进行事件过滤，然后看是否需要报警。<br>* Sol/isol：用于配置通过串口的Lan进行监控<br>* User：设置BMC中用户的信息 。<br>* Channel：设置Management Controller信道。<br><br>也可以加上 -I 指定使用哪个interface<br>通常，如果你想通过网络连接到IPMI，可以使用“lan”接口（例如：-I lan）。如果你使用串口连接到IPMI，可以使用“serial-over-lan”接口（例如：-I lanplus）。<br></code></pre></td></tr></table></figure>
+
+<p>在<code>ipmitool</code>中，<code>lan</code>和<code>lanplus</code>是指通过IPMI LAN接口与远程服务器进行通信时使用的两种不同的协议</p>
+<ol>
+<li><code>lan</code>协议是IPMI v1.5的标准协议，<code>lanplus</code>协议是IPMI v2.0的标准协议。</li>
+<li><code>lan</code>协议只支持IPv4地址，而<code>lanplus</code>协议同时支持IPv4和IPv6地址。</li>
+<li><code>lan</code>协议需要配置RMCP或RMCP+的网络参数，而<code>lanplus</code>协议可以自动发现目标设备。</li>
+<li><code>lanplus</code>协议支持更高级别的加密和认证机制，例如Kerberos和TLS。</li>
+<li><code>lanplus</code>协议支持更多的IPMI命令，包括Firmware Firewall和Serial Over LAN（SOL）。</li>
+</ol>
+<p>总的来说，如果目标设备支持IPMI v2.0及以上版本，建议使用<code>lanplus</code>协议，否则使用<code>lan</code>协议。</p>
+<p>大多数现代服务器都支持IPMI 2.0规范，并支持使用IPMI LAN接口进行远程管理。对于不同的服务器厂商和型号，支持的IPMI LAN接口版本可能会有所不同。但是，<strong>一般来说，现代服务器都至少支持IPMI LAN和LANplus两种接口之一，</strong>以提供远程管理功能。是服务器厂商会在其硬件上实现IPMI功能，提供相应的接口和工具。</p>
+<p>关于加密：</p>
+<p>IPMI 2.0定义了 Cipher Suite，用于协商加密方式，用来支持通过 SSL&#x2F;TLS 进行加密通信。</p>
+<p>IPMI 1.5 中未定义 Cipher Suite，但仍可以使用 SSL&#x2F;TLS 进行加密通信。SSL&#x2F;TLS 协议还可以对通信双方进行身份认证，防止中间人攻击等安全问题。</p>
+<p><strong>如果启用了IPMI的加密功能，使用ipmitool需要注意以下几点：</strong></p>
+<ol>
+<li><strong>IPMI LAN 密码必须提供，可以使用 <code>-E</code> 参数指定。</strong></li>
+<li>要使用支持 IPMI 加密的 LANPLUS 接口。可以使用 <code>-I lanplus</code> 参数指定。</li>
+<li>如果启用了双向认证，还需要提供本地私钥和远程服务器证书。可以使用 <code>-E</code> 和 <code>-K</code> 参数指定。</li>
+</ol>
+<p><strong>如果没有启用IPMI的加密功能</strong>，则可以使用IPMI的标准LAN接口，使用<code>-I lan</code>参数指定即可，无<strong>需提供密码和证书等加密相关信息。</strong></p>
+<hr>
+<p>dev是设备(device)的英文缩写。&#x2F;dev这个目录对所有的用户都十分重要。因为在这个目录中包含了所有Linux系统中使用的外部设备。但是这里并不是放的外部设备的驱动程序，这一点和**<a target="_blank" rel="noopener" href="http://www.ltesting.net/html/75/category-catid-375.html">windows</a>**,dos操作系统不一样。它实际上是一个访问这些外部设备的端口。</p>
+<p><strong>关于IPMI的端口</strong></p>
+<p>默认情况下，IPMI协议使用以下端口：</p>
+<ul>
+<li>IPMI over LAN: 端口号是623（UDP&#x2F;TCP）</li>
+<li>Serial-over-LAN: 端口号是6666（TCP）</li>
+</ul>
+<p>请注意，一些厂商可能使用不同的端口号，因此在连接到IPMI主机之前，请务必检查文档或联系厂商获取准确的端口号信息。</p>
+<hr>
+<p>ESXi是什么</p>
+<p>ESXi是VMware公司开发的一种虚拟化操作系统，它是VMware vSphere虚拟化平台的核心组件之一。它的主要功能是允许在一台物理服务器上同时运行多个虚拟机，从而实现资源的共享和优化，提高服务器资源的利用率。ESXi是一种精简版的操作系统，其核心组件包括VMkernel、管理代理和设备驱动程序等，专门为虚拟化而设计。</p>
+<p>ESX是什么意思</p>
+<p>ESX是VMware公司推出的一种虚拟化操作系统，是VMware vSphere虚拟化平台的早期版本。它和ESXi一样，是一种精简版的操作系统，专门为虚拟化而设计，可以在标准x86服务器上安装，实现资源的共享和优化，提高服务器资源的利用率。</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_34160841/article/details/121728364">参考</a></p>
+<p>IPMI核心是一个使用专用芯片&#x2F;控制器(一般称为服务器处理器或基板管理控制器(Baseboard Management Controller，<strong>BMC</strong>))，该控制器不依赖于服务器的处理器、BIOS或操作系统来工作，<strong>而是有常电供电并独立运行的，具有一个单独的子系统，在该系统中有ipmi的守护进程来处理主机或者远程管理的命令。</strong>一般BMC通常是一个贴片或者外挂在服务器主板上的独立的板卡，目前，部分服务器主板也提供对IPMI支持的。只要有BMC与IPMI固件其便可开始工作。</p>
+<p><img src="/../images/image-20230329104945232.png" srcset="/img/loading.gif" lazyload alt="image-20230329104945232"></p>
+<p>而在命令传输的安全性方面，用户也无需担心，IPMI增强的认证(基于安全哈希算法1和基于密钥哈希消息认证)和加密(高级加密标准和Arcfour)功能有助于实现安全的远程操作。</p>
+<p>ipmi协议只有三个版本：ipmi1.0、ipmi1.5、ipmi2.0。</p>
+<p><strong>IPMI只是一个通信协议，它的实现依赖于单独的硬件平台，即基板管理控制器（BMC）。</strong></p>
+<p>ipmi有一个web管理页面，web页面的用户名和密码和使用impitool访问的用户名和密码是一样的吗？</p>
+<p>IPMI的Web管理页面和使用IPMITool访问的用户名和密码不一定相同，因为它们是两个不同的认证方式。通常来说，IPMI的Web管理页面会使用服务器厂商提供的默认用户名和密码进行认证，而使用IPMITool访问则需要在命令行中指定用户名和密码。不过具体的情况可能会因厂商而异，需要查看服务器厂商的文档或者手册来确定。</p>
+<p>参考</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/pytanght/article/details/19756253">https://blog.csdn.net/pytanght/article/details/19756253</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/f0366f577e95">https://www.jianshu.com/p/f0366f577e95</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/machangwei-8/p/10350824.html">https://www.cnblogs.com/machangwei-8/p/10350824.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/adsjlnmj66029/article/details/101567983">https://blog.csdn.net/adsjlnmj66029/article/details/101567983</a></p>
+<p> <a target="_blank" rel="noopener" href="https://github.com/bougou/go-ipmi">https://github.com/bougou/go-ipmi</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.servethehome.com/download-supermicro-ipmiview-latest-version/">https://www.servethehome.com/download-supermicro-ipmiview-latest-version/</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/bakari/archive/2012/08/05/2623780.html">https://www.cnblogs.com/bakari/archive/2012/08/05/2623780.html</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%85%B6%E4%BB%96/" class="category-chain-item">其他</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>ipmi带外管理</div>
+      <div>https://rhythmnr.github.io/2023/04/11/ipmi带外管理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年4月11日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/04/13/pprof%E4%BD%BF%E7%94%A8/" title="pprof使用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pprof使用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/04/10/iperf3%E4%BD%BF%E7%94%A8/" title="iperf3使用">
+                        <span class="hidden-mobile">iperf3使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

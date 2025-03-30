@@ -1,0 +1,727 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="参考文章 https:&#x2F;&#x2F;www.thebyte.com.cn&#x2F;  Netfilter 实际上就是一个过滤器框架，Netfilter 在网络包收发以及路由的“管道”中，一共切了 5 个口（hook），分别是 PREROUTING、FORWARD、POSTROUTING、INPUT 以及 OUTPUT，其它内核模块(例如 iptables、IPVS 等)可以向这些 hook 点注册处理函数。每当有数">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netfilter框架和网络相关的一些总结（比较乱）">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/01/01/netfilter%E6%A1%86%E6%9E%B6%E5%92%8C%E7%BD%91%E7%BB%9C%E7%9B%B8%E5%85%B3%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%BB%E7%BB%93%EF%BC%88%E6%AF%94%E8%BE%83%E4%B9%B1%EF%BC%89/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="参考文章 https:&#x2F;&#x2F;www.thebyte.com.cn&#x2F;  Netfilter 实际上就是一个过滤器框架，Netfilter 在网络包收发以及路由的“管道”中，一共切了 5 个口（hook），分别是 PREROUTING、FORWARD、POSTROUTING、INPUT 以及 OUTPUT，其它内核模块(例如 iptables、IPVS 等)可以向这些 hook 点注册处理函数。每当有数">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240226160531038.png">
+<meta property="article:published_time" content="2023-01-01T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.733Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240226160531038.png">
+  
+  
+  <title>netfilter框架和网络相关的一些总结（比较乱） - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="netfilter框架和网络相关的一些总结（比较乱）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-01 11:00" pubdate>
+          2023年1月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">netfilter框架和网络相关的一些总结（比较乱）</h1>
+            
+            <div class="markdown-body">
+              
+              <p>参考文章 <a target="_blank" rel="noopener" href="https://www.thebyte.com.cn/">https://www.thebyte.com.cn/</a></p>
+<p><img src="/../images/image-20240226160531038.png" srcset="/img/loading.gif" lazyload alt="image-20240226160531038"></p>
+<p>Netfilter 实际上就是一个过滤器框架，Netfilter 在网络包收发以及路由的“管道”中，一共切了 5 个口（hook），分别是 PREROUTING、FORWARD、POSTROUTING、INPUT 以及 OUTPUT，其它内核模块(例如 iptables、IPVS 等)可以向这些 hook 点注册处理函数。每当有数据包留到网络层，就会自动触发内核模块注册在这里的回调函数，这样程序代码就能够通过回调函数来干预 Linux 的网络通信，进而实现对数据包过滤、修改、SNAT&#x2F;DNAT 等各类功能。</p>
+<blockquote>
+<ul>
+<li><strong>PREROUTING:</strong> 接收到的包进入协议栈后立即触发此链，在进行任何路由判断（将包发往哪里）之前。</li>
+<li><strong>INPUT:</strong> 接收到的包经过路由判断，如果目的是本机，将触发此链。</li>
+<li><strong>FORWARD</strong> 接收到的包经过路由判断，如果目的是其他机器，将触发此链。</li>
+<li><strong>OUTPUT:</strong> 本机产生的准备发送的包，在进入协议栈后立即触发此链。</li>
+<li><strong>POSTROUTING:</strong> 本机产生的准备发送的包或者转发的包，在经过路由判断之后，将触发此链。</li>
+</ul>
+</blockquote>
+<p>Linux 网络协议栈的处理是一套相对固定和封闭的流程，整套处理过程中，除了网络设备层能看到一点点程序以设备的形式介入处理的空间外，其他过程似乎就没有什么可提供程序插手的空间了。然而事实并非如此，</p>
+<p>从 Linux 内核 2.4 版本起，内核就开放了一套通用的，可提供代码干预数据在协议栈流转的过滤框架 – Netfilter</p>
+<p>iptables通常是系统自带的防火墙，</p>
+<p>支持RSS的网卡数据并行能力的优化：</p>
+<p>如果在多核 CPU 的服务器上，网卡内部会有多个 Ring Buffer，网卡负责将传进来的数据分配给不同的 Ring Buffer，同时触发的中断也可以分配到多个 CPU 上处理，这样存在多个 Ring Buffer 的情况下 Ring Buffer 缓存的数据也同时被多个 CPU 处理，就能提高数据的并行处理能力。</p>
+<p>要实现“网卡负责将传进来的数据分配给不同的 Ring Buffer”，网卡必须支持 Receive Side Scaling(RSS) 或者叫做 multiqueue 的功能。</p>
+<p>查看网卡是否支持RSS：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">ethtool -k  eth0|grep receive-hashing<br>receive-hashing: off [fixed]<br></code></pre></td></tr></table></figure>
+
+<p>这是我的输出结果。 <code>off</code> 表示接收哈希功能被禁用，而 <code>[fixed]</code> 表示该参数是固定的，无法通过修改网卡的配置来改变。</p>
+<p>如果支持，可以参考<a target="_blank" rel="noopener" href="https://www.thebyte.com.cn/network/RSS.html#_2-2-%E9%98%9F%E5%88%97%E5%A4%A7%E5%B0%8F%E8%B0%83%E6%95%B4">链接</a>进行RSS的多队列调整和队列大小调整。</p>
+<p>由于 TCP 双全工的特性，安全关闭一个连接需要四次挥手，如图 3-17 所示。但复杂的网络环境中存在很多异常情况，异常断开连接会导致产生“孤儿连”，<strong>这种连接既不能发送数据，也无法接收数据，累计过多，会消耗大量系统资源，资源不足时产生 Address already in use: connect 类似的错误。</strong></p>
+<p>也可以调整一些和TCP握手挥手相关的配置，参考<a target="_blank" rel="noopener" href="https://www.thebyte.com.cn/network/netstack-performance.html">文章</a></p>
+<p>高并发下网络协议栈的冗长流程是最主要的性能负担，也就是说<strong>内核才是高并发的瓶颈所在。</strong></p>
+<p>应用程序比如浏览器、电子邮件、文件传输服务器等产生的数据，会通过传输层协议进行传输，而应用程序是不会和传输层直接建立联系的，而是有一个能够连接应用层和传输层之间的套件，这个套件就是 <code>Socket</code>。</p>
+<p><code>netstat</code>命令用于显示所有的IP。从netstat命令可以看出，一个套接字就是五元组（协议、本地地址、外部地址、状态、PID）。有的时候也被叫做四元组，四元组不包括协议。</p>
+<p>How does the AF_PACKET socket work in Linux?：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/62866943/how-does-the-af-packet-socket-work-in-linux">https://stackoverflow.com/questions/62866943/how-does-the-af-packet-socket-work-in-linux</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/829455/iptables-and-libpcap%EF%BC%9A">https://stackoverflow.com/questions/829455/iptables-and-libpcap：</a></p>
+<p>Yes, libpcap sees all the packets.. They are being captured before being processed by the netfilter.</p>
+<p><a target="_blank" rel="noopener" href="https://superuser.com/questions/925286/does-tcpdump-bypass-iptables%EF%BC%9A">https://superuser.com/questions/925286/does-tcpdump-bypass-iptables：</a></p>
+<p>tcpdump的运行路径：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">Wire -&gt; NIC -&gt; tcpdump -&gt; netfilter/iptables<br><br>iptables -&gt; tcpdump -&gt; NIC -&gt; Wire<br></code></pre></td></tr></table></figure>
+
+<p>也许我应该添加一些细节。 tcpdump 基于 libpcap，一个创建数据包套接字的库。 当网络堆栈中收到常规数据包时，内核首先检查是否存在对新到达的数据包感兴趣的数据包套接字，如果有，则将数据包转发到该数据包套接字。 如果选择 ETH_P_ALL 选项，则所有协议都通过数据包套接字。</p>
+<p>libpcap 实现了一个这样的数据包套接字，并激活了该选项，保留一份副本供自己使用，并将数据包复制回网络堆栈，由内核以通常的方式处理，包括首先将其传递给内核 netfilter -space 与 iptables 相对应。 同样的事情，以相反的顺序（即，第一个网络过滤器，然后最后一个通过数据包套接字的通道），在出去。</p>
+<p>这容易被黑客攻击吗？ 但是当然。 当然，有一些概念验证的 Rootkit 使用 libpcap 在防火墙攻击它们之前拦截发往 Rootkit 的通信。 但即便如此，与一个简单的 Google 查询甚至可以从 libpcap 中挖掘出隐藏流量的工作代码这一事实相比，这还是相形见绌的。 尽管如此，大多数专业人士认为在调试网络数据包过滤器时优点远远超过缺点。</p>
+<p>AF_PACKET 是面向链路层的套接字</p>
+<p>同一个计算机中不同的程序会和同一个TCP&#x2F;IP协议的端口交互，为了区别不同的应用程序进程和连接，许多计算机操作系统为应用程序与TCP&#x2F;IP协议交互提供了称为套接字(Socket)的接口。</p>
+<p>linux以文件的形式实现套接口，与套接口相应的文件属于sockfs特殊文件系统，创建一个套接口就是在sockfs中创建一个特殊文件，并建立起为实现套接口功能的相关数据结构。换句话说，对每一个新创建的套接字，linux内核都将在sockfs特殊文件系统中创建一个新的inode。</p>
+<p>套接字有本地套接字和网络套接字两种。本地套接字的名字是Linux文件系统中的文件名，一般放在&#x2F;tmp或&#x2F;usr&#x2F;tmp目录中；网络套接字的名字是与客户连接的特定网络有关的服务标识符（端口号或访问点）。这</p>
+<p>常用的TCP&#x2F;IP协议的3种套接字类型如下所示：</p>
+<p>流套接字（SOCK_STREAM）：流套接字用于提供面向连接、可靠的数据传输服务。流套接字之所以能够实现可靠的数据服务，原因在于其使用了传输控制协议，即TCP（The Transmission Control Protocol）协议。</p>
+<p>数据报套接字（SOCK_DGRAM）：数据报套接字提供了一种无连接的服务。该服务并不能保证数据传输的可靠性，数据有可能在传输过程中丢失或出现数据重复，且无法保证顺序地接收到数据。数据报套接字使用UDP（User Datagram Protocol）协议进行数据的传输。</p>
+<p>原始套接字（SOCK_RAW）：允许对较低层次的协议直接访问，比如IP、 ICMP协议</p>
+<p>用户使用socket系统调用编写应用程序时，通过一个数字来表示一个socket，所有的操作都在该数字上进行，这个数字称为<strong>套接字描述符</strong>。</p>
+<p>基本接口函数：</p>
+<p>创建套接字的函数socket( )，可以指定不同的参数创建不同的socket描述符。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">socket</span><span class="hljs-params">( <span class="hljs-type">int</span> domain,   <span class="hljs-comment">/*  创建的套接字的协议族, AF_XXX */</span></span><br><span class="hljs-params">            <span class="hljs-type">int</span> type,     <span class="hljs-comment">/*  创建的套接字的类型, SOCK_XXX  */</span></span><br><span class="hljs-params">            <span class="hljs-type">int</span> protocol)</span>;<span class="hljs-comment">/* 创建的套接字的协议，与type有关  */</span><br></code></pre></td></tr></table></figure>
+
+<p>domain表示协议族，常用的协议族有，AF_INET、AF_INET6、AF_LOCAL（或称AF_UNIX，Unix域socket）、AF_ROUTE等等。协议族决定了socket的地址类型，在通信中必须采用对应的地址，如AF_INET决定了要用ipv4地址（32位的）与端口号（16位的）的组合、AF_UNIX决定了要用一个绝对路径名作为地址。</p>
+<p>type，指定socket类型。常用的socket类型有，SOCK_STREAM、SOCK_DGRAM、SOCK_RAW、SOCK_PACKET、SOCK_SEQPACKET等等。</p>
+<p>protocol，故名思意，就是指定协议。常用的协议有，IPPROTO_TCP、IPPTOTO_UDP、IPPROTO_SCTP、IPPROTO_TIPC等，它们分别对应TCP传输协议、UDP传输协议、STCP传输协议、TIPC传输协议。</p>
+<p>通过socket调用创建的套接字必须经过命名（绑定地址）后才能使用。</p>
+<p>如果作为一个服务器，在调用socket()、bind()之后就会调用listen()来监听这个socket。<br>如果客户端这时调用connect()发出连接请求，服务器端就会接收到这个请求。</p>
+<p>参考</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/gatieme/article/details/46241975">https://blog.csdn.net/gatieme/article/details/46241975</a></p>
+<p><a target="_blank" rel="noopener" href="https://lishiwen4.github.io/network/raw-socket">https://lishiwen4.github.io/network/raw-socket</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>netfilter框架和网络相关的一些总结（比较乱）</div>
+      <div>https://rhythmnr.github.io/2023/01/01/netfilter框架和网络相关的一些总结（比较乱）/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年1月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/01/gopher-lua%E4%BD%BF%E7%94%A8%E4%B8%8E%E7%AE%80%E4%BB%8B/" title="gopher-lua使用与简介">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">gopher-lua使用与简介</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/01/01/tcpdump%E6%98%AF%E5%A6%82%E4%BD%95%E6%8A%93%E5%8C%85%E7%9A%84/" title="tcpdump是如何抓包的">
+                        <span class="hidden-mobile">tcpdump是如何抓包的</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

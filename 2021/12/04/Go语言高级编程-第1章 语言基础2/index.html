@@ -1,0 +1,724 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。  1.7 错误和异常 在C语言中，默认采用一个整数类型的 errno 来表达错误，这样就可以根据需要定义多种错误类型。在Go 语言中， syscall.Errno 就是对应C语言中 errno 类型的错误。在 syscall 包中的接口，如果有返回错误的话，底层也 是 syscall.Errno 错误类型。  比如我们通过 sys">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go语言高级编程-第1章 语言基础2">
+<meta property="og:url" content="https://rhythmnr.github.io/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC1%E7%AB%A0%20%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%802/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。  1.7 错误和异常 在C语言中，默认采用一个整数类型的 errno 来表达错误，这样就可以根据需要定义多种错误类型。在Go 语言中， syscall.Errno 就是对应C语言中 errno 类型的错误。在 syscall 包中的接口，如果有返回错误的话，底层也 是 syscall.Errno 错误类型。  比如我们通过 sys">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.695Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="读书">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>Go语言高级编程-第1章 语言基础2 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go语言高级编程-第1章 语言基础2"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-12-04 00:00" pubdate>
+          2021年12月4日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          26 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Go语言高级编程-第1章 语言基础2</h1>
+            
+            <div class="markdown-body">
+              
+              <blockquote>
+<p>Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。</p>
+</blockquote>
+<h2 id="1-7-错误和异常"><a href="#1-7-错误和异常" class="headerlink" title="1.7 错误和异常"></a>1.7 错误和异常</h2><ol>
+<li>在C语言中，默认采用一个整数类型的 errno 来表达错误，这样就可以根据需要定义多种错误类型。<strong>在Go 语言中， syscall.Errno 就是对应C语言中 errno 类型的错误。</strong>在 syscall 包中的接口，如果有返回错误的话，底层也 是 syscall.Errno 错误类型。</li>
+</ol>
+<p>比如我们通过 syscall 包的接口来修改文件的模式时，如果 遇到错误我们可以通过将 err 强制断言为 syscall.Errno 错误类型来处理:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go">err := syscall.Chmod( <span class="hljs-string">&quot;:invalid path:&quot;</span> ,  <span class="hljs-number">0666</span> )<br>  <span class="hljs-keyword">if</span>  err !=  <span class="hljs-literal">nil</span>  &#123;<br>      log.Fatal(err.(syscall.Errno))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在Go语言中，错误被认为是一种可以预期的结果;而异常则 是一种非预期的结果，发生异常可能表示程序中存在BUG或发生了其它不可控的问题。<strong>Go语言推荐使用 recover 函数将内部异常转为错误处理</strong>，这使得用户可以真正的关心业务相关的错误处理。</p>
+<p>如果某个接口简单地将所有普通的错误当做异常抛出，将会使错误信息杂乱且没有价值。就像在 main 函数中直接捕获全部一样，是没有意义的:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>  <span class="hljs-keyword">defer</span>   <span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">()</span></span> &#123;<br> <span class="hljs-keyword">if</span> r:= <span class="hljs-built_in">recover</span>();r!= <span class="hljs-literal">nil</span> &#123; log.Fatal(r)<br>&#125; &#125;()<br>...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>捕获异常不是最终的目的。如果异常不可预测，直接输出异常信息是最好的处理方式。</p>
+<ol start="2">
+<li><strong>为了记录错误类型在包装的变迁过程中的信息，我们一般 会定义一个辅助的 WrapError 函数</strong>，用于包装原始的错误， 同时保留完整的原始错误类型。为了问题定位的方便，同时也 为了能记录错误发生时的函数调用状态，我们很多时候希望在 出现致命错误的时候保存完整的函数调用信息。<strong>同时，为了支 持RPC等跨网络的传输，我们可能要需要将错误序列化为类似 JSON格式的数据，然后再从这些数据中将错误解码恢出来。</strong></li>
+</ol>
+<p>为此，我们可以定义自己的 github.com&#x2F;chai2010&#x2F;errors 包， 里面是以下的错误类型:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span>  Error  <span class="hljs-keyword">interface</span>  &#123;<br>      Caller() []CallerInfo<br>      Wraped() []<span class="hljs-type">error</span><br>      Code()  <span class="hljs-type">int</span><br>      <span class="hljs-type">error</span><br>      private()<br>&#125;<br><br>  <span class="hljs-keyword">type</span>  CallerInfo  <span class="hljs-keyword">struct</span>  &#123;<br>      FuncName  <span class="hljs-type">string</span><br>      FileName  <span class="hljs-type">string</span><br>      FileLine  <span class="hljs-type">int</span><br>  &#125;<br></code></pre></td></tr></table></figure>
+
+<p>其中 Error 为接口类型，是 error 接口类型的扩展，用于 给错误增加调用栈信息，同时支持错误的多级嵌套包装，支持 错误码格式。为了使用方便，我们可以定义以下的辅助函数:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">New</span><span class="hljs-params">(msg  <span class="hljs-type">string</span> )</span></span> <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">NewWithCode</span><span class="hljs-params">(code  <span class="hljs-type">int</span> , msg  <span class="hljs-type">string</span> )</span></span> <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">Wrap</span><span class="hljs-params">(err <span class="hljs-type">error</span>, msg <span class="hljs-type">string</span> )</span></span> <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">WrapWithCode</span><span class="hljs-params">(code <span class="hljs-type">int</span>,err <span class="hljs-type">error</span>, msg <span class="hljs-type">string</span> )</span></span> <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">FromJson</span><span class="hljs-params">(json  <span class="hljs-type">string</span> )</span></span> (Error, <span class="hljs-type">error</span>)<br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">ToJson</span><span class="hljs-params">(err <span class="hljs-type">error</span>)</span></span>  <span class="hljs-type">string</span><br></code></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>Go语言中的错误是一种接口类型。接口信息中包含了原始类 型和原始的值。只有当接口的类型和原始的值都为空的时候， 接口的值才对应 nil 。</strong>其实当接口中类型为空的时候，原始 值必然也是空的;反之，当接口对应的原始值为空的时候，接 口对应的原始类型并不一定为空的。</li>
+</ol>
+<p>因此，在处理错误返回值的时候，没有错误的返回值最好直接 写为 nil 。</p>
+<p><strong>Go语言作为一个强类型语言，不同类型之间必须要显式的转 换(而且必须有相同的基础类型)。但是，Go语言中</strong></p>
+<p><strong>interface 是一个例外:非接口类型到接口类型，或者是接口 类型之间的转换都是隐式的。</strong>这是为了支持鸭子类型，当然会 牺牲一定的安全性。</p>
+<ol start="4">
+<li>Go语言函数调用的正常流程是函数执行返回语句返回结果， 在这个流程中是没有异常的，因此在这个流程中执行 recover 异常捕获函数始终是返回 nil 。另一种是异常流程: 当函数 调用 panic 抛出异常，函数将停止执行后续的普通语句，但 是之前注册的 defer 函数调用仍然保证会被正常执行，然后 再返回到调用者。对于当前函数的调用者，因为处理异常状态 还没有被捕获，和直接调用 panic 函数的行为类似。在异常 发生时，如果在 defer 中执行 recover 调用，它可以捕获触 发 panic 时的参数，并且恢复到正常的执行流程。</li>
+</ol>
+<p><strong>在非 defer 语句中执行 recover 调用是初学者常犯的错误:</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">if</span> r: = <span class="hljs-built_in">recover</span>();r != <span class="hljs-literal">nil</span> &#123;<br>        log.Fatal(r)<br>    &#125;<br>    <span class="hljs-built_in">panic</span>(<span class="hljs-number">123</span>)<br>    <span class="hljs-keyword">if</span> r: = <span class="hljs-built_in">recover</span>();r != <span class="hljs-literal">nil</span> &#123;<br>        log.Fatal(r)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>上面程序中两个 recover 调用都不能捕获任何异常。在第一 个 recover 调用执行时，函数必然是在正常的非异常执行流 程中，这时候 recover 调用将返回 nil 。发生异常时，第 二个 recover 调用将没有机会被执行到，因为 panic 调用会 导致函数马上执行已经注册 defer 的函数后返回。</p>
+<p>其实 recover 函数调用有着更严格的要求:<strong>我们必须在 defer 函数中直接调用 recover</strong> 。如果 defer 中调用的是 recover 函数的包装函数的话，异常的捕获工作将失败!</p>
+<p>如果是在嵌套的 defer 函数中调用 recover 也将导致 无法捕获异常</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>        <span class="hljs-keyword">defer</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>            <span class="hljs-keyword">defer</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123; <span class="hljs-comment">// 无法捕获异常</span><br>                <span class="hljs-keyword">if</span> r: = <span class="hljs-built_in">recover</span>();<br>                r != <span class="hljs-literal">nil</span> &#123;<br>                    fmt.Println(r)<br>                &#125;<br>            &#125;()<br>        &#125;()<br>        <span class="hljs-built_in">panic</span>(<span class="hljs-number">1</span>)<br>  &#125;<br></code></pre></td></tr></table></figure>
+
+<p>2层嵌套的 defer 函数中直接调用 recover 和1层 defer 函 数中调用包装的 MyRecover 函数一样，都是经过了2个函数帧 才到达真正的 recover 函数，这个时候Goroutine的对应上<strong>一 级栈帧中</strong>已经没有异常信息。</p>
+<p><strong>必须要和有异常的栈帧只隔一个栈帧， recover 函数才能正 常捕获异常。换言之， recover 函数捕获的是祖父一级调用 函数栈帧的异常(刚好可以跨越一层 defer 函数)!</strong></p>
+<ol start="5">
+<li>我们可以模拟出不同类型的异常。通过为定义不同类型的保护接口，我们就可以区分异常的类型<br>了:</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span></span> &#123;<br>    <span class="hljs-keyword">defer</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>            <span class="hljs-keyword">if</span> r: = <span class="hljs-built_in">recover</span>();<br>            r != <span class="hljs-literal">nil</span> &#123;<br>                <span class="hljs-keyword">switch</span> x: = r.(<span class="hljs-keyword">type</span>) &#123;<br>                    <span class="hljs-keyword">case</span> runtime.Error:<br>                        <span class="hljs-comment">// 这是运行时错误类型异常 case error:</span><br>                        <span class="hljs-comment">// 普通错误类型异常 default :</span><br>                        <span class="hljs-comment">// 其他类型异常</span><br>                &#125;<br>            &#125;<br>        &#125;()<br>        ...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ol start="6">
+<li>如果遇到要查阅API的时候可以通过godoc命令打开 自带的文档查询。Go语言本身不仅仅包含了所有的文档，也 包含了所有标准库的实现代码，这是第一手的最权威的Go语 言资料。我们认为此时你应该已经可以熟练使用Go语言了。</li>
+</ol>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6/">#读书</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go语言高级编程-第1章 语言基础2</div>
+      <div>https://rhythmnr.github.io/2021/12/04/Go语言高级编程-第1章 语言基础2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2021年12月4日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC1%E7%AB%A0%20%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%801/" title="Go语言高级编程-第1章 语言基础1">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go语言高级编程-第1章 语言基础1</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC2%E7%AB%A0%20CGO/" title="Go语言高级编程-第2章 CGO">
+                        <span class="hidden-mobile">Go语言高级编程-第2章 CGO</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

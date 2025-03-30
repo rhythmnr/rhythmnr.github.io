@@ -1,0 +1,768 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="简介RAID全称独立冗余磁盘阵列，主要功能是把多个独立的物理盘按照不同的方式组合形成一个硬盘组（逻辑硬盘），从而提供比单个硬盘更高的存储性能和备份技术。 上面所说的“不同的方式”也可以叫不同的RAID级别，也就是根据RAID级别组合，不同的RAID级别的组合方式不一样。常见的RAID级别包括：RAID0、RAID1、RAID5、RAID6、RAID10等。 可以做完RAID把系统OS放到RAID里">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RAID简介与设置">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/02/04/RAID%E7%AE%80%E4%BB%8B%E4%B8%8E%E8%AE%BE%E7%BD%AE/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="简介RAID全称独立冗余磁盘阵列，主要功能是把多个独立的物理盘按照不同的方式组合形成一个硬盘组（逻辑硬盘），从而提供比单个硬盘更高的存储性能和备份技术。 上面所说的“不同的方式”也可以叫不同的RAID级别，也就是根据RAID级别组合，不同的RAID级别的组合方式不一样。常见的RAID级别包括：RAID0、RAID1、RAID5、RAID6、RAID10等。 可以做完RAID把系统OS放到RAID里">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204160553983.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204160608410.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204171330076.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204171404887.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204171431878.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204171456385.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240204171506169.png">
+<meta property="article:published_time" content="2024-02-04T09:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.700Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="原创">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240204160553983.png">
+  
+  
+  <title>RAID简介与设置 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="RAID简介与设置"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-04 17:00" pubdate>
+          2024年2月4日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          42 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">RAID简介与设置</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>RAID全称独立冗余磁盘阵列，主要功能是把多个独立的物理盘按照<strong>不同的方式</strong>组合形成一个硬盘组（逻辑硬盘），从而提供比单个硬盘更高的存储性能和备份技术。</p>
+<p>上面所说的“不同的方式”也可以叫不同的RAID级别，也就是根据RAID级别组合，不同的RAID级别的组合方式不一样。常见的RAID级别包括：RAID0、RAID1、RAID5、RAID6、RAID10等。</p>
+<p>可以做完RAID把系统OS放到RAID里，所以RAID还是很重要的。</p>
+<h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><p>关于RAID操作有以下常用命令：</p>
+<h3 id="清除RAID："><a href="#清除RAID：" class="headerlink" title="清除RAID："></a>清除RAID：</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdDel -L&#123;&#123;LD&#125;&#125; -force -a&#123;&#123;Adapter&#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>LD表示RAID组序号，即下文硬盘Drive’s postion的DiskGroup字段值，Adapter表示当前使用的是哪个RAID适配器，一般一台机器上只有一个适配器，执行<code>MegaCli64 -PDList -aALL</code>命令输出的第一行<code>Adapter #0</code>可以看到当前机器的RAID适配器是0，这个地方LD传0，Adapter传0。</p>
+<h3 id="创建RAID"><a href="#创建RAID" class="headerlink" title="创建RAID"></a>创建RAID</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r&#123;&#123;Raid&#125;&#125;&#123;&#123;Slot&#125;&#125; -a&#123;&#123;Adapter&#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Raid参数表示RAID类型，如RAID0，或者RAID1，或者RAID2，slot表示使用的磁盘的槽位，Adapter与上文同意。</p>
+<p>比如可以执行如下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r1[8:9,8:8] -a0<br></code></pre></td></tr></table></figure>
+
+<h3 id="设置硬盘状态为good"><a href="#设置硬盘状态为good" class="headerlink" title="设置硬盘状态为good"></a>设置硬盘状态为good</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -PDMakeGood -Physdrv &#123;&#123;Slot&#125;&#125; -force -a&#123;&#123;Adapter&#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>各参数与上文同意。</p>
+<p>###设置硬盘状态为JBOD</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -PDMakeJBOD -Physdrv &#123;&#123;Slot&#125;&#125;  -a&#123;&#123;Adapter&#125;&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="实际例子"><a href="#实际例子" class="headerlink" title="实际例子"></a>实际例子</h3><p>下面举个实际运行的例子，查看设置RAID前后硬盘的状态变化。</p>
+<p>设置RAID前，查看硬盘状态：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -PDList -aALL<br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><code class="hljs shell">Enclosure Device ID: 8<br>Slot Number: 8<br>Enclosure position: 1<br>Device Id: 12<br>WWN: 55cd2e4156058d2c<br>Sequence Number: 38<br>Media Error Count: 0<br>Other Error Count: 0<br>Predictive Failure Count: 0<br>Last Predictive Failure Event Seq Number: 0<br>PD Type: SATA<br><br>Raw Size: 3.492 TB [0x1bf1f72b0 Sectors]<br>Non Coerced Size: 3.492 TB [0x1bf0f72b0 Sectors]<br>Coerced Size: 3.492 TB [0x1bf0f0000 Sectors]<br>Emulated Drive: Yes<br>Firmware state: JBOD<br>Device Firmware Level: 0132<br>Shield Counter: 0<br>Successful diagnostics completion on :  N/A<br>SAS Address(0): 0x500e004aaaaaaa08<br>Connected Port Number: 0(path0)<br>Inquiry Data: PHYG234600QS3P8EGN  INTEL SSDSC2KG038T8                     XCV10132<br>FDE Capable: Not Capable<br>FDE Enable: Disable<br>Secured: Unsecured<br>Locked: Unlocked<br>Needs EKM Attention: No<br>Foreign State: None<br>Device Speed: 6.0Gb/s<br>Link Speed: 12.0Gb/s<br>Media Type: Solid State Device<br>Drive Temperature :27C (80.60 F)<br>PI Eligibility:  No<br>Drive is formatted for PI information:  No<br>PI: No PI<br>Port-0 :<br>Port status: Active<br>Port&#x27;s Linkspeed: 12.0Gb/s<br>Drive has flagged a S.M.A.R.T alert : No<br><br><br><br>Enclosure Device ID: 8<br>Slot Number: 9<br>Enclosure position: 1<br>Device Id: 10<br>WWN: 55cd2e415604f4f0<br>Sequence Number: 2<br>Media Error Count: 0<br>Other Error Count: 0<br>Predictive Failure Count: 0<br>Last Predictive Failure Event Seq Number: 0<br>PD Type: SATA<br><br>Raw Size: 3.492 TB [0x1bf1f72b0 Sectors]<br>Non Coerced Size: 3.492 TB [0x1bf0f72b0 Sectors]<br>Coerced Size: 3.492 TB [0x1bf0f0000 Sectors]<br>Emulated Drive: Yes<br>Firmware state: JBOD<br>Device Firmware Level: 0132<br>Shield Counter: 0<br>Successful diagnostics completion on :  N/A<br>SAS Address(0): 0x500e004aaaaaaa09<br>Connected Port Number: 0(path0)<br>Inquiry Data: PHYG2345005Z3P8EGN  INTEL SSDSC2KG038T8                     XCV10132<br>FDE Capable: Not Capable<br>FDE Enable: Disable<br>Secured: Unsecured<br>Locked: Unlocked<br>Needs EKM Attention: No<br>Foreign State: None<br>Device Speed: 6.0Gb/s<br>Link Speed: 12.0Gb/s<br>Media Type: Solid State Device<br>Drive Temperature :26C (78.80 F)<br>PI Eligibility:  No<br>Drive is formatted for PI information:  No<br>PI: No PI<br>Port-0 :<br>Port status: Active<br>Port&#x27;s Linkspeed: 12.0Gb/s<br>Drive has flagged a S.M.A.R.T alert : No<br></code></pre></td></tr></table></figure>
+
+<p>下面设置这两块盘，使用RAID1，运行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r1[8:9,8:8] -a0<br></code></pre></td></tr></table></figure>
+
+<p>再次通过<code>MegaCli64 -PDList -aALL</code>查看结果，可以看到新的结果与旧的结果的不同：</p>
+<p><img src="/../images/image-20240204160553983.png" srcset="/img/loading.gif" lazyload alt="image-20240204160553983"></p>
+<p><img src="/../images/image-20240204160608410.png" srcset="/img/loading.gif" lazyload alt="image-20240204160608410"></p>
+<p>这两块盘的Firmware state都由<code>JBOD</code>变成了<code>Online, Spun Up</code></p>
+<p>Drive’s postion字段的值一个是：<code>Drive&#39;s postion: DiskGroup: 0, Span: 0, Arm: 1</code>，一个是<code>Drive&#39;s postion: DiskGroup: 0, Span: 0, Arm: 0</code>，DiskGroup表示在哪个RAID分组里</p>
+<p>因为如果有多块硬盘的话，可以选择两块AB做RAID0，再选择不同的两块CD做RAID1或者RAID0，AB是属于同一个RAID组的，CD是属于同一个RAID组的，这是两个不同的RAID组。Drive’s postion字段里DiskGroup就表示银盘所属RAID组，可以看到这8:8和8:9这两块盘属于同一个RAID组，因为上述CfgLdAdd里就指定了[8:9,8:8]这两块盘要做一个RAID。注意如果要指定RAID组一定要在执行一个CfgLdAdd时把所有的硬盘都写入，每一行CfgLdAdd命令中的硬盘在一个RAID组里，下一行的指定的硬盘就在另一个RAID组了。</p>
+<p>比如</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r1[8:9,8:8] -a0<br></code></pre></td></tr></table></figure>
+
+<p>操作后，8:8和8:9的Drive’s postion信息分别为<code>DiskGroup: 0, Span: 0, Arm: 1</code>和<code>DiskGroup: 0, Span: 0, Arm: 0</code>。再执行：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r1[8:4,8:5] -a0<br></code></pre></td></tr></table></figure>
+
+<p>8:4和8:5的Drive’s postion信息分别为<code>Drive&#39;s postion: DiskGroup: 1, Span: 0, Arm: 0</code>和<code>Drive&#39;s postion: DiskGroup: 1, Span: 0, Arm: 1</code>，8:8 8:9和8:4 8:5的DiskGroup是不一样的，因为它们处于不同的RAID组。</p>
+<h2 id="RAID级别"><a href="#RAID级别" class="headerlink" title="RAID级别"></a>RAID级别</h2><p>不同RAID级别对硬盘数量的要求：</p>
+<p>创建RAID0阵列，至少需要两块硬盘。</p>
+<blockquote>
+<p>相关命令解析：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd –r0[8:8] -a0<br></code></pre></td></tr></table></figure>
+
+<p>这条命令尝试创建一个 RAID 0 阵列，指定的物理驱动器是 <code>[8:8]</code>。</p>
+<p>在MegaCli64中，<code>[8:8]</code>不是指两块硬盘，而是指槽位号为8的硬盘。RAID 0 需要至少两块硬盘，但在这个命令中，只指定了一个硬盘的槽位号，因此它实际上不是有效的 RAID 0 配置。如果只有一块硬盘，这个命令可能会创建一个虚拟的 RAID 0 阵列，但是它不会提供任何冗余性或性能优势，因为 RAID 0 至少需要两块硬盘才能发挥作用。</p>
+<p>要创建一个有效的 RAID 0 阵列，你需要至少两块硬盘，并在命令中指定它们的槽位号。比如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdAdd -r0[8:8,9:9] -a0<br></code></pre></td></tr></table></figure>
+
+<p>这个命令会创建一个 RAID 0 阵列，使用槽位号为8和9的两块硬盘。</p>
+</blockquote>
+<p><img src="/../images/image-20240204171330076.png" srcset="/img/loading.gif" lazyload alt="image-20240204171330076"></p>
+<p>RAID1要求硬盘数量为偶数，通过磁盘数据镜像实现数据冗余，在成对的独立磁盘上产生互为备份的数据</p>
+<p><img src="/../images/image-20240204171404887.png" srcset="/img/loading.gif" lazyload alt="image-20240204171404887"></p>
+<p>RAID5要求硬盘数量大于等于3，数据条带形式分布，以奇偶校验作冗余</p>
+<p><img src="/../images/image-20240204171431878.png" srcset="/img/loading.gif" lazyload alt="image-20240204171431878"></p>
+<p>RAID6要求硬盘数量大于等于4</p>
+<p><img src="/../images/image-20240204171456385.png" srcset="/img/loading.gif" lazyload alt="image-20240204171456385"></p>
+<p>RAID10要求硬盘数量大于等于4且为偶数，也叫RAID1+0</p>
+<p><img src="/../images/image-20240204171506169.png" srcset="/img/loading.gif" lazyload alt="image-20240204171506169"></p>
+<h2 id="设置RAID的方法"><a href="#设置RAID的方法" class="headerlink" title="设置RAID的方法"></a>设置RAID的方法</h2><p>如果硬盘已经有了RAID的话，需要清除之前的RAID</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">MegaCli64 -CfgLdDel -L%s -force -a%s<br></code></pre></td></tr></table></figure>
+
+
+
+<p>标记硬盘状态为Good，表示磁盘空闲</p>
+<p>设置磁盘RAID</p>
+<p>此外还可以设置硬盘的状态为<strong>JBOD</strong>，即Just a Bunch Of Disks，当一个磁盘被设置为JBOD状态时，它不会被包含在任何RAID阵列中，而是被视为单独的独立磁盘。在JBOD状态下，每个磁盘都可以单独访问，并且没有数据被分配或复制到其他磁盘上。这意味着如果一个磁盘出现故障，它不会影响其他磁盘上的数据。</p>
+<h2 id="硬盘空间"><a href="#硬盘空间" class="headerlink" title="硬盘空间"></a>硬盘空间</h2><p>硬盘空间分为两类，一种是JBOD阵列，一种是RAID阵列。JBOD阵列里的多个硬盘互相独立。RAID阵列里可能有多个RAID组，一个RAID组里有多块硬盘。</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs css">- JBOD <span class="hljs-selector-attr">[硬盘1， 硬盘2]</span><br>- RAID阵列 - RAID组<span class="hljs-number">1</span>：<span class="hljs-selector-attr">[硬盘1，硬盘2]</span><br>           - RAID组<span class="hljs-number">2</span>：<span class="hljs-selector-attr">[硬盘2，硬盘3]</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="硬盘状态"><a href="#硬盘状态" class="headerlink" title="硬盘状态"></a>硬盘状态</h2><p>硬盘状态即Firmware state字段有以下可能值：</p>
+<ul>
+<li><p>Online, Spun Up：表示该盘已经被进行了RAID操作，其Drive’s postion字段可以查看该盘的所在RAID阵列。</p>
+</li>
+<li><p>Unconfigured(good), Spun Up：表示该状态良好，可以对该盘进行RAID操作</p>
+</li>
+<li><p>JBOD：盘在JBOD阵列中。</p>
+</li>
+</ul>
+<p>如果当前硬盘状态就是要设置的状态，那么可以不用执行设置状态的命令了，因为是重复设置了，否则可能会报错。<br>参考</p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/123456789SI/p/16793811.html">RAID配置与解释</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4/" class="category-chain-item">运维</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8E%9F%E5%88%9B/">#原创</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>RAID简介与设置</div>
+      <div>https://rhythmnr.github.io/2024/02/04/RAID简介与设置/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月4日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/02/06/clickhouse%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90%E4%B8%8E%E5%BA%94%E7%94%A8%E5%AE%9E%E6%88%98/" title="《clickhouse原理解析与应用实战》阅读笔记">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">《clickhouse原理解析与应用实战》阅读笔记</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/01/17/gin%E4%B9%8BcleanPath%E5%87%BD%E6%95%B0%E9%98%85%E8%AF%BB/" title="gin之cleanPath函数阅读">
+                        <span class="hidden-mobile">gin之cleanPath函数阅读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

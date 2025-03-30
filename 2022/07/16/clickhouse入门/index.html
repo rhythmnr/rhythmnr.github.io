@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="和其他数据库相比它也是一种关系型数据库。 传统的关系型数据库是行式存储，而clickHouse是列式存储。 关于clickHouse和mysql的对比，但空间唯独上可以抽象为行（横轴）列（纵轴），行式存储位于一行的数据总是被物理存储在一起。 列式存储的优势：更适合OLAP（是仓库型数据库，主要是读取数据，做复杂数据分析，侧重技术决策支持，提供直观简单的结果。和OLAP相对的是OLTP，是传统的关系">
+<meta property="og:type" content="article">
+<meta property="og:title" content="clickhouse入门">
+<meta property="og:url" content="https://rhythmnr.github.io/2022/07/16/clickhouse%E5%85%A5%E9%97%A8/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="和其他数据库相比它也是一种关系型数据库。 传统的关系型数据库是行式存储，而clickHouse是列式存储。 关于clickHouse和mysql的对比，但空间唯独上可以抽象为行（横轴）列（纵轴），行式存储位于一行的数据总是被物理存储在一起。 列式存储的优势：更适合OLAP（是仓库型数据库，主要是读取数据，做复杂数据分析，侧重技术决策支持，提供直观简单的结果。和OLAP相对的是OLTP，是传统的关系">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-07-16T08:04:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.702Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>clickhouse入门 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="clickhouse入门"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-07-16 16:04" pubdate>
+          2022年7月16日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          36 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">clickhouse入门</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="和其他数据库相比"><a href="#和其他数据库相比" class="headerlink" title="和其他数据库相比"></a>和其他数据库相比</h2><p><strong>它也是一种关系型数据库。</strong></p>
+<p><strong>传统的关系型数据库是</strong><em>行式存储</em>，而clickHouse是<strong>列式存储</strong>。</p>
+<p><strong>关于clickHouse和mysql的对比，但空间唯独上可以抽象为行（横轴）列（纵轴），行式存储位于一行的数据总是被物理存储在一起。</strong></p>
+<p><strong>列式存储</strong>的优势：更适合OLAP（是仓库型数据库，<strong>主要是读取数据，做复杂数据分析，侧重技术决策支持</strong>，提供直观简单的结果。和OLAP相对的是OLTP，是传统的关系型数据库，主要操作增删改查，<strong>强调事务一致性</strong>）</p>
+<p><strong>缺点：</strong></p>
+<ol>
+<li><strong>不支持事务</strong>。不要把clickHouse直接当做像mysql这样的关系型数据库。clickHouse本身的定位就是用于联机分析(OLAP)的列式数据库管理系统(DBMS)。</li>
+<li><strong>关于实时性</strong>。缺少高频率，低延迟的修改或删除已存在数据的能力。仅能用于批量删除或修改数据，但这符合 <a target="_blank" rel="noopener" href="https://gdpr-info.eu/">GDPR</a>。就像elasticsearch搜索引擎，它也是近实时的。如果对实时性有钱强烈要求的，应该避免使用clickHouse，或者通过业务上的设计，合理避免实时性问题。</li>
+<li><strong>稀疏索引使得ClickHouse不适合通过其键检索单行的点查询。</strong></li>
+</ol>
+<h2 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h2><p><strong>使用 docker</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">docker</span> run -d --name clickhouse-server --ulimit nofile=<span class="hljs-number">262144</span>:<span class="hljs-number">262144</span> -p <span class="hljs-number">9000</span>:<span class="hljs-number">9000</span> yandex/clickhouse-server:<span class="hljs-number">1</span>.<span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>或者读取自定义配置运行：</strong></p>
+<p><strong>注意，需要在$PWD&#x2F;etc&#x2F;clickhouse-server&#x2F;config.xml指定时区</strong> <code>&lt;timezone&gt;Asia/Shanghai&lt;/timezone&gt;</code></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">docker run -d --name some-clickhouse-server --ulimit nofile=<span class="hljs-number">262144</span>:<span class="hljs-number">262144</span> -p <span class="hljs-number">8123</span>:<span class="hljs-number">8123</span> -p <span class="hljs-number">9000</span>:<span class="hljs-number">9000</span> --volume=<span class="hljs-variable">$PWD</span><span class="hljs-regexp">/some_clickhouse_database:/</span>var<span class="hljs-regexp">/lib/</span>clickhouse --volume=<span class="hljs-variable">$PWD</span><span class="hljs-regexp">/etc/</span>clickhouse-server:<span class="hljs-regexp">/etc/</span>clickhouse-server yandex/clickhouse-server:latest<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>ps：对于clickhouse-server:1.1（但是实际上运行时用的不是1.1），我打开了<listen_host>::</listen_host>，这个配置是限制来源主机的请求，<listen_host>::</listen_host>的意思是允许IP4和IP6源主机远程访问。具体可以参见config.xml的注释。</strong></p>
+</blockquote>
+<p><strong>启动客户端：</strong></p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs axapta">docker run -it --rm --link some-clickhouse-<span class="hljs-keyword">server</span>:clickhouse-<span class="hljs-keyword">server</span> yandex/clickhouse-<span class="hljs-keyword">client</span> --host clickhouse-<span class="hljs-keyword">server</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>补充的一些命令：</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">DATABASE</span> db_1;<br><span class="hljs-keyword">show</span> databases;<br><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> test02( id UInt16,col1 String,col2 String,create_date <span class="hljs-type">date</span> ) ENGINE = MergeTree(create_date, (id), <span class="hljs-number">8192</span>);<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> test02 <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;tank&#x27;</span>,<span class="hljs-string">&#x27;tank&#x27;</span>,  <span class="hljs-string">&#x27;2021-08-19 14:21:30&#x27;</span>);  <br></code></pre></td></tr></table></figure>
+
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">docker exec -i -t xxx <span class="hljs-regexp">/bin/</span>bash<br></code></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2><p><strong>与常用的SQL一致，需要注意的是创建表的时候需要指定Engine。</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">create</span> (<span class="hljs-keyword">temporary</span>) <span class="hljs-keyword">table</span> (<span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">exists</span>) test.m1 (<br> id UInt16<br>,<span class="hljs-type">name</span> String<br>) ENGINE = Memory<br>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><p><strong>整型：UInt8,UInt16,UInt32,UInt64,Int8,Int16,Int32,Int64</strong></p>
+<p><strong>枚举类型：Enum8,Enum16，存储为Int8或Int16的一组枚举字符串值。Enum8（’hello’&#x3D; 1，’world’&#x3D; 2）， 这个数据类型有两个值  ‘hello’和’world’。</strong></p>
+<p><strong>字符串(String、FixedString 和 UUID，FixedString 固定了长度，UUID为32位</strong></p>
+<p><strong>数组类型：Array(T)表示T类型的数组</strong></p>
+<p><strong>元组：Tuple，由多个元素组成，允许不同类型</strong></p>
+<p><strong>嵌套（Nested(Name1 Type1, Name2 Type2, …)），MergeTree 引擎中不支持存储这样的列。不能对整个嵌套数据结构执行 SELECT。只能明确列出属于它一部分列</strong></p>
+<p><strong>定点数 Decimal32、Decimal64 和Decimal128，Decimal(P, S)：P代表精度，决定总位数（整数部分+小数部分）</strong></p>
+<p><strong>缺失值（Nullable(TypeName)），</strong><code>Nullable(Int8)</code> 类型的列可以存储 <code>Int8</code> 类型值，而没有值的行将存储 <code>NULL</code>。使用 Nullable 几乎总是对性能产生负面影响。例子：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> t_null(x <span class="hljs-type">Int8</span>, y Nullable(<span class="hljs-type">Int8</span>)) ENGINE TinyLog<br><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> t_null <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-keyword">NULL</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="物化列"><a href="#物化列" class="headerlink" title="物化列"></a>物化列</h3><p><strong>指定 MATERIALIZED 表达式，即将一个列作为</strong> <code>物化列</code>处理了，这意味着这个列的值不能从 <code>insert</code> 语句获取，只能是自己计算出来的。同时，物化列也不会出现在 <code>select *</code> 的结果中：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">drop</span> <span class="hljs-keyword">table</span> <span class="hljs-keyword">if</span> <span class="hljs-keyword">exists</span> test.m2;<br><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> test.m2 (<br> a <span class="hljs-keyword">MATERIALIZED</span> (b+<span class="hljs-number">1</span>)<br>,b UInt16<br>) ENGINE = Memory;<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> test.m2 (b) <span class="hljs-keyword">values</span> (<span class="hljs-number">1</span>);<br><span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> test.m2;<br><span class="hljs-keyword">select</span> a, b <span class="hljs-keyword">from</span> test.m2; <span class="hljs-comment">--这个可以查出来</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="表达式列"><a href="#表达式列" class="headerlink" title="表达式列"></a>表达式列</h3><p><strong>ALIAS 表达式列某方面跟物化列相同，就是它的值不能从 insert 语句获取。不同的是， 物化列 是会真正保存数据（这样查询时不需要再计算），</strong></p>
+<p><strong>而表达式列不会保存数据（这样查询时总是需要计算），只是在查询时返回表达式的结果。</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> test.m3 (a <span class="hljs-keyword">ALIAS</span> (b+<span class="hljs-number">1</span>), b UInt16) ENGINE = Memory;<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> test.m3(b) <span class="hljs-keyword">values</span> (<span class="hljs-number">1</span>);<br><span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> test.m3;<br><span class="hljs-keyword">select</span> a, b <span class="hljs-keyword">from</span> test.m3;<br></code></pre></td></tr></table></figure>
+
+<h2 id="Engine"><a href="#Engine" class="headerlink" title="Engine"></a>Engine</h2><h3 id="数据库引擎"><a href="#数据库引擎" class="headerlink" title="数据库引擎"></a>数据库引擎</h3><p><strong>Atomic</strong>：它支持非阻塞 DROP 和 RENAME TABLE 查询以及原子 EXCHANGE TABLES t1 AND t2 查询。</p>
+<p><strong>Mysql</strong> MySQL引擎用于将远程的MySQL服务器中的表映射到ClickHouse中，并允许您对表进行 <code>INSERT</code>和 <code>SELECT</code>查询，以方便您在ClickHouse与MySQL之间进行数据交换。创建数据库时需要指定原始Mysql数据源。</p>
+<p><code>MySQL</code>数据库引擎会将对其的查询转换为MySQL语法并发送到MySQL服务器中，因此您可以执行诸如 <code>SHOW TABLES</code>或 <code>SHOW CREATE TABLE</code>之类的操作。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs n1ql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">DATABASE</span> [<span class="hljs-keyword">IF</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span>] db_name [<span class="hljs-keyword">ON</span> <span class="hljs-keyword">CLUSTER</span> <span class="hljs-keyword">cluster</span>]<br>ENGINE = MySQL(<span class="hljs-string">&#x27;host:port&#x27;</span>, [<span class="hljs-string">&#x27;database&#x27;</span> | <span class="hljs-keyword">database</span>], <span class="hljs-string">&#x27;user&#x27;</span>, <span class="hljs-string">&#x27;password&#x27;</span>)<br><br>MySQL数据库引擎参数<br>host:port — 链接的MySQL地址。<br><span class="hljs-keyword">database</span> — 链接的MySQL数据库。<br><span class="hljs-keyword">user</span> — 链接的MySQL用户。<br><span class="hljs-keyword">password</span> — 链接的MySQL用户密码。<br></code></pre></td></tr></table></figure>
+
+<p><strong>Lazy</strong></p>
+<p><strong>在距最近一次访问间隔</strong> <code>expiration_time_in_seconds</code>时间段内，将表保存在内存中，仅适用于 Log引擎表</p>
+<p><em>由于针对这类表的访问间隔较长，对保存大量小的 <em>Log引擎表进行了优化。</em></em></p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf">CREATE DATABASE testlazy ENGINE <span class="hljs-operator">=</span> Lazy(expiration_time_in_seconds)<span class="hljs-comment">;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="表引擎"><a href="#表引擎" class="headerlink" title="表引擎"></a>表引擎</h3><h4 id="Log系列"><a href="#Log系列" class="headerlink" title="Log系列"></a>Log系列</h4><p><strong>主要用于快速写入小表（1百万行左右），然后全读出来的场景。当需要快速写入和整体读的时候，最有效。</strong></p>
+<p><strong>Log系列表引擎的共性是：</strong></p>
+<ol>
+<li><strong>数据顺序append写到磁盘</strong></li>
+<li><strong>不支持delete和update</strong></li>
+<li><strong>不支持索引</strong></li>
+<li><strong>不支持原子写</strong></li>
+<li><strong>Insert的操作会阻塞select操作</strong></li>
+</ol>
+<p><strong>主要的特点是：</strong></p>
+<ol>
+<li><strong>数据存储磁盘</strong></li>
+<li><strong>写入时追加数据到文件末尾</strong></li>
+<li><strong>不支持突变的操作</strong></li>
+<li><strong>不支持索引，所以select效率比较低</strong></li>
+<li><strong>非原子性写入数据</strong></li>
+</ol>
+<p><strong>其中的tinylog一般用于测试，存储少量数据的小表：</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> t_tinylog(<br>id Int64,<br>  <span class="hljs-type">name</span> String<br>)<br>ENGINE = TinyLog;<br></code></pre></td></tr></table></figure>
+
+<h4 id="Integration系列"><a href="#Integration系列" class="headerlink" title="Integration系列"></a>Integration系列</h4><p><strong>该系统表引擎主要用于对接外部数据源</strong></p>
+<p><strong>Kafka：可以将kafka Topic中的数据直接导入到clickhouse</strong></p>
+<p><strong>Mysql：将Mysql作为存储引擎，直接可以在Clickhouse中对mysql表进行select等操作</strong></p>
+<p><strong>HDFS：直接读取HDFS的特定格式的数据文件</strong></p>
+<h4 id="Specal系列"><a href="#Specal系列" class="headerlink" title="Specal系列"></a>Specal系列</h4><p><strong>Memory引擎，数据以未压缩的原始形式存在内存中，服务器重启数据就会消失。读写操作不会相互阻塞，不支持索引。简单查询下有非常高的性能表现。一般仅用来测试，适用于非常高的性能，同事数据量不大的场景。</strong></p>
+<p><strong>Merge引擎本身不存储数据，但同时从任意多个其他的表中读取数据。读取时自动并行，支持写入。</strong></p>
+<p><strong>Distributed引擎，本身不存储数据，但是可以从多个服务器进行分布式查询。读是自动并行的</strong></p>
+<p><strong>关于整合：</strong></p>
+<ol>
+<li><strong>Merge引擎：在同一个服务器上的，多个相同结构的物理表，可以被整合成一张大的逻辑表，这张表的数据包含了物理表中的所有数据</strong></li>
+<li><strong>Distributed：在不同的server上，多个相同结构的物理表，可以被整合成一张大的逻辑表，这张逻辑表的数据，就是包含了物理表的所有数据</strong></li>
+</ol>
+<h4 id="MergeTree"><a href="#MergeTree" class="headerlink" title="MergeTree"></a>MergeTree</h4><p><strong>绝大数场景会使用MergeTree</strong></p>
+<p><strong>只有MergeTree系列的表引擎才支持</strong><a target="_blank" rel="noopener" href="https://so.csdn.net/so/search?q=%E4%B8%BB%E9%94%AE&spm=1001.2101.3001.7020">主键</a>索引，数据分区，数据副本，数据采样这些特性，只有此系列的表引擎才支持ALTER操作。</p>
+<h2 id="聚合"><a href="#聚合" class="headerlink" title="聚合"></a>聚合</h2><p>**click house支持聚合操作，有一些标准聚合函数:**8</p>
+<p><strong>count，min，max等</strong></p>
+<p><strong>ClickHouse 特有的聚合函数:</strong></p>
+<p><strong>anyHeavy，anyLast，argMin等</strong></p>
+<p><strong>参考</strong><a target="_blank" rel="noopener" href="https://clickhouse.com/docs/zh/sql-reference/aggregate-functions/parametric-functions">官方文档</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4/" class="category-chain-item">运维</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>clickhouse入门</div>
+      <div>https://rhythmnr.github.io/2022/07/16/clickhouse入门/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年7月16日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/07/16/elasticsearch%E5%85%A5%E9%97%A8/" title="elasticsearch入门">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">elasticsearch入门</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/05/26/prometheus%20exporter%E7%9A%84%E6%80%BB%E7%BB%93/" title="prometheus exporter的总结">
+                        <span class="hidden-mobile">prometheus exporter的总结</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

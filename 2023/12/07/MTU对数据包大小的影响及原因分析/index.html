@@ -1,0 +1,749 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="MTU最大传输单元（Maximum Transmission Unit，缩写MTU）指在数据链路层上能传输的最大的数据包大小（以字节为单位） 如果发送端发送的数据包大小大于了发送端到接收端路上某台设备的MTU，那么会造成报文分段甚至丢弃，加重网络传输的负担。 不同的厂商，不同厂商的不同型号的设备对MTU的定义也可能不一样。 为什么需要MTU在网络传输中，数据包过大，会导致传输时间变长，传输过程中如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MTU对数据包大小的影响及原因分析">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/12/07/MTU%E5%AF%B9%E6%95%B0%E6%8D%AE%E5%8C%85%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%BD%B1%E5%93%8D%E5%8F%8A%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="MTU最大传输单元（Maximum Transmission Unit，缩写MTU）指在数据链路层上能传输的最大的数据包大小（以字节为单位） 如果发送端发送的数据包大小大于了发送端到接收端路上某台设备的MTU，那么会造成报文分段甚至丢弃，加重网络传输的负担。 不同的厂商，不同厂商的不同型号的设备对MTU的定义也可能不一样。 为什么需要MTU在网络传输中，数据包过大，会导致传输时间变长，传输过程中如">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231207112949818.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231207163741299.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208145325191.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208112903299.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208174000867.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208174034001.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208174139218.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208174203682.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20231208174306605.png">
+<meta property="article:published_time" content="2023-12-07T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.699Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20231207112949818.png">
+  
+  
+  <title>MTU对数据包大小的影响及原因分析 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MTU对数据包大小的影响及原因分析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-07 11:00" pubdate>
+          2023年12月7日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">MTU对数据包大小的影响及原因分析</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="MTU"><a href="#MTU" class="headerlink" title="MTU"></a>MTU</h2><p><strong>最大传输单元</strong>（Maximum Transmission Unit，缩写MTU）指在数据链路层上能传输的最大的数据包大小（以字节为单位）</p>
+<p>如果发送端发送的数据包大小大于了发送端到接收端路上某台设备的MTU，那么会造成报文分段甚至丢弃，加重网络传输的负担。</p>
+<p>不同的厂商，不同厂商的不同型号的设备对MTU的定义也可能不一样。</p>
+<h3 id="为什么需要MTU"><a href="#为什么需要MTU" class="headerlink" title="为什么需要MTU"></a>为什么需要MTU</h3><p>在网络传输中，数据包过大，会导致传输时间变长，传输过程中如果传输失败，对应的传输代价也比较大。数据包较小，则设备需要处理更多的报文，这个比较考验设备的线程转发能力，传输的有用信息占数据包的比例较低，传输效率低。</p>
+<p>设置MTU可以将数据包大小控制在合理范围内，提高传输效率。</p>
+<p>PPPoE网的MTU通常是1492。以太网的MTU通常为1500字节，这个1500是最大的承载IP层及以上层数据的最大长度，故以太网数据帧的最大长度是1518字节（1518是在1500的基础上加上以太网的14字节的帧头和4字节的帧尾CRC校验部分）。</p>
+<p><img src="/../images/image-20231207112949818.png" srcset="/img/loading.gif" lazyload alt="image-20231207112949818"></p>
+<p>受MTU的影响，数据包可能被分片。分片可以在源主机或者到目的主机路径上的传输路径上任意一台路由器执行，但是重组只能在目的主机执行。</p>
+<blockquote>
+<p>注意，有的时候捕获到的数据包不会有数据链路层的信息：</p>
+<p>在捕获本地回环接口（lo0）的数据包时，通常不会显示数据链路层的信息。这是因为本地回环接口是一个虚拟的网络接口，它主要用于本地主机内部的通信，数据包在传输时并不经过物理网络链路，也就是说不存在真正的数据链路层。</p>
+<p>因此，在捕获本地回环接口的数据包时，Wireshark 只会显示上层协议的信息，如网络层（IPv4、IPv6）、传输层（TCP、UDP）和应用层（HTTP、DNS）等。你可以查看捕获到的数据包的上层协议信息，但不会看到数据链路层的信息。</p>
+</blockquote>
+<h3 id="数据包太大受MTU限制而产生分片的情况"><a href="#数据包太大受MTU限制而产生分片的情况" class="headerlink" title="数据包太大受MTU限制而产生分片的情况"></a>数据包太大受MTU限制而产生分片的情况</h3><p>比如主机发送大小为2000字节的数据包，这个2000是UDP层的数据包长度，包含了UDP头部。假设出接口的MTU是1500，那么2000超过了MTU，则需要分片。</p>
+<p>到了IP层，需要加上长度为20的IP头部，那么此时总长度是2000+20&#x3D;2020，Payload长度是2000。因为<strong>MTU的限制是对IP层的数据包（包括了IP头部）的限制</strong>，则原数据包分为两段，分别是长度20的IP头部加上1480的Payload，还有长度20的IP头部加上剩余的2000-1480&#x3D;520。两个数据包都有IP头部，IP头部的标志位中的MF用来分辨这是不是最后一个分片，片偏移用来分辨这个分片相对原数据报的位置。通过这几个字段，可以准确的完成数据报的重组操作。</p>
+<p><img src="/../images/image-20231207163741299.png" srcset="/img/loading.gif" lazyload alt="image-20231207163741299"></p>
+<h2 id="wireshark显示的数据包长度说明"><a href="#wireshark显示的数据包长度说明" class="headerlink" title="wireshark显示的数据包长度说明"></a>wireshark显示的数据包长度说明</h2><h3 id="不包括FCS"><a href="#不包括FCS" class="headerlink" title="不包括FCS"></a>不包括FCS</h3><p><strong>wireshark显示的数据帧长度不包括FCS(Frame check sequence)[帧校验序列]</strong></p>
+<p>gopacket抓到的数据包也是不包括FCS的</p>
+<p>这两个抓包相关工具都不关注FCS，这是因为FCS是网络适配器校验使用的，抓包工具关注的是在网络上流动的原始数据。</p>
+<h3 id="wireshark会截断数据包"><a href="#wireshark会截断数据包" class="headerlink" title="wireshark会截断数据包"></a>wireshark会截断数据包</h3><p>有时候wireshark可能会截断数据包，比如在Wireshark里查看抓的包，有时候会显示<code>[Packet size limited during capture: xxxxxx truncated]</code>。这是因为wireshark使用的抓包机制（比如libpcap或者winpcap）是允许设置抓到的包的大小的，通常设置抓包大小是因为抓包者只关注一些协议（比如IP&#x2F;TCP&#x2F;UDP协议）的头信息而不关注payload部分。</p>
+<p>当设置了snaplen选项，那么只能抓到snaplen长度的数据包，数据包超出snaplen的部分会被截断。如果想要抓完整的数据包，可以将snaplen设置为默认值，通常是65535。</p>
+<p>但是wireshark显示的长度仍然是完整的长度，只是显示的数据是部分数据。</p>
+<p>下面是一个例子：</p>
+<p><img src="/../images/image-20231208145325191.png" srcset="/img/loading.gif" lazyload alt="image-20231208145325191"></p>
+<p>这个数据包的大小是8136字节，但是因为限制了snaplen为1024，所以相当于只存储了包的前1024个字节，右边显示了这个包的原始数据。一共是64行，每行是16个字节，一共是64*16&#x3D;1024个字节。因为大部分时候只关注协议头，不关注具体负载数据，所以设置成2024是足够的，可以看到协议头，同时也可以减少存储空间。</p>
+<p>这里的TCP payload显示的是数据包的payload的长度8070字节，这是真实的传输环境中的数据长度，只是payload部分受snaplen的影响被截断了。</p>
+<h2 id="数据包长度大于MTU的情况"><a href="#数据包长度大于MTU的情况" class="headerlink" title="数据包长度大于MTU的情况"></a>数据包长度大于MTU的情况</h2><p>我连接了VPN，这样就可以访问内网了。然后通过scp往内网的一台服务器上拷贝文件，拷贝的同时用wireshark抓V本机PN的网卡的流量，发现拷贝结束后所有的数据包的大小都没有超过mtu，最大也只有1401。我电脑上连接VPN的网卡是utun5。</p>
+<p>下面去到内网的被拷贝文件过去的目标服务器查看抓到的包，发现有很多包的大小都超过了mtu。比如长度为4101字节的就有一堆。</p>
+<p><img src="/../images/image-20231208112903299.png" srcset="/img/loading.gif" lazyload alt="image-20231208112903299"></p>
+<h2 id="原因相关概念"><a href="#原因相关概念" class="headerlink" title="原因相关概念"></a>原因相关概念</h2><p>在网络上搜寻了下，网卡有很多支持的功能，有些功能是对发送端有效，有些对接收端有效。这些功能和MTU相关的，会影响数据包大小的，主要有以下几个：</p>
+<h3 id="发送端"><a href="#发送端" class="headerlink" title="发送端"></a>发送端</h3><h4 id="TSO和USO"><a href="#TSO和USO" class="headerlink" title="TSO和USO"></a>TSO和USO</h4><p>TSO全程TCP Segment Offload，有很多网卡都支持TSO。有时候也被叫做LSO（Large Segment Offload）。TSO的作用就是把原本由内核做的拆包工作转移到网卡。支持TSO的网卡可以降低CPU的负载，提高网络带宽。TSO是一种硬件卸载技术，旨在将TCP分流的过程从CPU卸载到网卡。</p>
+<p>TSO是针对TCP的，USO是针对UDP的。</p>
+<p>TSO提供了一个缓冲区，然后由网卡将缓存的数据包拆分成小于MTU和MSS的小包。</p>
+<p>在不支持TSO的网卡上，TCP层向IP层发送数据会考虑MSS，使得TCP向下发送的数据可以包含在一个IP分组中。</p>
+<p>网卡支持TSO时，TCP层会慢慢增大MSS，一般都是整数倍增加，添加TCP头传给IP层。网卡接受到IP层的大数据包会将包分成若干个小的IP包。这样网卡就把CPU要做的分组的工作自己承接过来做好了。</p>
+<p><strong>如果TSO开启，那么GSO会自动开启。</strong></p>
+<h4 id="GSO"><a href="#GSO" class="headerlink" title="GSO"></a>GSO</h4><p>GSO(Generic Segmentation Offload)比TSO更通用。基本思想就是尽可能推迟数据分片直至达到网卡前，到达网卡前会检查网卡是否支持分片功能比如TSO，支持则发往网卡给网卡分片，否则将分片的工作推迟到发到网卡的前一刻执行。</p>
+<h3 id="接收端"><a href="#接收端" class="headerlink" title="接收端"></a>接收端</h3><h4 id="LRO"><a href="#LRO" class="headerlink" title="LRO"></a>LRO</h4><p>全称large-receive-offload，基本功能就是将接收到的多个TCP数据包聚合成一个更大的数据包，交给网络协议栈处理。作用于网卡。</p>
+<h4 id="GRO"><a href="#GRO" class="headerlink" title="GRO"></a>GRO</h4><p>全称generic-receive-offload。与LRO相似，更通用。在LRO的基础上新增作用于离开网卡加入网络协议栈的时候。是LRO的软实现，合并条件更加灵活。</p>
+<h3 id="分片示意图"><a href="#分片示意图" class="headerlink" title="分片示意图"></a>分片示意图</h3><p>下面是上述的几个功能开启或者关闭时的分片情况，在何处分片等，图源网络。</p>
+<h4 id="发送端-1"><a href="#发送端-1" class="headerlink" title="发送端"></a>发送端</h4><p>TSO关闭，GSO关闭</p>
+<p><img src="/../images/image-20231208174000867.png" srcset="/img/loading.gif" lazyload alt="image-20231208174000867"></p>
+<p>TSO开启，GSO自动开启</p>
+<p><img src="/../images/image-20231208174034001.png" srcset="/img/loading.gif" lazyload alt="image-20231208174034001"></p>
+<h3 id="接收端-1"><a href="#接收端-1" class="headerlink" title="接收端"></a>接收端</h3><p>LRO 关闭，GRO 关闭</p>
+<p><img src="/../images/image-20231208174139218.png" srcset="/img/loading.gif" lazyload alt="image-20231208174139218"></p>
+<p>LRO开启：数据包在网卡被合并</p>
+<p><img src="/../images/image-20231208174203682.png" srcset="/img/loading.gif" lazyload alt="image-20231208174203682"></p>
+<p>GRO开启</p>
+<p><img src="/../images/image-20231208174306605.png" srcset="/img/loading.gif" lazyload alt="image-20231208174306605"></p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>发送端即我的本机，使用的网卡是utun5，查看utun5的信息：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">ifconfig utun5                                                     <br>utun5: flags=8051&lt;UP,POINTOPOINT,RUNNING,MULTICAST&gt; mtu 1500<br>	inet 172.16.48.126 --&gt; 172.16.48.125 netmask 0xffffffff<br></code></pre></td></tr></table></figure>
+
+<p>可以看到utun5不支持TSO，这是因为utun5是一个虚拟网卡，不是物理网卡。</p>
+<blockquote>
+<p>查看我的物理网卡en0，可以看到物理网卡是支持TSO的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs shell">ifconfig en0                                                       <br>en0: flags=8863&lt;UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST&gt; mtu 1500<br>	options=6463&lt;RXCSUM,TXCSUM,TSO4,TSO6,CHANNEL_IO,PARTIAL_CSUM,ZEROINVERT_CSUM&gt;<br>	ether 38:f9:d3:7d:03:9c<br>	inet 192.168.22.56 netmask 0xffffff00 broadcast 192.168.22.255<br>	nd6 options=201&lt;PERFORMNUD,DAD&gt;<br>	media: autoselect<br>	status: active<br></code></pre></td></tr></table></figure>
+</blockquote>
+<p><strong>Wireshark抓的包是从内核到网卡的，</strong>网卡不支持分片，只能消耗CPU让内核做分片。所以抓到的的从内核到网卡的数据包都是被内核分片好的。此时的流程是：</p>
+<figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs elm">               抓包<br>网卡&lt;-<span class="hljs-comment">----------------------------内核</span><br>不支持<span class="hljs-type">TSO</span>                         做拆包的工作<br></code></pre></td></tr></table></figure>
+
+<p>目标服务器的工作网卡是ens5f0。查看其是否支持LRO或者GRO。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell">[root@localhost ~]# ethtool -k ens5f0|grep large-receive-offload<br>large-receive-offload: off [fixed]<br>[root@localhost ~]# ethtool -k ens5f0|grep generic-receive-offload<br>generic-receive-offload: on<br></code></pre></td></tr></table></figure>
+
+<p>可以看到其支持GRO。GRO会在离开网卡达到协议栈时做聚合。此时Wireshark抓的包是从网卡到内核的，抓到的包时通过GRO聚合完成的，所以聚合前的各个小包小于MTU，聚合完成后的包大小会大于MTU。</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ada">               抓包<br>网卡<span class="hljs-comment">-----------------------------&gt;内核</span><br>支持GRO                          <br></code></pre></td></tr></table></figure>
+
+<p>参考文章</p>
+<p><a target="_blank" rel="noopener" href="https://info.support.huawei.com/info-finder/encyclopedia/zh/MTU.html">https://info.support.huawei.com/info-finder/encyclopedia/zh/MTU.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/LearnLHC/article/details/115228649">https://blog.csdn.net/LearnLHC/article/details/115228649</a></p>
+<p><a target="_blank" rel="noopener" href="https://osqa-ask.wireshark.org/questions/50808/packet-size-limited-during-capture-xxxxxx-truncated/">https://osqa-ask.wireshark.org/questions/50808/packet-size-limited-during-capture-xxxxxx-truncated/</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.modb.pro/db/50701">https://www.modb.pro/db/50701</a></p>
+<p><a target="_blank" rel="noopener" href="https://luckymrwang.github.io/2022/07/27/SmartNIC-%E2%80%94-TSO%E3%80%81GSO%E3%80%81LRO%E3%80%81GRO-%E6%8A%80%E6%9C%AF/">https://luckymrwang.github.io/2022/07/27/SmartNIC-%E2%80%94-TSO%E3%80%81GSO%E3%80%81LRO%E3%80%81GRO-%E6%8A%80%E6%9C%AF/</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>MTU对数据包大小的影响及原因分析</div>
+      <div>https://rhythmnr.github.io/2023/12/07/MTU对数据包大小的影响及原因分析/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月7日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/12/12/%E3%80%8AGO%E4%B8%93%E5%AE%B6%E7%BC%96%E7%A8%8B%E3%80%8B%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" title="GO专家编程阅读记录">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">GO专家编程阅读记录</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/02/%E5%8C%97%E6%9E%81%E6%98%9FconfigMap%E6%9B%B4%E6%96%B0/" title="北极星configMao更新">
+                        <span class="hidden-mobile">北极星configMao更新</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

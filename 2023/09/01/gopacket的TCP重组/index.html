@@ -1,0 +1,712 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="背景当http请求或者响应太大时，请求或者返回的数据会被分成多个网络数据包，想知道具体的报文内容则需要进行TCP重组。另一个问题是关于http响应时间的计算，因为请求或者响应可能是又多个网络数据包组成的，每个数据包的时间戳也不相同，所以计算响应时间应该根据哪个数据包的时间戳也是一个需要思考的问题。我查阅了相关资料，总结出应该http响应时间应该用响应的最后一个数据包的时间戳减去请求的最后一个数据包">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gopacket的TCP重组">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/09/01/gopacket%E7%9A%84TCP%E9%87%8D%E7%BB%84/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="背景当http请求或者响应太大时，请求或者返回的数据会被分成多个网络数据包，想知道具体的报文内容则需要进行TCP重组。另一个问题是关于http响应时间的计算，因为请求或者响应可能是又多个网络数据包组成的，每个数据包的时间戳也不相同，所以计算响应时间应该根据哪个数据包的时间戳也是一个需要思考的问题。我查阅了相关资料，总结出应该http响应时间应该用响应的最后一个数据包的时间戳减去请求的最后一个数据包">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230421112651028.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230421112846949.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230421113058890.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230421113442834.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230421113224094.png">
+<meta property="article:published_time" content="2023-09-01T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.720Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230421112651028.png">
+  
+  
+  <title>gopacket的TCP重组 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="gopacket的TCP重组"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-09-01 11:00" pubdate>
+          2023年9月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          54 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">gopacket的TCP重组</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当http请求或者响应太大时，请求或者返回的数据会被分成多个网络数据包，<strong>想知道具体的报文内容则需要进行TCP重组。另一个问题是关于http响应时间的计算</strong>，因为请求或者响应可能是又多个网络数据包组成的，每个数据包的时间戳也不相同，所以计算响应时间应该根据哪个数据包的时间戳也是一个需要思考的问题。我查阅了相关资料，总结出应该http响应时间应该用响应的最后一个数据包的时间戳减去请求的最后一个数据包的时间戳（Wireshark也是这样计算的）。下面是一个简单的例子，这个例子的http响应数据较大，被分成了多个数据包：</p>
+<p>请求是一个简单的HTTP GET请求：</p>
+<p><img src="/../images/image-20230421112651028.png" srcset="/img/loading.gif" lazyload alt="image-20230421112651028"></p>
+<p>由请求的最后一行[Response in frame:53]，查看No.53的数据包</p>
+<p><img src="/../images/image-20230421112846949.png" srcset="/img/loading.gif" lazyload alt="image-20230421112846949"></p>
+<p>可以看到Wireshark上显示了完整的http报文，http响应中包含了非常多的字符c。也显示了[20 Reassembled TCP Segments(300109 bytes)..]，说明wireshark进行了TCP重组，使用了20个TCP分片重组得到了完整的http响应报文。</p>
+<p>点开[20 Reassembled TCP Segments(300109 bytes)..]，可以看到使用的所有的TCP分片</p>
+<p><img src="/../images/image-20230421113058890.png" srcset="/img/loading.gif" lazyload alt="image-20230421113058890"></p>
+<p>查看第一个TCP分片即Frame 19</p>
+<p><img src="/../images/image-20230421113442834.png" srcset="/img/loading.gif" lazyload alt="image-20230421113442834"></p>
+<p>其TCP Payload是http响应报文的格式，但是因为http body太长，这个分片无法负载完整http body，所以剩下的http body被分到其他的TCP分片中。</p>
+<p>再随机点入一个TCP分片比如Frame33：</p>
+<p><img src="/../images/image-20230421113224094.png" srcset="/img/loading.gif" lazyload alt="image-20230421113224094"></p>
+<p>可以看到其TCP payload都是ccc，<strong>TCP重组就是选出了所有的需要重组的TCP分片，然后将这些TCP分片的TCP Payload组合得到完整的数据。</strong></p>
+<h2 id="测试HTTP请求TCP重组的注意事项"><a href="#测试HTTP请求TCP重组的注意事项" class="headerlink" title="测试HTTP请求TCP重组的注意事项"></a>测试HTTP请求TCP重组的注意事项</h2><h3 id="客户端的随机端口"><a href="#客户端的随机端口" class="headerlink" title="客户端的随机端口"></a>客户端的随机端口</h3><p>客户端发送http请求时，客户端使用的端口是系统随机分配的，当我写了一个脚本，在这个脚本发送了2次http请求时，这2次http请求的端口使用的也是不同的，虽然在同一个脚本。</p>
+<h3 id="tcp包中如何知道应用层协议是什么"><a href="#tcp包中如何知道应用层协议是什么" class="headerlink" title="tcp包中如何知道应用层协议是什么"></a>tcp包中如何知道应用层协议是什么</h3><p>在TCP包中，我们无法直接知道应用层协议是什么，因为TCP只是一种传输层协议，它不关心上层的协议是什么。但是，在TCP包的数据部分，我们可以根据端口号来猜测上层协议的类型。因为在TCP连接建立时，客户端和服务器端会约定使用特定的端口号来传输数据，而这些端口号通常会对应着一种特定的应用层协议。比如，HTTP通常使用80端口，HTTPS通常使用443端口，SMTP通常使用25端口等等。因此，我们可以根据TCP包的目的端口号来猜测上层协议的类型。但是需要注意的是，这种方法并不完全准确，因为端口号并不是一成不变的，而且也有可能使用非标准的端口号。</p>
+<h2 id="gopacket对分片的支持"><a href="#gopacket对分片的支持" class="headerlink" title="gopacket对分片的支持"></a>gopacket对分片的支持</h2><p>关于TCP 重组，可以先看官方给出的一个比较通俗易懂的<a target="_blank" rel="noopener" href="https://github.com/google/gopacket/blob/master/examples/httpassembly/main.go">例子</a></p>
+ <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><br><span class="hljs-keyword">import</span> (<br>	<span class="hljs-string">&quot;bufio&quot;</span><br>	<span class="hljs-string">&quot;flag&quot;</span><br>	<span class="hljs-string">&quot;io&quot;</span><br>	<span class="hljs-string">&quot;log&quot;</span><br>	<span class="hljs-string">&quot;net/http&quot;</span><br>	<span class="hljs-string">&quot;time&quot;</span><br><br>	<span class="hljs-string">&quot;github.com/google/gopacket&quot;</span><br>	<span class="hljs-string">&quot;github.com/google/gopacket/examples/util&quot;</span><br>	<span class="hljs-string">&quot;github.com/google/gopacket/layers&quot;</span><br>	<span class="hljs-string">&quot;github.com/google/gopacket/pcap&quot;</span><br>	<span class="hljs-string">&quot;github.com/google/gopacket/tcpassembly&quot;</span><br>	<span class="hljs-string">&quot;github.com/google/gopacket/tcpassembly/tcpreader&quot;</span><br>)<br><br><span class="hljs-keyword">var</span> iface = flag.String(<span class="hljs-string">&quot;i&quot;</span>, <span class="hljs-string">&quot;eth0&quot;</span>, <span class="hljs-string">&quot;Interface to get packets from&quot;</span>)<br><span class="hljs-keyword">var</span> fname = flag.String(<span class="hljs-string">&quot;r&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;Filename to read from, overrides -i&quot;</span>)<br><span class="hljs-keyword">var</span> snaplen = flag.Int(<span class="hljs-string">&quot;s&quot;</span>, <span class="hljs-number">1600</span>, <span class="hljs-string">&quot;SnapLen for pcap packet capture&quot;</span>)<br><span class="hljs-keyword">var</span> filter = flag.String(<span class="hljs-string">&quot;f&quot;</span>, <span class="hljs-string">&quot;tcp and dst port 80&quot;</span>, <span class="hljs-string">&quot;BPF filter for pcap&quot;</span>)<br><span class="hljs-keyword">var</span> logAllPackets = flag.Bool(<span class="hljs-string">&quot;v&quot;</span>, <span class="hljs-literal">false</span>, <span class="hljs-string">&quot;Logs every packet in great detail&quot;</span>)<br><br><span class="hljs-comment">// Build a simple HTTP request parser using tcpassembly.StreamFactory and tcpassembly.Stream interfaces</span><br><br><span class="hljs-comment">// httpStreamFactory implements tcpassembly.StreamFactory</span><br><span class="hljs-keyword">type</span> httpStreamFactory <span class="hljs-keyword">struct</span>&#123;&#125;<br><br><span class="hljs-comment">// httpStream will handle the actual decoding of http requests.</span><br><span class="hljs-keyword">type</span> httpStream <span class="hljs-keyword">struct</span> &#123;<br>	net, transport gopacket.Flow<br>	r              tcpreader.ReaderStream<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(h *httpStreamFactory)</span></span> New(net, transport gopacket.Flow) tcpassembly.Stream &#123;<br>	hstream := &amp;httpStream&#123;<br>		net:       net,<br>		transport: transport,<br>		r:         tcpreader.NewReaderStream(),<br>	&#125;<br>	<span class="hljs-keyword">go</span> hstream.run() <span class="hljs-comment">// Important... we must guarantee that data from the reader stream is read.</span><br><br>	<span class="hljs-comment">// ReaderStream implements tcpassembly.Stream, so we can return a pointer to it.</span><br>	<span class="hljs-keyword">return</span> &amp;hstream.r<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(h *httpStream)</span></span> run() &#123;<br>	buf := bufio.NewReader(&amp;h.r)<br>	<span class="hljs-keyword">for</span> &#123;<br>		req, err := http.ReadRequest(buf)<br>		<span class="hljs-keyword">if</span> err == io.EOF &#123;<br>			<span class="hljs-comment">// We must read until we see an EOF... very important!</span><br>			<span class="hljs-keyword">return</span><br>		&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			log.Println(<span class="hljs-string">&quot;Error reading stream&quot;</span>, h.net, h.transport, <span class="hljs-string">&quot;:&quot;</span>, err)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			bodyBytes := tcpreader.DiscardBytesToEOF(req.Body)<br>			req.Body.Close()<br>			log.Println(<span class="hljs-string">&quot;Received request from stream&quot;</span>, h.net, h.transport, <span class="hljs-string">&quot;:&quot;</span>, req, <span class="hljs-string">&quot;with&quot;</span>, bodyBytes, <span class="hljs-string">&quot;bytes in request body&quot;</span>)<br>		&#125;<br>	&#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-keyword">defer</span> util.Run()()<br>	<span class="hljs-keyword">var</span> handle *pcap.Handle<br>	<span class="hljs-keyword">var</span> err <span class="hljs-type">error</span><br><br>	<span class="hljs-comment">// Set up pcap packet capture</span><br>	<span class="hljs-keyword">if</span> *fname != <span class="hljs-string">&quot;&quot;</span> &#123;<br>		log.Printf(<span class="hljs-string">&quot;Reading from pcap dump %q&quot;</span>, *fname)<br>		handle, err = pcap.OpenOffline(*fname)<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		log.Printf(<span class="hljs-string">&quot;Starting capture on interface %q&quot;</span>, *iface)<br>		handle, err = pcap.OpenLive(*iface, <span class="hljs-type">int32</span>(*snaplen), <span class="hljs-literal">true</span>, pcap.BlockForever)<br>	&#125;<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatal(err)<br>	&#125;<br><br>	<span class="hljs-keyword">if</span> err := handle.SetBPFFilter(*filter); err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatal(err)<br>	&#125;<br><br>	<span class="hljs-comment">// Set up assembly</span><br>	streamFactory := &amp;httpStreamFactory&#123;&#125;<br>	streamPool := tcpassembly.NewStreamPool(streamFactory)<br>	assembler := tcpassembly.NewAssembler(streamPool)<br><br>	log.Println(<span class="hljs-string">&quot;reading in packets&quot;</span>)<br>	<span class="hljs-comment">// Read in packets, pass to assembler.</span><br>	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())<br>	packets := packetSource.Packets()<br>	ticker := time.Tick(time.Minute)<br>	<span class="hljs-keyword">for</span> &#123;<br>		<span class="hljs-keyword">select</span> &#123;<br>		<span class="hljs-keyword">case</span> packet := &lt;-packets:<br>			<span class="hljs-comment">// A nil packet indicates the end of a pcap file.</span><br>			<span class="hljs-keyword">if</span> packet == <span class="hljs-literal">nil</span> &#123;<br>				<span class="hljs-keyword">return</span><br>			&#125;<br>			<span class="hljs-keyword">if</span> *logAllPackets &#123;<br>				log.Println(packet)<br>			&#125;<br>			<span class="hljs-keyword">if</span> packet.NetworkLayer() == <span class="hljs-literal">nil</span> || packet.TransportLayer() == <span class="hljs-literal">nil</span> || packet.TransportLayer().LayerType() != layers.LayerTypeTCP &#123;<br>				log.Println(<span class="hljs-string">&quot;Unusable packet&quot;</span>)<br>				<span class="hljs-keyword">continue</span><br>			&#125;<br>			tcp := packet.TransportLayer().(*layers.TCP)<br>			assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)<br><br>		<span class="hljs-keyword">case</span> &lt;-ticker:<br>			<span class="hljs-comment">// Every minute, flush connections that haven&#x27;t seen activity in the past 2 minutes.</span><br>			assembler.FlushOlderThan(time.Now().Add(time.Minute * <span class="hljs-number">-2</span>))<br>		&#125;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="代码解释"><a href="#代码解释" class="headerlink" title="代码解释"></a>代码解释</h2><h3 id="FlushOlderThan"><a href="#FlushOlderThan" class="headerlink" title="FlushOlderThan"></a>FlushOlderThan</h3><p>源码里，其实这个函数就是调用了FlushWithOptions，下面介绍FlushWithOptions的功能</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// FlushOlderThan calls FlushWithOptions with the CloseAll option set to true.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *Assembler)</span></span> FlushOlderThan(t time.Time) (flushed, closed <span class="hljs-type">int</span>) &#123;<br>	<span class="hljs-keyword">return</span> a.FlushWithOptions(FlushOptions&#123;CloseAll: <span class="hljs-literal">true</span>, T: t&#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>FlushWithOptions的定义如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *Assembler)</span></span> FlushWithOptions(opt FlushOptions) (flushed, closed <span class="hljs-type">int</span>) <br></code></pre></td></tr></table></figure>
+
+<p>FlushWithOptions函数的返回值的含义为刷新的连接数，以及其中因刷新而关闭的连接数。</p>
+<p>FlushWithOptions遍历所有streams，找到比给定时间更老的stream，然后把该stream的数据进行选择再将选择后的数据推送到 Stream 的 Reassembled 函数。也就是告诉这些比给定时间更老的stream停止接受新的数据包<br>每一个Stream都包含了多个按照时间顺序接收到的字节集合，比如某个Stream处理了序号10，这个Stream的多个字节集合可能为[15-20),[20-25),[30,50)这三个字节集合，每一个字节集合都有一个对应的时间戳。</p>
+<p>FlushWithOptions被调用后会查看该Stream的所有字节集合，如果[15-20)比输出的给定时间更老，FlushWithOptions将把[15-20)和所有连续的字节集合推送到 Stream 的 Reassembled 函数，在这个例子里会推送[15-20)和[20-25)因为这两个字节集合是连续的。只有当[30-50)的时间戳比给定时间更老的时候才会推送[30-50)到Stream 的 Reassembled 函数，否则会等到下一个FlushOlderThan调用看看缺失的[25-30)数据是否到来。<br>这里给出的例子其实发送方是发送了完整的字节[15-50)，只是在传输中被分组了，分到了多个字节集合。而这几个字节集合到达接收方的先后顺序是不一定的，在这个例子里，[25-30)这个集合就是最后到达的，这也是为什么一定要推送连续的字节集合到Reassembled函数的原因。</p>
+<p>如果FlushWithOptions推送了所有字节（或者没有字节集合小于给定时间）并且连接自传入时间以来未收到任何字节，则连接将关闭。</p>
+<p>###Reassembly</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Reassembly <span class="hljs-keyword">struct</span> &#123;<br>  <span class="hljs-comment">// Bytes为TCP payload，可能需要base64 encode查看具体内容</span><br>	Bytes []<span class="hljs-type">byte</span><br>  <span class="hljs-comment">// 如果在这次重组和上一次重组之间跳过了字节，则 Skip 设置为非零。 如果这是连接中的第一个数据包并且我们没有看到开始，我们不知道我们跳过了多少字节，所以我们将它设置为 -1。 否则，它被设置为跳过的字节数。</span><br>  <span class="hljs-comment">// 用于场景应该是分片达到的时间的不一致情况，如果后面的分片比前面的分片先到达了，那么Skip应该就是非0</span><br>	Skip <span class="hljs-type">int</span><br>	Start <span class="hljs-type">bool</span><br>	End <span class="hljs-type">bool</span><br>  <span class="hljs-comment">// 数据包的时间戳</span><br>	Seen time.Time<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>被分片的情况下，第一个分片的Start为true，最后一个分片的End为true，其他情况都是false。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E7%BD%91%E7%BB%9C/golang/" class="category-chain-item">golang</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>gopacket的TCP重组</div>
+      <div>https://rhythmnr.github.io/2023/09/01/gopacket的TCP重组/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年9月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/02/%E5%8C%97%E6%9E%81%E6%98%9FconfigMap%E6%9B%B4%E6%96%B0/" title="北极星configMao更新">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">北极星configMao更新</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/08/30/%E5%85%B3%E4%BA%8ECPU%E4%BF%A1%E6%81%AF%E7%9A%84%E4%B8%80%E4%BA%9B%E4%BB%8B%E7%BB%8D/" title="关于CPU信息的一些介绍">
+                        <span class="hidden-mobile">关于CPU信息的一些介绍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

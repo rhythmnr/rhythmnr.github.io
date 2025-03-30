@@ -1,0 +1,728 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在网络的发送和接收过程中，绝大部分工作都是在内核态完成的。那么用户使用的tcpdump是如何抓到内核态的包的呢？  tcpdump 是基于 libpcap 实现的，golang中用于分析网络数据包的gopacket库也是基于libpcap 写的。libpcap是一个网络数据包捕获框架，是用C语言写的。 在开始研究tcpdump之前，需要知道网络包是如何从网卡到达用户进程的。即数据包的接收流程。 L">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tcpdump是如何抓包的">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/01/01/tcpdump%E6%98%AF%E5%A6%82%E4%BD%95%E6%8A%93%E5%8C%85%E7%9A%84/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="在网络的发送和接收过程中，绝大部分工作都是在内核态完成的。那么用户使用的tcpdump是如何抓到内核态的包的呢？  tcpdump 是基于 libpcap 实现的，golang中用于分析网络数据包的gopacket库也是基于libpcap 写的。libpcap是一个网络数据包捕获框架，是用C语言写的。 在开始研究tcpdump之前，需要知道网络包是如何从网卡到达用户进程的。即数据包的接收流程。 L">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240227171206638.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240229110320205.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240229143443817.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240227165648231.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/MBXY-CR-f6de712d96114cc62a0e21cc4cb49503.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/MBXY-CR-e1c911d4778cc70223c44b341b2da1f7.png">
+<meta property="article:published_time" content="2023-01-01T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.739Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240227171206638.png">
+  
+  
+  <title>tcpdump是如何抓包的 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="tcpdump是如何抓包的"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-01 11:00" pubdate>
+          2023年1月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">tcpdump是如何抓包的</h1>
+            
+            <div class="markdown-body">
+              
+              <p>在网络的发送和接收过程中，绝大部分工作都是在内核态完成的。那么用户使用的tcpdump是如何抓到内核态的包的呢？</p>
+<p> tcpdump 是基于 libpcap 实现的，golang中用于分析网络数据包的gopacket库也是基于libpcap 写的。libpcap是一个网络数据包捕获框架，是用C语言写的。</p>
+<p>在开始研究tcpdump之前，需要知道网络包是如何从网卡到达用户进程的。即数据包的接收流程。</p>
+<h2 id="Linux网络数据包接收流程"><a href="#Linux网络数据包接收流程" class="headerlink" title="Linux网络数据包接收流程"></a>Linux网络数据包接收流程</h2><blockquote>
+<p>具体可以看<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1966873">原文</a>，本文只对原文做了小总结，原文涉及到了源代码分析，比较详细但是难懂。</p>
+</blockquote>
+<p>Linux视角的网络协议栈可以参考下图：</p>
+<p><img src="/../images/image-20240227171206638.png" srcset="/img/loading.gif" lazyload alt="image-20240227171206638"></p>
+<p>该图总结起来就是：链路层协议靠网卡驱动来实现，内核协议栈实现了网络层和传输层。负责这两层的内核会提供socket接口来供更上层也就是用户进程来访问。</p>
+<p>内核收包的路径示意图：</p>
+<p><img src="/../images/image-20240229110320205.png" srcset="/img/loading.gif" lazyload alt="image-20240229110320205"></p>
+<p>注意3和4的两次中断，分别是硬中断和软中断</p>
+<p>这个图总结起来就是：当网卡上收到数据以后，Linux中第一个工作的模块是网络驱动。网络驱动会以DMA的方式把网卡上收到的帧写到内存里。再向CPU发起一个中断，以通知CPU有数据到达。第二，当CPU收到中断请求后，会去调用网络驱动注册的中断处理函数。网卡的中断处理函数并不做过多工作，发出软中断请求，然后尽快释放CPU。<strong>ksoftirqd检测到有软中断请求到达，调用poll开始轮询收包</strong>，收到后交由各级协议栈处理。对于UDP包来说，会被放到用户socket的接收队列中。</p>
+<p>用另一张更简洁的图总结，如下：</p>
+<p><img src="/../images/image-20240229143443817.png" srcset="/img/loading.gif" lazyload alt="image-20240229143443817"></p>
+<p>这个过程可以用下面这个图概括：</p>
+<p><img src="/../images/image-20240227165648231.png" srcset="/img/loading.gif" lazyload alt="image-20240227165648231"></p>
+<p>这个图描述了数据包进入系统后的流程。</p>
+<hr>
+<p>ethtool命令之所以能查看网卡收发包统计、能修改网卡自适应模式、能调整RX 队列的数量和大小，是因为ethtool命令最终调用到了网卡驱动的相应方法，而不是ethtool本身有这个超能力</p>
+<p>在数据包分析中，DMA 功能通常与网络接口卡（NIC）结合使用，用于将网络数据包直接传输到内存中，而无需 CPU 参与每个数据包的传输过程。</p>
+<p><strong>本文总结下来大概就是：</strong></p>
+<p>首先在开始收包之前，Linux要做许多的准备工作：</p>
+<ul>
+<li>创建ksoftirqd线程，为它设置好它自己的线程函数，后面指望着它来处理软中断呢</li>
+<li>协议栈注册，linux要实现许多协议，比如arp，icmp，ip，udp，tcp，每一个协议都会将自己的处理函数注册一下，方便包来了迅速找到对应的处理函数</li>
+<li>网卡驱动初始化，每个驱动都有一个初始化函数，内核会让驱动也初始化一下。在这个初始化过程中，把自己的DMA准备好，把NAPI的poll函数地址告诉内核</li>
+<li>启动网卡，分配RX，TX队列，注册中断对应的处理函数</li>
+</ul>
+<p>以上是内核准备收包之前的重要工作，当上面都ready之后，就可以打开硬中断，等待数据包的到来了。</p>
+<p>当数据到来了以后，第一个迎接它的是网卡（我去，这不是废话么）：</p>
+<ul>
+<li>网卡将数据帧DMA到内存的RingBuffer中，然后向CPU发起中断通知</li>
+<li>CPU响应中断请求，调用网卡启动时注册的中断处理函数</li>
+<li>中断处理函数几乎没干啥，就发起了软中断请求</li>
+<li>内核线程ksoftirqd线程发现有软中断请求到来，先关闭硬中断</li>
+<li>ksoftirqd线程开始调用驱动的poll函数收包</li>
+<li>poll函数将收到的包送到协议栈注册的ip_rcv函数中</li>
+<li>ip_rcv函数再讲包送到udp_rcv函数中（对于tcp包就送到tcp_rcv）</li>
+</ul>
+<p>Linux收一个包的开销包括：首先第一块是用户进程调用系统调用陷入内核态的开销。第二块是CPU响应包的硬中断的CPU开销。第三块是ksoftirqd内核线程的软中断上下文花费的。</p>
+<h2 id="tcpdump是如何抓到数据包的"><a href="#tcpdump是如何抓到数据包的" class="headerlink" title="tcpdump是如何抓到数据包的"></a>tcpdump是如何抓到数据包的</h2><blockquote>
+<p>可以看<a target="_blank" rel="noopener" href="https://www.eet-china.com/mp/a78228.html">原文</a>，原文涉及到了很多源代码解析，很详细，但是有点难懂。</p>
+</blockquote>
+<p>网络包的接收和发送，大部分都是在内核中完成的。</p>
+<p>用户态的 tcpdump 挂载协议到内 ptype_all 上</p>
+<p><strong>tcpdump是如何工作的：</strong></p>
+<p><strong>用户态 tcpdump 命令是通过 socket 系统调用，在内核源码中用到的 ptype_all 中挂载了函数钩子上去。</strong>无论是在网络包接收过程中，还是在发送过程中，都会在网络设备层遍历 ptype_all 中的协议，并执行其中的回调。tcpdump 命令就是基于这个底层原理来工作的。</p>
+<p><strong>netfilter 过滤的包 tcpdump是否可以抓的到？</strong></p>
+<p>关于这个问题，得分接收和发送过程分别来看。在网络包接收的过程中，由于 tcpdump 近水楼台先得月，所以完全可以捕获到命中 netfilter 过滤规则的包。</p>
+<p><img src="/../images/MBXY-CR-f6de712d96114cc62a0e21cc4cb49503.png" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>但是在发送的过程中，恰恰相反。网络包先经过协议层，这时候被 netfilter 过滤掉的话，底层工作的 tcpdump 还没等看见就啥也没了。</p>
+<p><img src="/../images/MBXY-CR-e1c911d4778cc70223c44b341b2da1f7.png" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>数据包进入OS及出去的顺序：</p>
+<p><code>网卡nic</code> -&gt; <code>tcpdump</code> -&gt; <code>iptables(netfilter)</code> -&gt; <code>app</code> -&gt; <code>iptables(netfilter)</code> -&gt; <code>tcpdump</code> -&gt; <code>网卡nic</code></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>tcpdump是如何抓包的</div>
+      <div>https://rhythmnr.github.io/2023/01/01/tcpdump是如何抓包的/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年1月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/01/netfilter%E6%A1%86%E6%9E%B6%E5%92%8C%E7%BD%91%E7%BB%9C%E7%9B%B8%E5%85%B3%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%BB%E7%BB%93%EF%BC%88%E6%AF%94%E8%BE%83%E4%B9%B1%EF%BC%89/" title="netfilter框架和网络相关的一些总结（比较乱）">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">netfilter框架和网络相关的一些总结（比较乱）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/01/01/%EF%BC%88%E6%AD%A3%E5%9C%A8%E7%BC%96%E5%86%99%E4%B8%AD%EF%BC%89gin%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="编写中，未定稿">
+                        <span class="hidden-mobile">编写中，未定稿</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

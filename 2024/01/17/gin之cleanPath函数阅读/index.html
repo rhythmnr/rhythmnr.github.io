@@ -1,0 +1,687 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="最近在阅读gin框架的源代码，发现gin里有一个挺重要的函数cleanPath，这个函数和path.Clean类似，但是是url的实现方式，和go的path.Clean源码的实现方式还是有些不一样的。但是主要的功能就是给定一个路径，返回这个路径计算之后的结果，主要就是对一些相对路径如.，..的处理，比如输入&#x2F;a&#x2F;b&#x2F;..&#x2F;d，那么就输出计算后的路径：&#x2F;a&#x2F;d，输入&#x2F;a&#x2F;b&#x2F;c&#x2F;.，输出&#x2F;a&#x2F;b&#x2F;c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gin之cleanPath函数阅读">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/01/17/gin%E4%B9%8BcleanPath%E5%87%BD%E6%95%B0%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="最近在阅读gin框架的源代码，发现gin里有一个挺重要的函数cleanPath，这个函数和path.Clean类似，但是是url的实现方式，和go的path.Clean源码的实现方式还是有些不一样的。但是主要的功能就是给定一个路径，返回这个路径计算之后的结果，主要就是对一些相对路径如.，..的处理，比如输入&#x2F;a&#x2F;b&#x2F;..&#x2F;d，那么就输出计算后的路径：&#x2F;a&#x2F;d，输入&#x2F;a&#x2F;b&#x2F;c&#x2F;.，输出&#x2F;a&#x2F;b&#x2F;c">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.710Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="原创">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>gin之cleanPath函数阅读 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="gin之cleanPath函数阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-01-17 00:00" pubdate>
+          2024年1月17日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          38 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">gin之cleanPath函数阅读</h1>
+            
+            <div class="markdown-body">
+              
+              <p>最近在阅读gin框架的源代码，发现gin里有一个挺重要的函数cleanPath，这个函数和path.Clean类似，但是是url的实现方式，和go的path.Clean源码的实现方式还是有些不一样的。但是主要的功能就是给定一个路径，返回这个路径计算之后的结果，主要就是对一些相对路径如<code>.</code>，<code>..</code>的处理，比如输入<code>/a/b/../d</code>，那么就输出计算后的路径：<code>/a/d</code>，输入<code>/a/b/c/.</code>，输出<code>/a/b/c</code>。</p>
+<p>下面是gin里cleanPath的实现，这个函数在<code>path.go</code>文件里：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// cleanPath is the URL version of path.Clean, it returns a canonical URL path</span><br><span class="hljs-comment">// for p, eliminating . and .. elements.</span><br><span class="hljs-comment">//</span><br><span class="hljs-comment">// The following rules are applied iteratively until no further processing can</span><br><span class="hljs-comment">// be done:</span><br><span class="hljs-comment">//  1. Replace multiple slashes with a single slash.</span><br><span class="hljs-comment">//  2. Eliminate each . path name element (the current directory).</span><br><span class="hljs-comment">//  3. Eliminate each inner .. path name element (the parent directory)</span><br><span class="hljs-comment">//     along with the non-.. element that precedes it.</span><br><span class="hljs-comment">//  4. Eliminate .. elements that begin a rooted path:</span><br><span class="hljs-comment">//     that is, replace &quot;/..&quot; by &quot;/&quot; at the beginning of a path.</span><br><span class="hljs-comment">//</span><br><span class="hljs-comment">// If the result of this process is an empty string, &quot;/&quot; is returned.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">cleanPath</span><span class="hljs-params">(p <span class="hljs-type">string</span>)</span></span> <span class="hljs-type">string</span> &#123;<br>	<span class="hljs-keyword">const</span> stackBufSize = <span class="hljs-number">128</span><br>	<span class="hljs-comment">// Turn empty string into &quot;/&quot;</span><br>	<span class="hljs-keyword">if</span> p == <span class="hljs-string">&quot;&quot;</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-string">&quot;/&quot;</span><br>	&#125;<br><br>	<span class="hljs-comment">// Reasonably sized buffer on stack to avoid allocations in the common case.</span><br>	<span class="hljs-comment">// If a larger buffer is required, it gets allocated dynamically.</span><br>	buf := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-number">0</span>, stackBufSize)<br><br>	n := <span class="hljs-built_in">len</span>(p)<br><br>	<span class="hljs-comment">// Invariants:</span><br>	<span class="hljs-comment">//      reading from path; r is index of next byte to process.</span><br>	<span class="hljs-comment">//      writing to buf; w is index of next byte to write.</span><br><br>	<span class="hljs-comment">// path must start with &#x27;/&#x27;</span><br>	r := <span class="hljs-number">1</span><br>	w := <span class="hljs-number">1</span><br><br>	<span class="hljs-keyword">if</span> p[<span class="hljs-number">0</span>] != <span class="hljs-string">&#x27;/&#x27;</span> &#123;<br>		r = <span class="hljs-number">0</span><br><br>		<span class="hljs-keyword">if</span> n+<span class="hljs-number">1</span> &gt; stackBufSize &#123;<br>			buf = <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, n+<span class="hljs-number">1</span>)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			buf = buf[:n+<span class="hljs-number">1</span>]<br>		&#125;<br>		buf[<span class="hljs-number">0</span>] = <span class="hljs-string">&#x27;/&#x27;</span><br>	&#125;<br><br>	trailing := n &gt; <span class="hljs-number">1</span> &amp;&amp; p[n<span class="hljs-number">-1</span>] == <span class="hljs-string">&#x27;/&#x27;</span><br><br>	<span class="hljs-comment">// A bit more clunky without a &#x27;lazybuf&#x27; like the path package, but the loop</span><br>	<span class="hljs-comment">// gets completely inlined (bufApp calls).</span><br>	<span class="hljs-comment">// loop has no expensive function calls (except 1x make)		// So in contrast to the path package this loop has no expensive function</span><br>	<span class="hljs-comment">// calls (except make, if needed).</span><br><br>	<span class="hljs-keyword">for</span> r &lt; n &#123;<br>		<span class="hljs-keyword">switch</span> &#123;<br>		<span class="hljs-keyword">case</span> p[r] == <span class="hljs-string">&#x27;/&#x27;</span>:<br>			<span class="hljs-comment">// empty path element, trailing slash is added after the end</span><br>			r++<br><br>		<span class="hljs-keyword">case</span> p[r] == <span class="hljs-string">&#x27;.&#x27;</span> &amp;&amp; r+<span class="hljs-number">1</span> == n:<br>			trailing = <span class="hljs-literal">true</span><br>			r++<br><br>		<span class="hljs-keyword">case</span> p[r] == <span class="hljs-string">&#x27;.&#x27;</span> &amp;&amp; p[r+<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;/&#x27;</span>:<br>			<span class="hljs-comment">// . element</span><br>			r += <span class="hljs-number">2</span><br><br>		<span class="hljs-keyword">case</span> p[r] == <span class="hljs-string">&#x27;.&#x27;</span> &amp;&amp; p[r+<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;.&#x27;</span> &amp;&amp; (r+<span class="hljs-number">2</span> == n || p[r+<span class="hljs-number">2</span>] == <span class="hljs-string">&#x27;/&#x27;</span>):<br>			<span class="hljs-comment">// .. element: remove to last /</span><br>			r += <span class="hljs-number">3</span><br><br>			<span class="hljs-keyword">if</span> w &gt; <span class="hljs-number">1</span> &#123;<br>				<span class="hljs-comment">// can backtrack</span><br>				w--<br><br>				<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(buf) == <span class="hljs-number">0</span> &#123;<br>					<span class="hljs-keyword">for</span> w &gt; <span class="hljs-number">1</span> &amp;&amp; p[w] != <span class="hljs-string">&#x27;/&#x27;</span> &#123;<br>						w--<br>					&#125;<br>				&#125; <span class="hljs-keyword">else</span> &#123;<br>					<span class="hljs-keyword">for</span> w &gt; <span class="hljs-number">1</span> &amp;&amp; buf[w] != <span class="hljs-string">&#x27;/&#x27;</span> &#123;<br>						w--<br>					&#125;<br>				&#125;<br>			&#125;<br><br>		<span class="hljs-keyword">default</span>:<br>			<span class="hljs-comment">// Real path element.</span><br>			<span class="hljs-comment">// Add slash if needed</span><br>			<span class="hljs-keyword">if</span> w &gt; <span class="hljs-number">1</span> &#123;<br>				bufApp(&amp;buf, p, w, <span class="hljs-string">&#x27;/&#x27;</span>)<br>				w++<br>			&#125;<br><br>			<span class="hljs-comment">// Copy element</span><br>			<span class="hljs-keyword">for</span> r &lt; n &amp;&amp; p[r] != <span class="hljs-string">&#x27;/&#x27;</span> &#123;<br>				bufApp(&amp;buf, p, w, p[r])<br>				w++<br>				r++<br>			&#125;<br>		&#125;<br>	&#125;<br><br>	<span class="hljs-comment">// Re-append trailing slash</span><br>	<span class="hljs-keyword">if</span> trailing &amp;&amp; w &gt; <span class="hljs-number">1</span> &#123;<br>		bufApp(&amp;buf, p, w, <span class="hljs-string">&#x27;/&#x27;</span>)<br>		w++<br>	&#125;<br><br>	<span class="hljs-comment">// If the original string was not modified (or only shortened at the end),</span><br>	<span class="hljs-comment">// return the respective substring of the original string.</span><br>	<span class="hljs-comment">// Otherwise return a new string from the buffer.</span><br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(buf) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span> p[:w]<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-type">string</span>(buf[:w])<br>&#125;<br><br><span class="hljs-comment">// Internal helper to lazily create a buffer if necessary.</span><br><span class="hljs-comment">// Calls to this function get inlined.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">bufApp</span><span class="hljs-params">(buf *[]<span class="hljs-type">byte</span>, s <span class="hljs-type">string</span>, w <span class="hljs-type">int</span>, c <span class="hljs-type">byte</span>)</span></span> &#123;<br>	b := *buf<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(b) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-comment">// No modification of the original string so far.</span><br>		<span class="hljs-comment">// If the next character is the same as in the original string, we do</span><br>		<span class="hljs-comment">// not yet have to allocate a buffer.</span><br>		<span class="hljs-keyword">if</span> s[w] == c &#123;<br>			<span class="hljs-keyword">return</span><br>		&#125;<br><br>		<span class="hljs-comment">// Otherwise use either the stack buffer, if it is large enough, or</span><br>		<span class="hljs-comment">// allocate a new buffer on the heap, and copy all previous characters.</span><br>		length := <span class="hljs-built_in">len</span>(s)<br>		<span class="hljs-keyword">if</span> length &gt; <span class="hljs-built_in">cap</span>(b) &#123;<br>			*buf = <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, length)<br>		&#125; <span class="hljs-keyword">else</span> &#123;<br>			*buf = (*buf)[:length]<br>		&#125;<br>		b = *buf<br><br>		<span class="hljs-built_in">copy</span>(b, s[:w])<br>	&#125;<br>	b[w] = c<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>我阅读的时候主要就是使用go的调试工具来逐行查看运行效果的。主要就是多输入集中能想到的情况，尽可能让代码运行时覆盖掉所有路径。</p>
+<p>这个函数最重要的就是w和r两个变量，r记录了处理到了输入路径的第几个字符，w用于标记当前为运行当前判断出来的在最后结果中的下标，这个下标可能是p的下标（如果buf为空），也可能是buf的下标（如果buf非空）。</p>
+<p>还有比较重要的就是buf，buf用于存储最终会用到的路径，存储的内容可能比最终的真实结果长，但是因为程序运行结束前，w标记了应该存储到buf的第几个下标，最终返回的结果是buf[:w]</p>
+<p>&#x2F;&#x2F; 举一个需要注意的例子</p>
+<p>&#x2F;&#x2F; 如果输出参数是  “&#x2F;tttttttttt&#x2F;c&#x2F;..&#x2F;d&#x2F;..&#x2F;..&#x2F;aaa&#x2F;yy”</p>
+<p>那么程序运行过程中w和buf的值变化为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs shell">w: 1, buf:<br>w: 2, buf:<br>w: 3, buf:<br>w: 4, buf:<br>w: 5, buf:<br>w: 6, buf:<br>w: 7, buf:<br>w: 8, buf:<br>w: 9, buf:<br>w: 10, buf:<br>w: 11, buf:<br>w: 12, buf:<br>w: 11, buf:<br>w: 12, buf: /tttttttttt/d  这里是 /tttttttttt/c/../d 得到的结果<br>w: 1, buf: /attttttttt/d 后面因为遇到了/aaa，因为前面的两个../，w不断回退，然后aaaa开始从w的位置也就是1开始覆盖buf<br>w: 2, buf: /aatttttttt/d<br>w: 3, buf: /aaattttttt/d<br>w: 4, buf: /aaa/tttttt/d<br>w: 5, buf: /aaa/yttttt/d<br>w: 6, buf: /aaa/yytttt/d w为6，虽然buf的长度不止6，但是w是标记哪些是真正计算出来的实际值的下标，返回的是用w截断的，返回的是buf[:w]<br></code></pre></td></tr></table></figure>
+
+<p>buf运行中之前写入的值可能会在之后被覆盖掉，最终运行的结果是以w和buf综合起来的，是buf在w处被截断的结果，为buf[:w]。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8E%9F%E5%88%9B/">#原创</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>gin之cleanPath函数阅读</div>
+      <div>https://rhythmnr.github.io/2024/01/17/gin之cleanPath函数阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年1月17日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/02/04/RAID%E7%AE%80%E4%BB%8B%E4%B8%8E%E8%AE%BE%E7%BD%AE/" title="RAID简介与设置">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">RAID简介与设置</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/01/04/gorm%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8D%E5%AD%98%E5%9C%A8%E6%97%B6%E8%87%AA%E5%8A%A8%E5%88%9B%E5%BB%BA/" title="gorm实现数据库不存在时自动创建">
+                        <span class="hidden-mobile">gorm实现数据库不存在时自动创建</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,741 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="slice这是slice的底层数据结构定义，比较重要的字段包括：指向底层数组的指针、slice的长度即len字段，slice所指向的底层数组的长度即cap字段，表示slice的容量。 12345type slice struct &amp;#123;	array unsafe.Pointer	len int	cap int&amp;#125;  创建make使用make函数，比如： 1s:&#x3D;make([]int,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="golang底层数据结构实现原理">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/07/25/golang%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="slice这是slice的底层数据结构定义，比较重要的字段包括：指向底层数组的指针、slice的长度即len字段，slice所指向的底层数组的长度即cap字段，表示slice的容量。 12345type slice struct &amp;#123;	array unsafe.Pointer	len int	cap int&amp;#125;  创建make使用make函数，比如： 1s:&#x3D;make([]int,">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240729171926604.png">
+<meta property="article:published_time" content="2024-07-25T12:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.718Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240729171926604.png">
+  
+  
+  <title>golang底层数据结构实现原理 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="golang底层数据结构实现原理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-25 20:00" pubdate>
+          2024年7月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          32 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">golang底层数据结构实现原理</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="slice"><a href="#slice" class="headerlink" title="slice"></a>slice</h2><p>这是slice的底层数据结构定义，比较重要的字段包括：指向底层数组的指针、slice的长度即len字段，slice所指向的底层数组的长度即cap字段，表示slice的容量。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> slice <span class="hljs-keyword">struct</span> &#123;<br>	array unsafe.Pointer<br>	<span class="hljs-built_in">len</span> <span class="hljs-type">int</span><br>	<span class="hljs-built_in">cap</span> <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="创建"><a href="#创建" class="headerlink" title="创建"></a>创建</h3><h4 id="make"><a href="#make" class="headerlink" title="make"></a>make</h4><p>使用make函数，比如：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">s:=<span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">1</span>)<br></code></pre></td></tr></table></figure>
+
+<p>该slice的len为1，cap为1。</p>
+<p>可以在make数组的基础上新增一个参数，例如：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">s:=<span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">1</span>, <span class="hljs-number">10</span>)<br></code></pre></td></tr></table></figure>
+
+<p>该slice的len为1，cap为10。</p>
+<p>注意slice取下标只能以len为基础，不能以cap为基础，比如下面的代码就会报越界的错误：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">slice</span> := make([]<span class="hljs-type">int</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)<br><span class="hljs-keyword">slice</span>[<span class="hljs-number">0</span>] = <span class="hljs-number">1</span> // panic: runtime error: <span class="hljs-keyword">index</span> <span class="hljs-keyword">out</span> <span class="hljs-keyword">of</span> range [<span class="hljs-number">0</span>] <span class="hljs-keyword">with</span> length <span class="hljs-number">0</span><br>fmt.Println(<span class="hljs-keyword">slice</span>) // <br></code></pre></td></tr></table></figure>
+
+<p>虽然len为0，但是可以append：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">slice := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)<br>slice = <span class="hljs-built_in">append</span>(slice, <span class="hljs-number">1</span>)<br>fmt.Println(<span class="hljs-built_in">len</span>(slice), <span class="hljs-built_in">cap</span>(slice)) <span class="hljs-comment">// 1 1</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="根据数组创建"><a href="#根据数组创建" class="headerlink" title="根据数组创建"></a>根据数组创建</h4><p>从数组拷贝：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">array := [<span class="hljs-number">5</span>]<span class="hljs-type">int</span>&#123;<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>&#125; <span class="hljs-comment">// array是一个数组</span><br>slice := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">3</span>) <span class="hljs-comment">// 创建一个slice</span><br><span class="hljs-built_in">copy</span>(slice, array[<span class="hljs-number">1</span>:<span class="hljs-number">4</span>]) <span class="hljs-comment">// 将数组的部分元素复制到切片</span><br></code></pre></td></tr></table></figure>
+
+<p>或者从数组创建切片，共用数组的底层空间：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go">array := [<span class="hljs-number">5</span>]<span class="hljs-type">int</span>&#123;<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>&#125; <span class="hljs-comment">// array是一个数组</span><br><br>slice1 := array[<span class="hljs-number">1</span>:<span class="hljs-number">4</span>] <span class="hljs-comment">// 包含索引1到3的元素</span><br>fmt.Println(slice1)  <span class="hljs-comment">// 输出 [20, 30, 40]</span><br>slice1[<span class="hljs-number">0</span>] = <span class="hljs-number">99</span><br>fmt.Println(slice1) <span class="hljs-comment">// 输出 [99 30 40]</span><br>fmt.Println(array)  <span class="hljs-comment">// 输出 [10 99 30 40 50]</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h3><p>向slice追加元素时，如果slice的容量不够，那么会触发slice的扩容操作（会分配一块更大的内存）：</p>
+<p>原Slice容量小于1024， 新Slice容量将扩大为原来的2倍；<br>原Slice容量大于等于1024， 新Slice容量将扩大为原来的1.25倍；</p>
+<h3 id="copy"><a href="#copy" class="headerlink" title="copy"></a>copy</h3><p>copy拷贝的数量是两个slice长度的较小值。所以copy不会扩容，sppend才会扩容。比如如下的示例代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-comment">// nums := []int&#123;2, 3, 1, 1, 4&#125;</span><br>	<span class="hljs-comment">// fmt.Println(minSubArrayLen(7, []int&#123;2, 3, 1, 2, 4, 3&#125;)) // 输出: 3</span><br>	slice := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br>	slice[<span class="hljs-number">0</span>] = <span class="hljs-number">10</span><br>	slice = <span class="hljs-built_in">append</span>(slice, <span class="hljs-number">1</span>) <span class="hljs-comment">// 此时slice为 [10, 0, 1]</span><br>	slice = <span class="hljs-built_in">append</span>(slice, <span class="hljs-number">2</span>) <span class="hljs-comment">// 此时slice为 [10, 0, 1, 1]</span><br>	<span class="hljs-built_in">new</span> := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>)<br>	<span class="hljs-built_in">copy</span>(<span class="hljs-built_in">new</span>, slice)<br>	fmt.Println(<span class="hljs-built_in">new</span>, <span class="hljs-built_in">len</span>(<span class="hljs-built_in">new</span>)) <span class="hljs-comment">// [0] 1</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="append"><a href="#append" class="headerlink" title="append"></a>append</h3><p>append是向slice的len之后继续追加，比如</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">slice := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>) <span class="hljs-comment">// 此时slice是[0, 0]</span><br>slice = <span class="hljs-built_in">append</span>(slice, <span class="hljs-number">1</span>)  <span class="hljs-comment">// 此时slice是[0, 0, 1]</span><br>slice[<span class="hljs-number">0</span>] = <span class="hljs-number">10</span> <span class="hljs-comment">// 此时slice是[10, 0, 1]</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="函数传递"><a href="#函数传递" class="headerlink" title="函数传递"></a>函数传递</h3><p>当函数的参数是一个切片类型的值时，如果在函数内部修改切片的值，会影响到原始切片的值。因为实际上是传递了切片的引用，而不是切片的副本，并且切片本质上还是一个对底层数组的引用。</p>
+<h2 id="channel"><a href="#channel" class="headerlink" title="channel"></a>channel</h2><p>channel的底层数据结构定义为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> hchan <span class="hljs-keyword">struct</span> &#123;<br>	qcount <span class="hljs-type">uint</span><br>	dataqsiz <span class="hljs-type">uint</span><br>	buf unsafe.Pointer <span class="hljs-comment">// 环形队列指针</span><br>	elemsize <span class="hljs-type">uint16</span> <span class="hljs-comment">// 环形队列大小</span><br>	closed <span class="hljs-type">uint32</span><br>	elemtype *_type <span class="hljs-comment">// 指向 dataqsiz 元素数组</span><br>	sendx <span class="hljs-type">uint</span> <span class="hljs-comment">// 标记了环形队列读指针的位置</span><br>	recvx <span class="hljs-type">uint</span> <span class="hljs-comment">// 标记了环形队写读指针的位置</span><br>	recvq waitq  <span class="hljs-comment">// 等待读取channel的可能是多个的goroutine组成的队列</span><br>	sendq waitq <span class="hljs-comment">// 等待写channel的可能是多个的goroutine组成的队列</span><br> <br>	lock mutex<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>主要就是一个环形队列指针，队列读写位置，队列读写goroutine的读取队列和接收队列。</p>
+<p>一般实现环形队列会用数组或者链表，链表也可能不会将头尾直接链接起来，不然就真的变成一个圈了，而是会在链表的尾部节点做特殊处理。不管用数组还是链表实现，都会维护两个指针，即指向有效数据的头尾指针<strong>。golang的channel底层的环形链表用的是数组实现的。</strong></p>
+<h3 id="写channel"><a href="#写channel" class="headerlink" title="写channel"></a>写channel</h3><p>写操作比较关键的就是接收队列了，还有缓冲区。</p>
+<p>接收队列为空，缓冲区有位置，将数据写入缓冲区。</p>
+<p>接收队列为空，缓冲区没有位置，将当前写数据的goroutine加入recvq，表示这个goroutine被阻塞了，要等待被唤醒。</p>
+<p>接收队列不空，则表示接收队列的goroutine被阻塞了，为什么被阻塞，因为没有接收到数据，表明当前缓冲区为空或者根本没有缓冲区，则此时将接收队列的一个goroutine唤醒，把要写入的数据传递给这个goroutine。</p>
+<h3 id="读channel"><a href="#读channel" class="headerlink" title="读channel"></a>读channel</h3><p>读操作比较关键的就是写队列了，还有缓冲区。</p>
+<p>写队列为空，直接从缓冲区读取数据。</p>
+<p>写队列不为空，缓冲区为空，表示没有压根没有缓冲区，此时唤醒写队列的某个goroutine接收其要写的数据。</p>
+<p>写队列不为空，缓冲区不为空，表示缓冲区满了，从缓冲区读取最早写入的数据，然后唤醒写队列的某个goroutine，让这个goroutine把数据写到缓冲区，当然写的这个数据必然是最新的，在队列的最后面（缓冲区的队列不会环形队列）。</p>
+<h3 id="关闭channel"><a href="#关闭channel" class="headerlink" title="关闭channel"></a>关闭channel</h3><p>对于recvq的所有goroutine，这些goroutine都是被阻塞的，让这些goroutine直接返回，也不会让它们把数据写到缓冲区。</p>
+<h2 id="map"><a href="#map" class="headerlink" title="map"></a>map</h2><p>总结起来，golang的map数据类型底层使用的是哈希表来实现的，当哈希冲突时，使用链地址法来解决冲突。</p>
+<blockquote>
+<p>哈希操作简介：对于一个key，使用哈希函数f计算f(key)，得到一个值。<strong>如果多个key被哈希到同一个bucket里，那么就产生哈希冲突了。</strong>可以用链地址法解决。</p>
+<p>解决哈希冲突除了链地址法，还有再次哈希法，创建一个公共缓冲区等方法。</p>
+<p>golang官方使用了什么哈希函数，具体的函数逻辑没有公开。且golang对于不同类型的key使用了不同的哈希函数。</p>
+</blockquote>
+<p>底层结构为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> hmap <span class="hljs-keyword">struct</span> &#123;<br>	count <span class="hljs-type">int</span> <span class="hljs-comment">// 当前保存的元素个数</span><br>	B <span class="hljs-type">uint8</span> <span class="hljs-comment">// 指示bucket数组的大小</span><br>	buckets unsafe.Pointer <span class="hljs-comment">// bucket数组指针， 数组大小为2^B</span><br>  hash0     <span class="hljs-type">uint32</span> <span class="hljs-comment">// 哈希种子，让哈希函数计算的结果有了随机性</span><br>	...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>bucket底层数据结构为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> bmap <span class="hljs-keyword">struct</span> &#123;<br>	tophash [<span class="hljs-number">8</span>]<span class="hljs-type">uint8</span> <span class="hljs-comment">//存储哈希值的高8位</span><br>	data <span class="hljs-type">byte</span>[<span class="hljs-number">1</span>] <span class="hljs-comment">// 占位符，类似一个指针，其具体的存储数据可能是变化的。这里存储了 /key value数据:key/key/key/.../value/value/value...，最多可存8个key-value对</span><br>	overflow *bmap <span class="hljs-comment">//溢出bucket的地址，就是当该bucket存储的key-value对超出8个以外的key-value对会放在这里存储</span><br>  <span class="hljs-comment">// 这是一个新的bmap类型，父bmap指向了子bmap，实现了链表的功能</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="查找操作"><a href="#查找操作" class="headerlink" title="查找操作"></a>查找操作</h3><ul>
+<li>对于一个key，通过哈希函数计算出哈希值</li>
+<li>将哈希值的低8位和hmap.B取模，得到一个整数，得到buckets unsafe.Pointer所指向数组的下标</li>
+<li>直接buckets unsafe.Pointer所指向数组的下标</li>
+<li>将哈希值的低8位和bmap的tophash比较，如果相等，则去data byte[1]所指向的key-value键值对查找输入key对应的value</li>
+<li>如果上述比较操作不相等，则去bmap.overflow的bmap数据结构继续将该哈希值的高8位和其进行比较，如果最后bmap.overflow为空，则表示没有找到</li>
+</ul>
+<h3 id="写入操作"><a href="#写入操作" class="headerlink" title="写入操作"></a>写入操作</h3><ul>
+<li>对于一个key，通过哈希函数计算出哈希值</li>
+<li>将哈希值的低8位和hmap.B取模，得到一个整数，得到buckets unsafe.Pointer所指向数组的下标</li>
+<li>直接buckets unsafe.Pointer所指向数组的下标</li>
+<li>如果数组该下标的元素为空，则新建。如果不为空，则找到key对应的value将value更新</li>
+</ul>
+<h3 id="结构图"><a href="#结构图" class="headerlink" title="结构图"></a>结构图</h3><p>map底层的结构可参考如下图：</p>
+<p><img src="/../images/image-20240729171926604.png" srcset="/img/loading.gif" lazyload alt="image-20240729171926604"></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Golang/" class="category-chain-item">Golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>golang底层数据结构实现原理</div>
+      <div>https://rhythmnr.github.io/2024/07/25/golang底层数据结构实现原理/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月25日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/08/01/Cacti%E7%AE%80%E4%BB%8B%E4%B8%8E%E4%BD%BF%E7%94%A8/" title="Cacti简介与使用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Cacti简介与使用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/06/26/GMP%E6%A8%A1%E5%9E%8B/" title="GMP模型">
+                        <span class="hidden-mobile">GMP模型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

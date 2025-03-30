@@ -1,0 +1,774 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="第 7 章 并发模式  runner 包用于展示如何使用通道来监视程序的执行时间，如果程序运行时间太长，也可以用 runner 包来终止程序。当开发需要调度后台处理任务的程序的时候，这种模式会很有用。这个程序可能会作为 cron 作业执行，或者在基于定时任务的云环境（如 iron.io）里执行。  这是一个名为 New 的工厂函数   12345func New(d *time.Duration)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go语言实战-7-8章">
+<meta property="og:url" content="https://rhythmnr.github.io/2021/03/23/Go%E8%AF%AD%E8%A8%80%E5%AE%9E%E6%88%98-7-8%E7%AB%A0/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="第 7 章 并发模式  runner 包用于展示如何使用通道来监视程序的执行时间，如果程序运行时间太长，也可以用 runner 包来终止程序。当开发需要调度后台处理任务的程序的时候，这种模式会很有用。这个程序可能会作为 cron 作业执行，或者在基于定时任务的云环境（如 iron.io）里执行。  这是一个名为 New 的工厂函数   12345func New(d *time.Duration)">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ww1.sinaimg.cn/large/006gLprLly1gqh4v4zzb6j30y70f6tfi.jpg">
+<meta property="article:published_time" content="2021-03-22T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.693Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="读书">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://ww1.sinaimg.cn/large/006gLprLly1gqh4v4zzb6j30y70f6tfi.jpg">
+  
+  
+  <title>Go语言实战-7-8章 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go语言实战-7-8章"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-03-23 00:00" pubdate>
+          2021年3月23日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          36 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Go语言实战-7-8章</h1>
+            
+            <div class="markdown-body">
+              
+              <p><strong>第 7 章 并发模式</strong></p>
+<ol>
+<li><p>runner 包用于展示如何使用通道来监视程序的执行时间，如果程序运行时间太长，也可以用 runner 包来终止程序。当开发需要调度后台处理任务的程序的时候，这种模式会很有用。这个程序可能会作为 cron 作业执行，或者在基于定时任务的云环境（如 iron.io）里执行。</p>
+</li>
+<li><p>这是一个名为 New 的工厂函数</p>
+</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">New</span><span class="hljs-params">(d *time.Duration)</span></span> *Runner&#123;<br>  <span class="hljs-keyword">return</span> &amp;Runner&#123;<br>    interrupt: <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> os.Signal, <span class="hljs-number">1</span>),<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>通道 interrupt 被初始化为缓冲区容量为 1 的通道。这可以保证通道至少能接收一个来自语言运行时的 os.Signal 值，确保语言运行时发送这个事件的时候不会被阻塞。如果 goroutine没有准备好接收这个值，这个值就会被丢弃。例如，如果用户反复敲 Ctrl+C 组合键，程序只会在这个通道的缓冲区可用的时候接收事件，其余的所有事件都会被丢弃。</p>
+<p>下面与 Runner 有关的方法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *Runner)</span></span> goInterrupt() <span class="hljs-type">bool</span>&#123;<br> <span class="hljs-keyword">select</span> &#123;<br>  signal.Stop(r.interrupt)<br>  <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span><br> <span class="hljs-comment">// 继续正常执行</span><br> <span class="hljs-keyword">default</span>:<br>  <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span><br> &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>default 分支会将接收 interrupt 通道的阻塞调用转变为非阻塞的。</p>
+<ol start="3">
+<li><p>pool包用于展示如何使用有缓冲的通道实现资源池，来管理可以在任意数量的goroutine之间共享及独立使用的资源。</p>
+</li>
+<li><p>work 包的目的是展示如何使用无缓冲的通道来创建一个 goroutine 池，这些 goroutine 执行并控制一组工作，让其并发执行。在这种情况下，使用无缓冲的通道要比随意指定一个缓冲区大小的有缓冲的通道好。无缓冲的通道保证两个 goroutine 之间的数据交换。这种使用无缓冲的通道的方法允许使用者知道什么时候 goroutine 池正在执行工作，而且如果池里的所有 goroutine 都忙，无法接受新的工作的时候，也能及时通过通道来通知调用者。使用无缓冲的通道不会有工作在队列里丢失或者卡住，所有工作都会被处理。</p>
+</li>
+<li><p>有缓冲的通道可以用来管理一组可复用的资源。<br>语言运行时会处理好通道的协作和同步。<br>使用无缓冲的通道来创建完成工作的 goroutine 池。<br>任何时间都可以用无缓冲的通道来让两个 goroutine 交换数据，在通道操作完成时一定保证对方接收到了数据。</p>
+</li>
+</ol>
+<p><strong>第8章 标准库</strong></p>
+<ol>
+<li><p>什么是 Go 标准库？为什么这个库这么重要？Go 标准库是一组核心包，用来扩展和增强语<br>言的能力。这些包为语言增加了大量不同的类型。开发人员可以直接使用这些类型，而不用再写<br>自己的包或者去下载其他人发布的第三方包。由于这些包和语言绑在一起发布，它们会得到以下<br>特殊的保证：<br>每次语言更新，哪怕是小更新，都会带有标准库；<br>这些标准库会严格遵守向后兼容的承诺；<br>标准库是 Go 语言开发、构建、发布过程的一部分；<br>标准库由 Go 的构建者们维护和评审；<br>每次 Go 语言发布新版本时，标准库都会被测试，并评估性能。</p>
+</li>
+<li><p>准库里包含众多的包，不可能在一章内把这些包都讲一遍。目前，标准库里总共有超过100 个包，这些包被分到 38 个类别里</p>
+</li>
+<li><p>不管用什么方式安装 Go，标准库的源代码都会安装在$GOROOT&#x2F;src&#x2F;pkg 文件夹中。</p>
+</li>
+<li><p>作为 Go 发布包的一部分，标准库的源代码是经过预编译的。这些预编译后的文件，称作归档文件（archive file），可以 在$GOROOT&#x2F;pkg 文件夹中找到已经安装的各目标平台和操作系统的归档文件。</p>
+</li>
+<li><p>归档文件是特殊的 Go 静态库文件，由 Go 的构建工具创建，并在编译和链接最终程序时被使用。归档文件可以让构建的速度更快。但是在构建的过程中，没办法指定这些文件，所以没办法与别人共享这些文件。Go 工具链知道什么时候可以使用已有的.a 文件，什么时候需要从机器上的源代码重新构建。</p>
+</li>
+<li><p>在 UNIX 里，日志有很长的历史。这些积累下来的经验都体现在 log 包的设计里。传统的CLI（命令行界面）程序直接将输出写到名为 stdout 的设备上。所有的操作系统上都有这种设备，这种设备的默认目的地是标准文本输出。默认设置下，终端会显示这些写到 stdout 设备上的文本。这种单个目的地的输出用起来很方便，不过你总会碰到需要同时输出程序信息和输出执行细节的情况。这些执行细节被称作日志。当想要记录日志时，你希望能写到不同的目的地，这样就不会将程序的输出和日志混在一起了。为了解决这个问题，UNIX 架构上增加了一个叫作 stderr 的设备。这个设备被创建为日志的默认目的地。这样开发人员就能将程序的输出和日志分离开来。如果想在程序运行时同时看到程序输出和日志，可以将终端配置为同时显示写到 stdout 和 stderr 的信息。不过，如果用户的程序只记录日志，没有程序输出，更常用的方式是将一般的日志信息写到 stdout，将错误或者警告信息写到 stderr。</p>
+</li>
+<li><p>通常程序会在这个 init()函数里配置日志参数</p>
+</li>
+<li><p>设置了一个字符串，作为每个日志项的前缀。这个字符串应该是能让用户从一般的程序输出中分辨出日志的字符串。传统上这个字符串的字符会全部大写。</p>
+</li>
+<li><p>操作符&lt;&lt;对左边的操作数执行按位左移操作</p>
+</li>
+<li><p>Panic 系列函数用来写日志消息，然后触发一个 panic。除非程序执行 recover 函数，否则会导致程序打印调用栈后终止。Print 系列函数是写日志消息的标准方法。log 包有一个很方便的地方就是，这些日志记录器是多 goroutine 安全的。这意味着在多个goroutine 可以同时调用来自同一个日志记录器的这些函数，而不 会有彼此间的写冲突。标准日志记录器具有这一性质，用户定制的日志记录器也应该满足这一性质。</p>
+</li>
+<li><p>记录不同的日志</p>
+</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go">Trace *log.Logger <span class="hljs-comment">// 记录所有日志</span><br>Info *log.Logger <span class="hljs-comment">// 重要的信息</span><br>Warning *log.Logger <span class="hljs-comment">// 需要注意的问题</span><br>Error *log.Logger <span class="hljs-comment">// 非常严重的问题</span><br></code></pre></td></tr></table></figure>
+
+<ol start="12">
+<li>如下一个声明和它的作用</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Discard 是一个 io.Writer，所有的 Write 调用都不会有动作，但是会成功返回</span><br><span class="hljs-keyword">var</span> Discard io.Writer = delNull(<span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<ol start="13">
+<li><p>在今天，JSON 远比 XML 流行。这主要是因为与 XML 相比，使用 JSON 需要处理的标签更少。而这就意味着网络传输时每个消息的数据更少，从而提升整个系统的性能。而且，JSON 可以转换为 BSON（Binary JavaScript Object Notation，二进制 JavaScript 对象标记），进一步缩小每个消息的数据长度</p>
+</li>
+<li><p>如下你会注意到每个字段最后使用单引号声明了一个字符串。这些字符串被称作标签（tag），是提供每个字段的元信息的一种机制，将 JSON 文档和结构类型里的字段一一映射起来。如果不存在标签，编码和解码过程会试图以大小写无关的方式，直接使用字段的名字进行匹配。如果无法匹配，对应的结构类型里的字段就包含其零值。</p>
+</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> A <span class="hljs-keyword">struct</span>&#123;<br> Name <span class="hljs-type">string</span> <span class="hljs-string">`json:&quot;name&quot;`</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ol start="15">
+<li>由于 Go 语言支持复合语句调用，可以直接调用从 NewDecoder 函数返回的值的 Decode 方法，而不用把这个返回值存入变量。NewDecode 如下</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewDecoder</span><span class="hljs-params">(r *io.Reader)</span></span> *Decoder<br></code></pre></td></tr></table></figure>
+
+<ol start="16">
+<li><p>我们 向 Decode 方法传入了指向 gResponse 类型的指针变量的地址，而这个地址的实际值为 nil。该方法调用后，这个指针变量会被赋给一个 gResponse 类型的值，并根据解码后的 JSON 文档做初始化。</p>
+</li>
+<li><p>使用 map 会很快</p>
+</li>
+<li><p>序列化（marshal）是指将数据转换为 JSON 字符串的过程</p>
+</li>
+<li><p>MarshalIndent 很像 Marshal，只是用缩减对输出进行了格式化</p>
+</li>
+<li><p>如果不需要输出带有缩进格式的 JSON 字符串，json 包还提供了名为 Marshal 的函数来进行解码。这个函数产生的 JSON 字符串很适合作为在网络响应（如 Web API）的数据。函数 Marshal的工作原理和函数 MarshalIndent 一样，只不过没有用于前缀 prefix 和缩进 indent 的参数。</p>
+</li>
+<li><p>同样的理念扩展到了标准库的 io 包，而且提供的功能很神奇。这个包可以以流的方式高效处理数据，而不用考虑数据是什么，数据来自哪里，以及数据要发送到哪里的问题。与 stdout和 stdin 对应，这个包含有 io.Writer 和 io.Reader 两个接口。所有实现了这两个接口的类型的值，都可以使用 io 包提供的所有功能，也可以用于其他包里接受这两个接口的函数以及方法。这是用接口类型来构造函数和 API 最美妙的地方。开发人员可以基于这些现有功能进行组合，利用所有已经存在的实现，专注于解决业务问题。</p>
+</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Writer <span class="hljs-keyword">interface</span> &#123;<br> Write(p []<span class="hljs-type">byte</span>) (n <span class="hljs-type">int</span>,err <span class="hljs-type">error</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ol start="22">
+<li>Read 最多读入 len(p)字节，保存到 p。这个方法返回读入的字节数（0 &lt;&#x3D; n<br>(1) Rd l()0 &lt;<br>&lt;l()Rd &lt; l()<br>习惯上 Read 会立刻返回可用的数据，而不等待更多的数据。<br>(2) 当成功读取 n &gt; 0 字节后，如果遇到错误或者文件读取完成，Read 方法会返回<br>(2) &gt; 0 Rd<br>il<br>0Rd<br>下一次调用 Read 应该返回 0, EOF。<br>(3) 调用者在返回的 n &gt; 0 时，总应该先处理读入的数据，再处理错误 err。这样才<br>(3) &gt; 0<br>(4) Read 的实现不鼓励返回 0 个读取字节的同时，返回 nil 值的错误。调用者需要将<br>这种返回状态视为没有做任何操作，而不是遇到读取结束。</li>
+<li>关于变量的声明：</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> &#123;<br> Stdin = NewFile(<span class="hljs-type">uintptr</span>(syscall.Stdin), <span class="hljs-string">&quot;/dev/stdin&quot;</span>)<br> Stdout = NewFile(<span class="hljs-type">uintptr</span>(syscall.Stdout), <span class="hljs-string">&quot;/dev/stdout&quot;</span>)<br> Stderr = NewFile(<span class="hljs-type">uintptr</span>(syscall.Stderr), <span class="hljs-string">&quot;/dev/stderr&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ol start="24">
+<li>使用 MultiWriter，这样可以同时向文件和标准输出设备进行写操作</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">dest:=io.MultiWriter(os.Stdout, file)<br></code></pre></td></tr></table></figure>
+
+<ol start="25">
+<li></li>
+</ol>
+<p><img src="http://ww1.sinaimg.cn/large/006gLprLly1gqh4v4zzb6j30y70f6tfi.jpg" srcset="/img/loading.gif" lazyload alt="IMG_0325.jpg"></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6/">#读书</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go语言实战-7-8章</div>
+      <div>https://rhythmnr.github.io/2021/03/23/Go语言实战-7-8章/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2021年3月23日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/03/23/Go%E8%AF%AD%E8%A8%80%E5%AE%9E%E6%88%98-6%E7%AB%A0%20%E5%B9%B6%E5%8F%91/" title="Go语言实战-6章 并发">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go语言实战-6章 并发</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/03/22/Go%E8%AF%AD%E8%A8%80%E5%AE%9E%E6%88%98-1-5%E7%AB%A0/" title="Go语言实战-1-5章">
+                        <span class="hidden-mobile">Go语言实战-1-5章</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

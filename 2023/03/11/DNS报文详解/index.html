@@ -1,0 +1,779 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="报文格式 抓包 PS：开启混杂模式的网卡可以捕获所有流过该网卡的帧，不开启则只能捕获广播帧以及发给该网卡的帧。一般都要开混杂模式。  DNS报文之后的数据我抓包的时候发现了这样的包：  数据包在DNS之后还有2段数据，查阅资料后得知，这2段数据分别是以太网的Trailer和以太网帧校验序列（FCS）。 抓包概览Authority RRs  权威名称服务器计数：权威名称服务器的数目。Addition">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DNS报文详解">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/03/11/DNS%E6%8A%A5%E6%96%87%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="报文格式 抓包 PS：开启混杂模式的网卡可以捕获所有流过该网卡的帧，不开启则只能捕获广播帧以及发给该网卡的帧。一般都要开混杂模式。  DNS报文之后的数据我抓包的时候发现了这样的包：  数据包在DNS之后还有2段数据，查阅资料后得知，这2段数据分别是以太网的Trailer和以太网帧校验序列（FCS）。 抓包概览Authority RRs  权威名称服务器计数：权威名称服务器的数目。Addition">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303134146545.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230302163519309.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303102132074.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306150548748.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306162407622.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306162511347.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306154851361.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306155602060.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306162741839.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230306162810925.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303134338135.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303102208256.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303102548260.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303135525275.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303135651498.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230303135925682.png">
+<meta property="article:published_time" content="2023-03-11T08:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.689Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230303134146545.png">
+  
+  
+  <title>DNS报文详解 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DNS报文详解"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-11 16:00" pubdate>
+          2023年3月11日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          31 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">DNS报文详解</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="报文格式"><a href="#报文格式" class="headerlink" title="报文格式"></a>报文格式</h2><p><img src="/../images/image-20230303134146545.png" srcset="/img/loading.gif" lazyload alt="image-20230303134146545"></p>
+<h2 id="抓包"><a href="#抓包" class="headerlink" title="抓包"></a>抓包</h2><blockquote>
+<p>PS：开启混杂模式的网卡可以捕获所有流过该网卡的帧，不开启则只能捕获广播帧以及发给该网卡的帧。一般都要开混杂模式。</p>
+</blockquote>
+<h3 id="DNS报文之后的数据"><a href="#DNS报文之后的数据" class="headerlink" title="DNS报文之后的数据"></a>DNS报文之后的数据</h3><p>我抓包的时候发现了这样的包：</p>
+<p><img src="/../images/image-20230302163519309.png" srcset="/img/loading.gif" lazyload alt="image-20230302163519309"></p>
+<p>数据包在DNS之后还有2段数据，查阅资料后得知，这2段数据分别是以太网的Trailer和以太网帧校验序列（FCS）。</p>
+<h3 id="抓包概览"><a href="#抓包概览" class="headerlink" title="抓包概览"></a>抓包概览</h3><p>Authority RRs  权威名称服务器计数：权威名称服务器的数目。<br>Additional RRs  附加资源记录数：额外的记录数目（权威名称服务器对应 IP 地址的数目）。</p>
+<p><img src="/../images/image-20230303102132074.png" srcset="/img/loading.gif" lazyload alt="image-20230303102132074"></p>
+<h2 id="报文字段分析"><a href="#报文字段分析" class="headerlink" title="报文字段分析"></a>报文字段分析</h2><h3 id="Answers"><a href="#Answers" class="headerlink" title="Answers"></a>Answers</h3><blockquote>
+<p>Answers 部分的响应数据是根据查询所请求的 DNS 记录类型和查询类型（递归查询或迭代查询）而返回的。如果没有找到匹配的记录，则响应的 Answers 部分将为空。</p>
+</blockquote>
+<p>Answers在有的Response里可能为空</p>
+<h4 id="Type"><a href="#Type" class="headerlink" title="Type"></a>Type</h4><p>Answers里可能的Type的值我抓包时看到了以下几种（通过gopacket分析的）：</p>
+<p>NS、A、CNAME、PTR、AAAA、SOA、Unknown</p>
+<p><img src="/../images/image-20230306150548748.png" srcset="/img/loading.gif" lazyload alt="image-20230306150548748"></p>
+<p><img src="/../images/image-20230306162407622.png" srcset="/img/loading.gif" lazyload alt="image-20230306162407622"></p>
+<p>SOA对应的请求为</p>
+<p><img src="/../images/image-20230306162511347.png" srcset="/img/loading.gif" lazyload alt="image-20230306162511347"></p>
+<p>还有抓包抓到了一些gopacket里没有定义的类型，比如RRSIG，其对应的值为46</p>
+<blockquote>
+<p>DNS RRSIG (Resource Record Signature) 是一种 DNS 记录类型，用于提供 DNSSEC (DNS Security Extensions) 安全扩展的数字签名。RRSIG 记录对指定的 DNS 记录进行数字签名，并在签名中包含有关签名算法、签名有效期和其他信息。</p>
+</blockquote>
+<p><img src="/../images/image-20230306154851361.png" srcset="/img/loading.gif" lazyload alt="image-20230306154851361"></p>
+<p>还有DS类型的，其对应的值为43</p>
+<p><img src="/../images/image-20230306155602060.png" srcset="/img/loading.gif" lazyload alt="image-20230306155602060"></p>
+<p>此外还有值为48的DNSKEY类型</p>
+<p><img src="/../images/image-20230306162741839.png" srcset="/img/loading.gif" lazyload alt="image-20230306162741839"></p>
+<p>其对应的请求为：</p>
+<p><img src="/../images/image-20230306162810925.png" srcset="/img/loading.gif" lazyload alt="image-20230306162810925"></p>
+<p><strong>我总结了下</strong>：每台DNS服务器可以理解为一个表，表存储了一行行信息，每行信息可能是 域名- DNS类型- IP，或者是域名- DNS类型-域名。</p>
+<p>这个类型在DNS请求和响应中都会出现：</p>
+<p>常见的有以下这些，还有部分未统计：</p>
+<ul>
+<li>NS记录：NS记录是一个指针记录，它指向一组该域名授权的域名服务器的名称。当客户端要查询该域名下的某个主机的IP地址时，需要先向授权域名服务器查询，因此NS记录在DNS解析过程中非常重要。</li>
+<li>A记录：A记录是最基本的DNS记录类型，是Address Record的缩写，它将域名解析为IPv4地址。例如，将<a target="_blank" rel="noopener" href="http://www.example.com解析为192.0.2.1./">www.example.com解析为192.0.2.1。</a></li>
+<li>AAAA记录：和A记录类似，但是它将域名解析为IPv6地址</li>
+<li>CNAME：将一个别名解析为实际的主机名。</li>
+<li>MX记录（Mail Exchange Record）：指定邮件交换服务器的地址。</li>
+<li>PTR记录（Pointer Record）：反向解析记录，将IP地址解析为域名。</li>
+<li>SOA记录（Start of Authority Record）：区域文件的授权记录，指定了负责该域的DNS服务器。</li>
+<li>SRV记录（Service Record）：指定提供特定服务的服务器的地址。</li>
+<li>TXT记录（Text Record）：包含任意文本信息的记录。</li>
+</ul>
+<p>在DNS报文中，NS记录和A记录都可以作为Answer Section的一部分返回给客户端。</p>
+<p><strong>CNAME类型</strong></p>
+<p>应当读作：</p>
+<p>CNAME记录用于将一个<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D">域名</a>（同名）映射到另一个域名（真实名称），<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E8%A7%A3%E6%9E%90%E6%9C%8D%E5%8A%A1%E5%99%A8">域名解析服务器</a>遇到CNAME记录会以映射到的目标重新开始查询。</p>
+<p>比如某个CNAME记录为</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">bar<span class="hljs-selector-class">.example</span><span class="hljs-selector-class">.com</span>.        CNAME  foo<span class="hljs-selector-class">.example</span><span class="hljs-selector-class">.com</span>.<br></code></pre></td></tr></table></figure>
+
+<p>这里<em>bar.example.com</em>的“CNAME”是<em>foo.example.com</em>，因为CNAME的意思是真实名称，而右侧才是真实名称，才是CNAME。</p>
+<p>应当读作：</p>
+<p><em>bar.example.com</em>的真实名称是<em>foo.example.com</em>。请求访问<em>bar.example.com</em>的客户端会得到<em>foo.example.com</em>返回的结果。</p>
+<p>这是一个方便理解的例子：若要同时运行<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%96%87%E4%BB%B6%E4%BC%A0%E8%BE%93%E5%8D%8F%E8%AE%AE">文件传输</a>服务和<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Web%E6%9C%8D%E5%8A%A1">Web服务</a>，则可以把<em>ftp.example.com</em>和<em><a target="_blank" rel="noopener" href="http://www.example.com/">www.example.com</a></em>都指向DNS记录<em>example.com</em>，而后者则有一个指向IP地址的A记录。如此一来，若服务器IP地址改变，则只需修改<em>example.com</em>的A记录即可。那么当发起ftp.example.com的DNS解析时，DNS响应中会包含CNAME记录，请求方会重启查询，查询example.com的对应记录</p>
+<p>查询名：一般为要查询的域名，有时也会是 IP 地址，用于反向查询。</p>
+<h4 id="Class"><a href="#Class" class="headerlink" title="Class"></a>Class</h4><p>有以下这些可能值</p>
+<p>IN（Internet类）</p>
+<p>CS（CSNET类）、CH（CHAOS类）、HS（Hesiod）很少使用</p>
+<h3 id="Flag"><a href="#Flag" class="headerlink" title="Flag"></a>Flag</h3><p>包含了以下这些字段：</p>
+<p><img src="/../images/image-20230303134338135.png" srcset="/img/loading.gif" lazyload alt="image-20230303134338135"></p>
+<p><strong>QR</strong>：查询请求时，值为 0；响应时，值为 1。</p>
+<p><strong>Opcode</strong>：操作码。其中，0 表示标准查询；1 表示反向查询；2 表示服务器状态请求。</p>
+<p><strong>AA</strong>（Authoritative）：授权应答，该字段在响应报文中有效。值为 1 时，表示名称服务器是权威服务器；值为 0 时，表示不是<strong>权威服务器</strong>。我执行了一个<code>dig +trace baidu.com</code>请求，只有最后一个响应中的这个AA为1，如下。其他的都是0，为1表示这是一个权威服务器，这个服务器返回了baidu.com的IP。</p>
+<blockquote>
+<p>什么叫权威服务器？？？</p>
+<p>在DNS中，权威服务器（Authoritative Server）是指能够对某个域名或主机名提供官方答案的DNS服务器。权威服务器通常是负责管理域名解析信息的DNS服务器，<strong>它们保存有该域名下所有主机的IP地址等DNS记录，可以直接回答该域名下主机的DNS查询请求。</strong>而非权威服务器则是指没有权威性的DNS服务器，它们通常只是缓存了其他服务器的DNS查询结果，以提高DNS查询效率。</p>
+</blockquote>
+<p><img src="/../images/image-20230303102208256.png" srcset="/img/loading.gif" lazyload alt="image-20230303102208256"></p>
+<p>这个响应返回的baidu.com的IP在Answers里，展开如下：</p>
+<p><img src="/../images/image-20230303102548260.png" srcset="/img/loading.gif" lazyload alt="image-20230303102548260"></p>
+<p>这里解析出来的2个IP和我执行 nslookup解析出来的结果是一样的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs shell">nslookup baidu.com                <br>Server:		10.50.4.107<br>Address:	10.50.4.107#53<br><br>Non-authoritative answer:<br>Name:	baidu.com<br>Address: 39.156.66.10<br>Name:	baidu.com<br>Address: 110.242.68.66<br></code></pre></td></tr></table></figure>
+
+<p><strong>TC</strong></p>
+<p><strong>RD</strong>（Recursion Desired）：是否期望递归，值为1和为0分别表示递归查询和迭代查询。</p>
+<p>值为1的情况</p>
+<p><img src="/../images/image-20230303135525275.png" srcset="/img/loading.gif" lazyload alt="image-20230303135525275"></p>
+<p>对应的响应为</p>
+<p><img src="/../images/image-20230303135651498.png" srcset="/img/loading.gif" lazyload alt="image-20230303135651498"></p>
+<p>值为0的情况</p>
+<p>这里执行<code>dig +trace baidu.com</code>，4个请求的RD都是0，请求方192.168.1.5进行了迭代查询。</p>
+<p><img src="/../images/image-20230303135925682.png" srcset="/img/loading.gif" lazyload alt="image-20230303135925682"></p>
+<blockquote>
+<p><strong>递归查询和迭代查询</strong></p>
+<p><strong>递归查询是默认方式</strong>，迭代查询是以DNS客户端，也就是客户机器为中心查询。其实DNS客户端和本地名称服务器是递归，而本地名称服务器和其他名称服务器之间是迭代。</p>
+<p>递归查询：当客户端向本地DNS服务器（可以通过系统设置查看或者 scutil –dns命令查看，比如我电脑的是8.8.8.8）发出查询请求时，如果本地DNS服务器发现没有命中自己的缓存，就会代替客户端查询，直到从权威服务器处得到了正确的解析结果，然后本地DNS服务器就告诉DNS客户端查询的结果。整个过程客户端只需要发出一次请求，也就是向本地DNS服务器发出的那次请求。本地DNS就像一个中介一样。</p>
+<p>迭代查询：<strong>客户端</strong>向<strong>本地DNS服务器</strong>发出查询请求时，如果本地DNS服务器发现没有命中自己的缓存，本地DNS就会向<strong>根域名服务器</strong>发出请求，根域名服务器把请求中的DNS域名中的顶级域名对应的<strong>顶级域名服务器</strong>信息返回，本地DNS服务器会将返回的结果返回给客户端。客户端再向本地DNS服务器发出向顶级域名服务器的查询请求，顶级名称服务器在收到DNS查询请求后，也是先查询自己的缓存，如果有所请求的DNS域名的记录项，则相接把对应的记录项返回给本地域名服务器，然后再由本地域名服务器返回给DNS客户端，否则向本地名称服务器返回所请求的DNS域名中的二级域名所对应的二级名称服务器地址。以此类推，直到访问到<strong>权威域名服务器</strong>，权威域名服务器返回请求的域名对应的IP地址。整个过程本地DNS服务器就只是一个单纯的传输和转发作用，不会像递归查询一样主动查询最终结果，真正的驱动还是客户端。</p>
+</blockquote>
+<p><strong>RA</strong>：只有响应报文可能设置该字段。值为1时表示服务器支持递归查询。</p>
+<p><strong>Z</strong>：保留字段，值必须为0</p>
+<p><strong>rcode</strong>：响应的差错状态，0表示没有错误，非0表示出错了</p>
+<h3 id="附加资源Additional-records"><a href="#附加资源Additional-records" class="headerlink" title="附加资源Additional records"></a>附加资源Additional records</h3><p>DNS报文中的附加信息Additional records字段包含了一些额外的记录，这些记录与查询结果相关但不是直接回答查询问题的。它们提供了关于所查询域名的更多信息，例如权威域名服务器的IP地址、域名服务器的版本信息、以及与所查询域名相关的其他域名。</p>
+<p>在DNS查询中，附加记录可以帮助客户端更快地获取所需的信息，而不必进行额外的DNS查询。例如，当客户端需要连接某个Web服务器时，Web服务器通常会在DNS响应中返回其IP地址以及网站运行的操作系统版本等信息，客户端可以将这些信息缓存下来，以便更快地建立连接。</p>
+<p>参考资料</p>
+<p><a target="_blank" rel="noopener" href="http://c.biancheng.net/view/6457.html">资料1</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DNS报文详解</div>
+      <div>https://rhythmnr.github.io/2023/03/11/DNS报文详解/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月11日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/03/17/SNMP%E5%8D%8F%E8%AE%AE%E7%AE%80%E4%BB%8B/" title="SNMP协议简介">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SNMP协议简介</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/11/dig%20trace%E5%91%BD%E4%BB%A4%E5%8F%8A%E6%8A%93%E5%8C%85/" title="dig trace命令及抓包">
+                        <span class="hidden-mobile">dig trace命令及抓包</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

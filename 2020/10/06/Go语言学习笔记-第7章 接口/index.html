@@ -1,0 +1,707 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="第七章 接口来源：《Go 语言学习笔记》 7.1 定义是一组方法声明的集合。接口运行的时候回有运行期开销。 接口最常见的使用场景，是对包外提供访问，或者预留空间。 也可以先写方法然后抽象出接口。接口可以嵌入其他类型接口，那么需要实现这些接口里的所有方法才可以。接口名字通常以er结尾。 结构体的方法实现接口的时候，结构体的方法不能包含指针。 实现方法一般写成func (db *Database)fu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go语言学习笔记-第7章 接口">
+<meta property="og:url" content="https://rhythmnr.github.io/2020/10/06/Go%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-%E7%AC%AC7%E7%AB%A0%20%E6%8E%A5%E5%8F%A3/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="第七章 接口来源：《Go 语言学习笔记》 7.1 定义是一组方法声明的集合。接口运行的时候回有运行期开销。 接口最常见的使用场景，是对包外提供访问，或者预留空间。 也可以先写方法然后抽象出接口。接口可以嵌入其他类型接口，那么需要实现这些接口里的所有方法才可以。接口名字通常以er结尾。 结构体的方法实现接口的时候，结构体的方法不能包含指针。 实现方法一般写成func (db *Database)fu">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-10-05T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.691Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="读书">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>Go语言学习笔记-第7章 接口 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go语言学习笔记-第7章 接口"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2020-10-06 00:00" pubdate>
+          2020年10月6日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          29 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Go语言学习笔记-第7章 接口</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="第七章-接口"><a href="#第七章-接口" class="headerlink" title="第七章 接口"></a>第七章 接口</h2><p>来源：《Go 语言学习笔记》</p>
+<h3 id="7-1-定义"><a href="#7-1-定义" class="headerlink" title="7.1 定义"></a>7.1 定义</h3><p>是一组方法声明的集合。接口运行的时候回有运行期开销。</p>
+<p>接口最常见的使用场景，是对包外提供访问，或者预留空间。</p>
+<p>也可以先写方法然后抽象出接口。<br>接口可以嵌入其他类型接口，那么需要实现这些接口里的所有方法才可以。<br>接口名字通常以er结尾。</p>
+<p>结构体的方法实现接口的时候，结构体的方法不能包含指针。</p>
+<p>实现方法一般写成func (db *Database)funcname(){}这样的形式</p>
+<p>对于一个方法，func(*data)和func(data)，只有形如t&#x3D;&amp;data的形式才可以调用者两个方法，t&#x3D;data是不可以的。</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs stylus">type tester interface&#123;<br>    <span class="hljs-built_in">test</span>()<br>    <span class="hljs-built_in">string</span>() string<br>&#125;<br>type <span class="hljs-built_in">data</span>()<br><span class="hljs-function"><span class="hljs-title">func</span><span class="hljs-params">(*data)</span><span class="hljs-title">test</span><span class="hljs-params">()</span></span><br><span class="hljs-function"><span class="hljs-title">func</span><span class="hljs-params">(data)</span><span class="hljs-title">stirng</span><span class="hljs-params">(string)</span></span>&#123;return <span class="hljs-string">&quot;123&quot;</span>&#125;<br>func <span class="hljs-selector-tag">main</span>()&#123;<br>    <span class="hljs-selector-tag">var</span> d data<br>    <span class="hljs-comment">// var t tester=d   <span class="hljs-doctag">FIXME:</span> 这个是不对的，因为data类型没有实现test和string,*data实现了</span><br>    <span class="hljs-selector-tag">var</span> t tester=&amp;d<br>    t<span class="hljs-selector-class">.test</span>()<br>    fmt<span class="hljs-selector-class">.Println</span>(t<span class="hljs-selector-class">.string</span>()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>空接口可以被赋值为任何对象,默认值是nil</strong><br>也可以在结构体里面写接口</p>
+<hr>
+<h1 id="7-1-定义-1"><a href="#7-1-定义-1" class="headerlink" title="7.1 定义"></a>7.1 定义</h1><ol>
+<li>接口变量的默认值是nil</li>
+<li>接口之间是可以进行是否相等的判断的</li>
+<li>可以接口套接口</li>
+<li>空接口可以实现任何接口，比如一个空接口叫test,然后另一个接口叫data，那么可以定义 var d data&#x3D;&amp;test <strong>空接口可以被赋值为任何类型的对象</strong></li>
+<li>如果接口A实现了接口B的所有方法，那么可以直接赋值为 var b B&#x3D;&amp;A，然后可以通过b调用A实现的具体方法了</li>
+<li><strong>Go不是一种典型的OO语言，它在语法上不支持类和继承的概念。</strong><br> 所以接口和结构体非常重要</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://juejin.im/post/5a6873fd518825734501b3c5">下面来自掘金</a></p>
+<p>~ 补充：<em>方法和函数的区别</em>：方法一般是指某个结构体的方法，类似于 func (a *struct)function(args){}，而函数就是单纯的接收一个输入然后给出一个输出 func funcname(in)out{}.也就是说方法是作用于某个数据类型上的函数。<br>7. Go语言支持的除Interface类型外的任何其它数据类型都可以定义其method（而并非只有struct才支持method），只不过实际项目中，method(s)多定义在struct上而已。<br>8. <strong>只要你实现了我，你就可以调我的方法</strong><br>也就说只要你实现了我，就可以把你看成我。</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs autoit">   type MyInterface interface&#123;<br>       Print()<br>   &#125; <span class="hljs-meta"># 接口MyInterface定义，实现这个接口需要Print()方法实现才可以</span><br>   <br>   <span class="hljs-keyword">func</span> <span class="hljs-title function_">TestFunc</span><span class="hljs-params">(x MyInterface)</span> &#123;&#125;<br><span class="hljs-meta"># MyInterface的方法</span><br>   type MyStruct struct &#123;&#125;<br><span class="hljs-meta"># MyStruct接口定义</span><br>   <span class="hljs-keyword">func</span> <span class="hljs-params">(me MyStruct)</span> <span class="hljs-title function_">Print</span><span class="hljs-params">()</span> &#123;&#125;<br><span class="hljs-meta"># MyStruct的Print方法，实现了MyInterface接口</span><br>   <span class="hljs-keyword">func</span> <span class="hljs-title function_">main</span><span class="hljs-params">()</span> &#123;<br>       var me MyStruct<br>       <span class="hljs-meta"># me是一个MyStruct接口，实现了MYInterface接口</span><br>       TestFunc(me)<br>       <span class="hljs-meta"># 因为MyStruct实现了MyInterface接口，所以可以其调用MyInterface的方法</span><br>   &#125;<br></code></pre></td></tr></table></figure>
+
+<p>例子</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> sort<br><br><span class="hljs-comment">// A type, typically a collection, that satisfies sort.Interface can be</span><br><span class="hljs-comment">// sorted by the routines in this package.  The methods require that the</span><br><span class="hljs-comment">// elements of the collection be enumerated by an integer index.</span><br><span class="hljs-keyword">type</span> Interface <span class="hljs-keyword">interface</span> &#123;<br>    <span class="hljs-comment">// Len is the number of elements in the collection.</span><br>    Len() <span class="hljs-type">int</span><br>    <span class="hljs-comment">// Less reports whether the element with</span><br>    <span class="hljs-comment">// index i should sort before the element with index j.</span><br>    Less(i, j <span class="hljs-type">int</span>) <span class="hljs-type">bool</span><br>    <span class="hljs-comment">// Swap swaps the elements with indexes i and j.</span><br>    Swap(i, j <span class="hljs-type">int</span>)<br>&#125;<br><br>...<br><br><span class="hljs-comment">// Sort sorts data.</span><br><span class="hljs-comment">// It makes one call to data.Len to determine n, and O(n*log(n)) calls to</span><br><span class="hljs-comment">// data.Less and data.Swap. The sort is not guaranteed to be stable.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Sort</span><span class="hljs-params">(data Interface)</span></span> &#123;<br>    <span class="hljs-comment">// Switch to heapsort if depth of 2*ceil(lg(n+1)) is reached.</span><br>    n := data.Len()<br>    maxDepth := <span class="hljs-number">0</span><br>    <span class="hljs-keyword">for</span> i := n; i &gt; <span class="hljs-number">0</span>; i &gt;&gt;= <span class="hljs-number">1</span> &#123;<br>        maxDepth++<br>    &#125;<br>    maxDepth *= <span class="hljs-number">2</span><br>    quickSort(data, <span class="hljs-number">0</span>, n, maxDepth)<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>调用</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs stylus">type Person struct &#123;<br>Name string<br>Age  int<br>&#125;<br><br>func (<span class="hljs-selector-tag">p</span> Person) <span class="hljs-built_in">String</span>() string &#123;<br>    return fmt<span class="hljs-selector-class">.Sprintf</span>(<span class="hljs-string">&quot;%s: %d&quot;</span>, <span class="hljs-selector-tag">p</span><span class="hljs-selector-class">.Name</span>, <span class="hljs-selector-tag">p</span>.Age)<br>&#125;<br><br><span class="hljs-comment">// ByAge implements sort.Interface for []Person based on</span><br><span class="hljs-comment">// the Age field.</span><br>type ByAge <span class="hljs-selector-attr">[]</span>Person <span class="hljs-comment">//自定义</span><br><br>func (<span class="hljs-selector-tag">a</span> ByAge) <span class="hljs-built_in">Len</span>() int           &#123; return <span class="hljs-built_in">len</span>(a) &#125;<br>func (<span class="hljs-selector-tag">a</span> ByAge) <span class="hljs-built_in">Swap</span>(<span class="hljs-selector-tag">i</span>, j int)      &#123; <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[i]</span>, <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[j]</span> = <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[j]</span>, <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[i]</span> &#125;<br>func (<span class="hljs-selector-tag">a</span> ByAge) <span class="hljs-built_in">Less</span>(<span class="hljs-selector-tag">i</span>, j int) bool &#123; return <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[i]</span><span class="hljs-selector-class">.Age</span> &lt; <span class="hljs-selector-tag">a</span><span class="hljs-selector-attr">[j]</span><span class="hljs-selector-class">.Age</span> &#125;<br><br>func <span class="hljs-selector-tag">main</span>() &#123;<br>    people := <span class="hljs-selector-attr">[]</span>Person&#123;<br>        &#123;<span class="hljs-string">&quot;Bob&quot;</span>, <span class="hljs-number">31</span>&#125;,<br>        &#123;<span class="hljs-string">&quot;John&quot;</span>, <span class="hljs-number">42</span>&#125;,<br>        &#123;<span class="hljs-string">&quot;Michael&quot;</span>, <span class="hljs-number">17</span>&#125;,<br>        &#123;<span class="hljs-string">&quot;Jenny&quot;</span>, <span class="hljs-number">26</span>&#125;,<br>    &#125;<br><br>    fmt<span class="hljs-selector-class">.Println</span>(people)<br>    sort<span class="hljs-selector-class">.Sort</span>(<span class="hljs-built_in">ByAge</span>(people))<br>    fmt<span class="hljs-selector-class">.Println</span>(people)<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>因为ByAge实现了Interface的方法，所以可以直接写ByAge(people)，把这个当做Interface传给Sort</p>
+<h2 id="hiding-implementation-detail-（隐藏具体实现）"><a href="#hiding-implementation-detail-（隐藏具体实现）" class="headerlink" title="hiding implementation detail （隐藏具体实现）"></a>hiding implementation detail （隐藏具体实现）</h2><p>是一些源码，读不下去了</p>
+<h2 id="interface的内存布局"><a href="#interface的内存布局" class="headerlink" title="interface的内存布局"></a>interface的内存布局</h2><p><strong>当你实现了我，也可以把你强制转换为我</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Stringer <span class="hljs-keyword">interface</span> &#123;<br>    String() <span class="hljs-type">string</span><br>&#125;<br><br><span class="hljs-keyword">type</span> Binary <span class="hljs-type">uint64</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(i Binary)</span></span> String() <span class="hljs-type">string</span> &#123;<br>    <span class="hljs-keyword">return</span> strconv.Uitob64(i.Get(), <span class="hljs-number">2</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(i Binary)</span></span> Get() <span class="hljs-type">uint64</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-type">uint64</span>(i)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    b := Binary&#123;&#125;<br>    s := Stringer(b)<br>    fmt.Print(s.String())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6/">#读书</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go语言学习笔记-第7章 接口</div>
+      <div>https://rhythmnr.github.io/2020/10/06/Go语言学习笔记-第7章 接口/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2020年10月6日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/12/07/Go%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-%E7%AC%AC8%E7%AB%A0%20%E5%B9%B6%E5%8F%91/" title="Go语言学习笔记-第8章 并发">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go语言学习笔记-第8章 并发</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2020/10/05/Go%E8%AF%AD%E8%A8%80%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-%E7%AC%AC6%E7%AB%A0%20%E6%96%B9%E6%B3%95/" title="Go语言学习笔记-第6章 方法">
+                        <span class="hidden-mobile">Go语言学习笔记-第6章 方法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,750 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文翻译自：https:&#x2F;&#x2F;www.opensourceforu.com&#x2F;2015&#x2F;03&#x2F;a-guide-to-using-raw-sockets&#x2F; raw socket即原始套接字，可以用来发送和接收数据包，可以通过常见的TCP&#x2F;IP协议，将数据包发送给指定的用户应用。 当你对linux内核一无所知，但是依然对网络数据包感兴趣时，可以通过raw socket来了解自己想要的内容。 ra">
+<meta property="og:type" content="article">
+<meta property="og:title" content="翻译：一份如何使用raw scoekt的指南">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/05/13/%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8raw%20socket/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="本文翻译自：https:&#x2F;&#x2F;www.opensourceforu.com&#x2F;2015&#x2F;03&#x2F;a-guide-to-using-raw-sockets&#x2F; raw socket即原始套接字，可以用来发送和接收数据包，可以通过常见的TCP&#x2F;IP协议，将数据包发送给指定的用户应用。 当你对linux内核一无所知，但是依然对网络数据包感兴趣时，可以通过raw socket来了解自己想要的内容。 ra">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240511173806622.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240511174504392-5420705.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240511175417969.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240513135305485.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240513140223611.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240513144921115.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240513145255271.png">
+<meta property="article:published_time" content="2024-05-13T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.747Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240511173806622.png">
+  
+  
+  <title>翻译：一份如何使用raw scoekt的指南 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="翻译：一份如何使用raw scoekt的指南"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-05-13 11:00" pubdate>
+          2024年5月13日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          49 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">翻译：一份如何使用raw scoekt的指南</h1>
+            
+            <div class="markdown-body">
+              
+              <p>本文翻译自：<a target="_blank" rel="noopener" href="https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/">https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/</a></p>
+<p>raw socket即原始套接字，可以用来发送和接收数据包，可以通过常见的TCP&#x2F;IP协议，将数据包发送给指定的用户应用。</p>
+<p>当你对linux内核一无所知，但是依然对网络数据包感兴趣时，可以通过raw socket来了解自己想要的内容。</p>
+<p>raw socket是用来接收数据包的，这意味着链路层接收到的数据包会被直接传递给raw socket。<strong>因为绕过了链路层上的网络层和传输层</strong>，所以raw socket会绕过TCP&#x2F;IP处理程序将数据包直接发送给特定的应用程序。如下图：</p>
+<p><img src="/../images/image-20240511173806622.png" srcset="/img/loading.gif" lazyload alt="image-20240511173806622"></p>
+<h2 id="raw-socket和其他的socket的对比"><a href="#raw-socket和其他的socket的对比" class="headerlink" title="raw socket和其他的socket的对比"></a>raw socket和其他的socket的对比</h2><p>其他的socket包括了stream socket、data gram socket等等，这些其他的socket接收到来自传输层的数据，这些数据不包含header只包含了payload。因为没有header，所以找不到源IP地址和MAC地址。如果运行在同一台机器或者不同机器的两个程序正在交流，那么这两个程序只是交换数据。</p>
+<p>下图展示了raw socket和其他socket的对比：</p>
+<p><img src="/../images/image-20240511174504392-5420705.png" srcset="/img/loading.gif" lazyload alt="image-20240511174504392"></p>
+<h2 id="网络数据包和数据包嗅探器（sniffer）"><a href="#网络数据包和数据包嗅探器（sniffer）" class="headerlink" title="网络数据包和数据包嗅探器（sniffer）"></a>网络数据包和数据包嗅探器（sniffer）</h2><p>当一个应用发送数据到网络中时，这个数据会经过不层的处理，这些层按照时间顺序从先到后分别是网络层、传输层、数据链路层。每层都会添加Header。最终处理得到的结果可能为 ：</p>
+<p>下图是一个网络数据包的结构：</p>
+<p><img src="/../images/image-20240511175417969.png" srcset="/img/loading.gif" lazyload alt="image-20240511175417969"></p>
+<p>默认情况下，机器会接收与本机具有相同目的地址的数据包，这种模式称为非混杂模式。 但如果我们想接收所有数据包，我们必须切换到混杂模式。 我们可以借助 ioctl 进入混杂模式。</p>
+<p>如果想知道数据包的结构，可以使用数据包嗅探器（sniffer），比如wireshark或者tcpdump。</p>
+<h2 id="带有raw-socket的数据包嗅探器"><a href="#带有raw-socket的数据包嗅探器" class="headerlink" title="带有raw socket的数据包嗅探器"></a>带有raw socket的数据包嗅探器</h2><p>这里主要介绍如何开发一个数据包嗅探器。要开发数据包嗅探器，<strong>首先必须打开原始套接字（raw socket）</strong>。 仅允许有效用户 ID 为 0 或具有 CAP_NET_RAW 功能的进程打开原始套接字。 所以，在程序执行过程中，你必须是root用户。</p>
+<h3 id="打开-raw-socket"><a href="#打开-raw-socket" class="headerlink" title="打开 raw socket"></a>打开 raw socket</h3><p>要打开套接字，需要了解套接字系列、套接字类型和协议这三个字段。</p>
+<p>对于raw socket，套接字系列字段为 AF_PACKET，套接字类型为 SOCK_RAW。</p>
+<p>接收所有数据包时，宏为 ETH_P_ALL；接收 IP 数据包时，宏为 ETH_P_IP（协议字段）。？？？？？？？</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> sock_r;<br>sock_r=socket(AF_PACKET,SOCK_RAW,htons(ETH_P_ALL));<br><span class="hljs-keyword">if</span>(sock_r&lt;<span class="hljs-number">0</span>)<br>&#123;<br><span class="hljs-built_in">printf</span>(error in socket\n);<br><span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="网络数据包的接收"><a href="#网络数据包的接收" class="headerlink" title="网络数据包的接收"></a>网络数据包的接收</h3><p>成功打开原始套接字后，就可以接收网络数据包了，为此需要使用recvfrom api或者使用recv api。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *buffer = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> *) <span class="hljs-built_in">malloc</span>(<span class="hljs-number">65536</span>); <span class="hljs-comment">//to receive data</span><br><span class="hljs-built_in">memset</span>(buffer,<span class="hljs-number">0</span>,<span class="hljs-number">65536</span>);<br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr</span> <span class="hljs-title">saddr</span>;</span><br><span class="hljs-type">int</span> saddr_len = <span class="hljs-keyword">sizeof</span> (saddr);<br> <br><span class="hljs-comment">//Receive a network packet and copy in to buffer</span><br>buflen=recvfrom(sock_r,buffer,<span class="hljs-number">65536</span>,<span class="hljs-number">0</span>,&amp;saddr,(<span class="hljs-type">socklen_t</span> *)&amp;saddr_len);<br><span class="hljs-keyword">if</span>(buflen&lt;<span class="hljs-number">0</span>)<br>&#123;<br><span class="hljs-built_in">printf</span>(error in reading recvfrom function\n);<br><span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在saddr中，底层协议提供数据包的源地址。</p>
+<h3 id="提取各层数据"><a href="#提取各层数据" class="headerlink" title="提取各层数据"></a>提取各层数据</h3><h4 id="提取以太网（Ethernet）Header"><a href="#提取以太网（Ethernet）Header" class="headerlink" title="提取以太网（Ethernet）Header"></a>提取以太网（Ethernet）Header</h4><p>以太网的标头包含了源地址和目的地址（源地址和目的地址都是物理地址，占用了6个字节）和协议。以太网的Header在源代码的if_ether.h文件被定义成如下数据结构：</p>
+<p><img src="/../images/image-20240513135305485.png" srcset="/img/loading.gif" lazyload alt="image-20240513135305485"></p>
+<p>h_proto表示下一层是什么协议。比如如果h_proto的值是ETH_P_IP，那么表示下一个Header是IP协议的Header。下面类似的，介绍如何提取IP Header。</p>
+<h4 id="提取IP层的-Header"><a href="#提取IP层的-Header" class="headerlink" title="提取IP层的 Header"></a>提取IP层的 Header</h4><p>IP 层提供各种信息，如源和目标 IP 地址、传输层协议等。IP Header的信息在<em>ip.h</em>被定义了，如下：</p>
+<p><img src="/../images/image-20240513140223611.png" srcset="/img/loading.gif" lazyload alt="image-20240513140223611"></p>
+<p>类似的，提取传输层的协议的Header</p>
+<h4 id="提取传输层的Header"><a href="#提取传输层的Header" class="headerlink" title="提取传输层的Header"></a>提取传输层的Header</h4><p>TCP和UDP协议结构分别在tcp.h和udp.h中定义。 这些结构提供源和目标的端口号。</p>
+<blockquote>
+<p>TLS 协议在 OSI 模型中被认为是一个位于传输层和应用层之间的安全层协议。</p>
+</blockquote>
+<h4 id="提取应用层的Payload"><a href="#提取应用层的Payload" class="headerlink" title="提取应用层的Payload"></a>提取应用层的Payload</h4><p>在传输层Header之后的数据就是有效负载。</p>
+<h3 id="使用raw-socket发送数据包"><a href="#使用raw-socket发送数据包" class="headerlink" title="使用raw socket发送数据包"></a>使用raw socket发送数据包</h3><p>要发送数据包，需要知道源MAC地址和目的MAC地址，以及源IP地址和目的IP地址。发送时如何知晓发送人的IP地址和MAC地址呢？下面是方法：</p>
+<p>输入<code>ifconfig</code>来获得某个指定网络接口的IP地址和MAC地址。或者输入ioctl命令获取IP地址和MAC地址（这个方法更快速更推荐）。</p>
+<h4 id="打开raw-socket"><a href="#打开raw-socket" class="headerlink" title="打开raw socket"></a>打开raw socket</h4><p>要打开raw socket，需要知道socekt API的三个参数，分别为：</p>
+<p>Family参数，可以传递AF_PACKET</p>
+<p>Type参数，可以传递SOCK_RAW</p>
+<p>协议protocol参数，可以传递IPPROTO_RAW</p>
+<p>协议protocol参数为什么要传递IPPROTO_RAW呢？因为想传递一个IP包。IPPROTO_RAW宏定义在in.h文件中：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c">sock_raw=socket(AF_PACKET,SOCK_RAW,IPPROTO_RAW);<br><span class="hljs-keyword">if</span>(sock_raw == <span class="hljs-number">-1</span>)<br><span class="hljs-built_in">printf</span>(error in socket);<br></code></pre></td></tr></table></figure>
+
+<h4 id="什么是ifreq-struct？"><a href="#什么是ifreq-struct？" class="headerlink" title="什么是ifreq struct？"></a>什么是ifreq struct？</h4><p>Linux 支持一些标准 ioctl 来配置网络设备。</p>
+<p><img src="/../images/image-20240513144921115.png" srcset="/img/loading.gif" lazyload alt="image-20240513144921115"></p>
+<p><img src="/../images/image-20240513145255271.png" srcset="/img/loading.gif" lazyload alt="image-20240513145255271"></p>
+<h4 id="获取发送数据包的网络接口的下标"><a href="#获取发送数据包的网络接口的下标" class="headerlink" title="获取发送数据包的网络接口的下标"></a>获取发送数据包的网络接口的下标</h4><p>您的机器上可能有多种接口，如环回、有线接口和无线接口。 因此，您必须决定我们可以通过哪个接口发送数据包。 确定接口后，您必须获取该接口的索引。 为此，首先通过设置 ifreq 结构的 ifr_name 字段来给出接口的名称，然后使用 ioctl。 然后使用 sockios.h 中定义的 SIOCGIFINDEX 宏，您将在 ifreq 结构中收到索引号：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">ifreq</span> <span class="hljs-title">ifreq_i</span>;</span><br><span class="hljs-built_in">memset</span>(&amp;ifreq_i,<span class="hljs-number">0</span>,<span class="hljs-keyword">sizeof</span>(ifreq_i));<br><span class="hljs-built_in">strncpy</span>(ifreq_i.ifr_name,wlan0,IFNAMSIZ<span class="hljs-number">-1</span>); <span class="hljs-comment">//giving name of Interface</span><br> <br><span class="hljs-keyword">if</span>((ioctl(sock_raw,SIOCGIFINDEX,&amp;ifreq_i))&lt;<span class="hljs-number">0</span>)<br><span class="hljs-built_in">printf</span>(error in index ioctl reading);<span class="hljs-comment">//getting Index Name</span><br> <br><span class="hljs-built_in">printf</span>(index=%d\n,ifreq_i.ifr_ifindex);<br></code></pre></td></tr></table></figure>
+
+<h4 id="获取网络接口的MAC地址"><a href="#获取网络接口的MAC地址" class="headerlink" title="获取网络接口的MAC地址"></a>获取网络接口的MAC地址</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">ifreq</span> <span class="hljs-title">ifreq_c</span>;</span><br><span class="hljs-built_in">memset</span>(&amp;ifreq_c,<span class="hljs-number">0</span>,<span class="hljs-keyword">sizeof</span>(ifreq_c));<br><span class="hljs-built_in">strncpy</span>(ifreq_c.ifr_name,wlan0,IFNAMSIZ<span class="hljs-number">-1</span>);<span class="hljs-comment">//giving name of Interface</span><br> <br><span class="hljs-keyword">if</span>((ioctl(sock_raw,SIOCGIFHWADDR,&amp;ifreq_c))&lt;<span class="hljs-number">0</span>) <span class="hljs-comment">//getting MAC Address</span><br><span class="hljs-built_in">printf</span>(error in SIOCGIFHWADDR ioctl reading);<br></code></pre></td></tr></table></figure>
+
+<h4 id="获取网络接口的IP地址"><a href="#获取网络接口的IP地址" class="headerlink" title="获取网络接口的IP地址"></a>获取网络接口的IP地址</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">struct</span> ifreq ifreq_ip;<br>memset(&amp;ifreq_ip,<span class="hljs-number">0</span>,sizeof(ifreq_ip));<br>strncpy(ifreq_ip.ifr_name,wlan0,IFNAMSIZ<span class="hljs-number">-1</span>);<span class="hljs-comment">//giving name of Interface</span><br><span class="hljs-keyword">if</span>(ioctl(sock_raw,SIOCGIFADDR,&amp;ifreq_ip)&lt;<span class="hljs-number">0</span>) <span class="hljs-comment">//getting IP Address</span><br>&#123;<br>printf(<span class="hljs-type">error</span> in SIOCGIFADDR \n);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="构建以太网报头"><a href="#构建以太网报头" class="headerlink" title="构建以太网报头"></a>构建以太网报头</h4><p>获得索引以及接口的 MAC 和 IP 地址后，就可以构建以太网标头了。 首先，创建一个缓冲区，在其中放置所有信息，如以太网标头、IP 标头、UDP 标头和数据。 该缓冲区将是您的数据包。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs c">sendbuff=(<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>*)<span class="hljs-built_in">malloc</span>(<span class="hljs-number">64</span>); <span class="hljs-comment">// increase in case of more data</span><br><span class="hljs-built_in">memset</span>(sendbuff,<span class="hljs-number">0</span>,<span class="hljs-number">64</span>);<br></code></pre></td></tr></table></figure>
+
+<p>要构造以太网标头，请填写 ethhdr 结构的所有字段：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">ethhdr</span> *<span class="hljs-title">eth</span> =</span> (<span class="hljs-keyword">struct</span> ethhdr *)(sendbuff);<br> <br>eth-&gt;h_source[<span class="hljs-number">0</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">0</span>]);<br>eth-&gt;h_source[<span class="hljs-number">1</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">1</span>]);<br>eth-&gt;h_source[<span class="hljs-number">2</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">2</span>]);<br>eth-&gt;h_source[<span class="hljs-number">3</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">3</span>]);<br>eth-&gt;h_source[<span class="hljs-number">4</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">4</span>]);<br>eth-&gt;h_source[<span class="hljs-number">5</span>] = (<span class="hljs-type">unsigned</span> <span class="hljs-type">char</span>)(ifreq_c.ifr_hwaddr.sa_data[<span class="hljs-number">5</span>]);<br> <br><span class="hljs-comment">/* filling destination mac. DESTMAC0 to DESTMAC5 are macro having octets of mac address. */</span><br>eth-&gt;h_dest[<span class="hljs-number">0</span>] = DESTMAC0;<br>eth-&gt;h_dest[<span class="hljs-number">1</span>] = DESTMAC1;<br>eth-&gt;h_dest[<span class="hljs-number">2</span>] = DESTMAC2;<br>eth-&gt;h_dest[<span class="hljs-number">3</span>] = DESTMAC3;<br>eth-&gt;h_dest[<span class="hljs-number">4</span>] = DESTMAC4;<br>eth-&gt;h_dest[<span class="hljs-number">5</span>] = DESTMAC5;<br> <br>eth-&gt;h_proto = htons(ETH_P_IP); <span class="hljs-comment">//means next header will be IP header</span><br> <br><span class="hljs-comment">/* end of ethernet header */</span><br>total_len+=<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> ethhdr);<br></code></pre></td></tr></table></figure>
+
+<h4 id="构建IP-Header"><a href="#构建IP-Header" class="headerlink" title="构建IP Header"></a>构建IP Header</h4><p>要构造 IP 标头，请将 sendbuff 增加以太网标头的大小并填充 iphdr 结构的每个字段。 IP报头之后的数据称为IP报头的有效负载，同样，以太网报头之后的数据称为以太网报头的有效负载。 在IP报头中，有一个称为总长度的字段，它包含IP报头加上有效负载的大小。 要了解 IP 标头有效负载的大小，您必须知道 UDP 标头和 UDP 有效负载的大小。 因此，iphdr 结构的某些字段将在填充 UDP 标头字段后获取值。</p>
+<blockquote>
+<p>代码这里就不贴出来了，因为代码我没怎么看，主要看的就是大概的步骤。</p>
+</blockquote>
+<h4 id="构建UDP-Header"><a href="#构建UDP-Header" class="headerlink" title="构建UDP Header"></a>构建UDP Header</h4><p>构建 UDP 标头与构建 IP 标头非常相似。 为 udphdr 结构的字段赋值。 为此，将 sendbuff 指针增加以太网和 IP 标头的大小。</p>
+<h4 id="添加数据或者UDP-Payload"><a href="#添加数据或者UDP-Payload" class="headerlink" title="添加数据或者UDP Payload"></a>添加数据或者UDP Payload</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c">sendbuff[total_len++] = <span class="hljs-number">0xAA</span>;<br>sendbuff[total_len++] = <span class="hljs-number">0xBB</span>;<br>sendbuff[total_len++] = <span class="hljs-number">0xCC</span>;<br>sendbuff[total_len++] = <span class="hljs-number">0xDD</span>;<br>sendbuff[total_len++] = <span class="hljs-number">0xEE</span>;<br></code></pre></td></tr></table></figure>
+
+<h4 id="填充-IP-和-UDP-标头的剩余字段"><a href="#填充-IP-和-UDP-标头的剩余字段" class="headerlink" title="填充 IP 和 UDP 标头的剩余字段"></a>填充 IP 和 UDP 标头的剩余字段</h4><p>现在我们有了total_len指针，借助它，我们可以填充IP和UDP标头的剩余字段</p>
+<h4 id="IP-Header-校验和"><a href="#IP-Header-校验和" class="headerlink" title="IP Header 校验和"></a>IP Header 校验和</h4><p>IP 标头检查中还剩下一个字段，用于校验和。 校验和用于头部的错误检查。</p>
+<p>当数据包到达路由器时，路由器会计算校验和，如果计算出的校验和与标头的校验和字段不匹配，则路由器将丢弃该数据包； 如果匹配，则路由器会将到达 live 字段的时间减 1，然后转发。</p>
+<p>计算校验和时，将IP头的所有16位字相加，如果有进位，则再次相加得到16位字。 之后，找到 1 的补码，这就是我们的校验和。 要检查我们的校验和是否正确，请使用上述算法。</p>
+<h4 id="发送数据"><a href="#发送数据" class="headerlink" title="发送数据"></a>发送数据</h4><p>现在我们有了数据包，但在发送之前，让我们用目标 MAC 地址填充 sockaddr_ll 结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">sockaddr_ll</span> <span class="hljs-title">sadr_ll</span>;</span><br>sadr_ll.sll_ifindex = ifreq_i.ifr_ifindex; <span class="hljs-comment">// index of interface</span><br>sadr_ll.sll_halen = ETH_ALEN; <span class="hljs-comment">// length of destination mac address</span><br>sadr_ll.sll_addr[<span class="hljs-number">0</span>] = DESTMAC0;<br>sadr_ll.sll_addr[<span class="hljs-number">1</span>] = DESTMAC1;<br>sadr_ll.sll_addr[<span class="hljs-number">2</span>] = DESTMAC2;<br>sadr_ll.sll_addr[<span class="hljs-number">3</span>] = DESTMAC3;<br>sadr_ll.sll_addr[<span class="hljs-number">4</span>] = DESTMAC4;<br>sadr_ll.sll_addr[<span class="hljs-number">5</span>] = DESTMAC5;<br></code></pre></td></tr></table></figure>
+
+<p>现在是时候发送它了，为此我们使用 sendto api：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c">send_len = sendto(sock_raw,sendbuff,<span class="hljs-number">64</span>,<span class="hljs-number">0</span>,(<span class="hljs-type">const</span> <span class="hljs-keyword">struct</span> sockaddr*)&amp;sadr_ll,<span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> sockaddr_ll));<br><span class="hljs-keyword">if</span>(send_len&lt;<span class="hljs-number">0</span>)<br>&#123;<br><span class="hljs-built_in">printf</span>(error in sending....sendlen=%d....errno=%d\n,send_len,errno);<br><span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br> <br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BF%BB%E8%AF%91/" class="category-chain-item">翻译</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>翻译：一份如何使用raw scoekt的指南</div>
+      <div>https://rhythmnr.github.io/2024/05/13/如何使用raw socket/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年5月13日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/05/16/%E3%80%8A%E6%9E%B6%E6%9E%84%E6%95%B4%E6%B4%81%E4%B9%8B%E9%81%93%E3%80%8B%E9%98%85%E8%AF%BB/" title="《架构整洁之道》阅读笔记">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">《架构整洁之道》阅读笔记</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/04/26/gopacket%E6%BA%90%E4%BB%A3%E7%A0%81%E9%98%85%E8%AF%BB/" title="gopacket源代码部分阅读">
+                        <span class="hidden-mobile">gopacket源代码部分阅读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,875 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="DNS的传输层使用的是UDP协议或者TCP协议。 DNS在某些情况下会使用TCP协议。DNS通常使用UDP协议（用户数据报协议）来进行域名查询，因为UDP速度快、效率高，而且查询数据包通常较小，适合在UDP上进行。但是，当DNS查询数据包的大小超过了UDP数据包的最大限制时（通常是512字节），DNS会使用TCP协议来进行查询。此外，某些DNS服务器也会将DNS查询请求强制转换为TCP协议，以增">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DNS抓包请求详解">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/02/24/DNS%E8%AF%B7%E6%B1%82%E6%8A%93%E5%8C%85%E8%AF%A6%E8%A7%A3/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="DNS的传输层使用的是UDP协议或者TCP协议。 DNS在某些情况下会使用TCP协议。DNS通常使用UDP协议（用户数据报协议）来进行域名查询，因为UDP速度快、效率高，而且查询数据包通常较小，适合在UDP上进行。但是，当DNS查询数据包的大小超过了UDP数据包的最大限制时（通常是512字节），DNS会使用TCP协议来进行查询。此外，某些DNS服务器也会将DNS查询请求强制转换为TCP协议，以增">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSz3zXn.png">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSzGdM9.png">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSzGxZq.png">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSzaS8f.png">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSza6it.png">
+<meta property="og:image" content="https://s1.ax1x.com/2023/02/24/pSzgIPg.png">
+<meta property="article:published_time" content="2023-02-24T09:14:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.689Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://s1.ax1x.com/2023/02/24/pSz3zXn.png">
+  
+  
+  <title>DNS抓包请求详解 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DNS抓包请求详解"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-02-24 17:14" pubdate>
+          2023年2月24日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          59 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">DNS抓包请求详解</h1>
+            
+            <div class="markdown-body">
+              
+              <blockquote>
+<p>DNS的传输层使用的是<strong>UDP协议或者TCP协议。</strong></p>
+<p>DNS在某些情况下会使用TCP协议。DNS通常使用UDP协议（用户数据报协议）来进行域名查询，因为UDP速度快、效率高，而且查询数据包通常较小，适合在UDP上进行。但是，当DNS查询数据包的大小超过了UDP数据包的最大限制时（通常是512字节），DNS会使用TCP协议来进行查询。此外，某些DNS服务器也会将DNS查询请求强制转换为TCP协议，以增加安全性和可靠性。</p>
+</blockquote>
+<h2 id="Transaction-ID"><a href="#Transaction-ID" class="headerlink" title="Transaction ID"></a>Transaction ID</h2><p>在DNS协议中，每个DNS请求报文都包含一个16位的Transaction ID字段，用于标识该DNS请求和对应的DNS响应。<strong>Transaction ID由客户端随机生成，并且在DNS响应报文中原样返回，以便客户端能够将响应与请求进行匹配</strong>。Transaction ID的生成没有特定的规律，通常是使用伪随机数生成算法来生成。</p>
+<h2 id="DNS解析过程"><a href="#DNS解析过程" class="headerlink" title="DNS解析过程"></a>DNS解析过程</h2><h3 id="终端输出"><a href="#终端输出" class="headerlink" title="终端输出"></a>终端输出</h3><p>执行<code>dig +trace www.baidu.com</code>返回的结果为：</p>
+<details><summary>展开/收起</summary>
+dig +trace www.baidu.com<br>
+<br>
+; <<>> DiG 9.10.6 <<>> +trace www.baidu.com<br>
+;; global options: +cmd<br>
+.            255946    IN    NS    f.root-servers.net.<br>
+.            255946    IN    NS    g.root-servers.net.<br>
+.            255946    IN    NS    h.root-servers.net.<br>
+.            255946    IN    NS    b.root-servers.net.<br>
+.            255946    IN    NS    j.root-servers.net.<br>
+.            255946    IN    NS    l.root-servers.net.<br>
+.            255946    IN    NS    k.root-servers.net.<br>
+.            255946    IN    NS    e.root-servers.net.<br>
+.            255946    IN    NS    a.root-servers.net.<br>
+.            255946    IN    NS    c.root-servers.net.<br>
+.            255946    IN    NS    m.root-servers.net.<br>
+.            255946    IN    NS    i.root-servers.net.<br>
+.            255946    IN    NS    d.root-servers.net.<br>
+.            255946    IN    RRSIG    NS 8 0 518400 20230305170000 20230220160000 951 . xU5kKOHDoGfyQVeW8Huv74NJxyAaKyuDUxli5P0K08z+vvLlA3N87OVL bhwoihWpKg+Of2S2nI6jx80n+S2Ty74PSOijnu9sW7vvTD30Wg1Vgtda rrOc2gf9UmDkT+mLda/IiX7DtAla76k9t+owykaxyPHfdkLH1cfZmGj6 0KPRJDf9gnopBomQIBa4/m3UqwJlefYA0Wr01Bs+BaCKHPQEnrBSsBYJ jBbFOkadtuXtVym5Bapg8TYJQQfJxlutIuuEyC1BDSqw33poKUcKzXg3 v7VIeHSq+wKaOyDt7m9wrCxOhj3uZurNO+b88xmtV4pX+HxRGs+Yx2QY kCGskQ==<br>
+;; Received 1097 bytes from 10.50.4.107#53(10.50.4.107) in 12 ms<br>
+<br>
+com.            172800    IN    NS    m.gtld-servers.net.<br>
+com.            172800    IN    NS    k.gtld-servers.net.<br>
+com.            172800    IN    NS    c.gtld-servers.net.<br>
+com.            172800    IN    NS    i.gtld-servers.net.<br>
+com.            172800    IN    NS    h.gtld-servers.net.<br>
+com.            172800    IN    NS    b.gtld-servers.net.<br>
+com.            172800    IN    NS    e.gtld-servers.net.<br>
+com.            172800    IN    NS    f.gtld-servers.net.<br>
+com.            172800    IN    NS    d.gtld-servers.net.<br>
+com.            172800    IN    NS    g.gtld-servers.net.<br>
+com.            172800    IN    NS    j.gtld-servers.net.<br>
+com.            172800    IN    NS    a.gtld-servers.net.<br>
+com.            172800    IN    NS    l.gtld-servers.net.<br>
+com.            86400    IN    DS    30909 8 2 E2D3C916F6DEEAC73294E8268FB5885044A833FC5459588F4A9184CF C41A5766<br>
+com.            86400    IN    RRSIG    DS 8 1 86400 20230308170000 20230223160000 951 . eiW76HnA6iWoL7HVQQlR5GwBc3QagvdHZJEH3d13ze+ukMwieArh0Ec2 pd10S4nFcW8S37ajG+u2tzLV09ZlXhpRNbXX84qD17QvWeh7IeT+vCFl lk4I/+55UcVdI3LfhHmJPF4cjMLQsIbKCB1Ryf+sWQsVKYE9XeoUR5Mp rV7W8I1UWn9e1yMs5C+ujrd/UFPb/Uw4QS6RZ7Q0K39XOUqFRqUuSnFQ Klg5fExB7I6/dARBqK4lnOzMssrF97HmGtGNUkpb3CgBMIwSDGriM+Uf vQVRzFyhGNHD3KigUV18uYw8Yqq48By+BKJmzMd4IQGiy0e0WNavs2vd 9Ph/+A==<br>
+;; Received 1176 bytes from 192.5.5.241#53(f.root-servers.net) in 27 ms<br>
+<br>
+baidu.com.        172800    IN    NS    ns2.baidu.com.<br>
+baidu.com.        172800    IN    NS    ns3.baidu.com.<br>
+baidu.com.        172800    IN    NS    ns4.baidu.com.<br>
+baidu.com.        172800    IN    NS    ns1.baidu.com.<br>
+baidu.com.        172800    IN    NS    ns7.baidu.com.<br>
+CK0POJMG874LJREF7EFN8430QVIT8BSM.com. 86400 IN NSEC3 1 1 0 - CK0Q2D6NI4I7EQH8NA30NS61O48UL8G5  NS SOA RRSIG DNSKEY NSEC3PARAM<br>
+CK0POJMG874LJREF7EFN8430QVIT8BSM.com. 86400 IN RRSIG NSEC3 8 2 86400 20230227052255 20230220041255 36739 com. YJw2xFEhDVUfIlym8yUrXw8rVYLxS+e/EkIJVmOkBANnfCmNPVATcGuM /DIrUz8PTWTezM5z6f2tM+KnzzXYMNL1ScDIgO/jaJUrs4aOz1EOPwD4 hk5rJ/pRSY9C87vRoxqdryDIHxg3TwwEfQglqQ9hk+P1qvU7qY5nd0yc tO+IV8Vqd0sRiteg/P1h6Bpp79v/kZNjntRTdnWLI2oW2g==<br>
+HPVV07LPQ3T8RQS9HETLBJF268LK3OQ2.com. 86400 IN NSEC3 1 1 0 - HPVV8SARM2LDLRBTVC5EP1CUB1EF7LOP  NS DS RRSIG<br>
+HPVV07LPQ3T8RQS9HETLBJF268LK3OQ2.com. 86400 IN RRSIG NSEC3 8 2 86400 20230301070223 20230222055223 36739 com. Z4AFqvwBHDHfzuf37WTbdeC0SMt15I4qG2MUUhjv14m7MJ6AwDCHVXAZ tqi9T+xttD0xo0wgL5pRciXRTdNPUFBq/mu5Fimp/tfosWjcshv50+4c TNdbMXubTw4yr7DLDlQGO5a2cSa6T/HrDnpdDjZJcfVYLGZP1k5nFXhc +TKjOrScSPq9lG3hH7n7SGxCTrp7j+tCjzrHjH8egq2tKg==<br>
+;; Received 849 bytes from 192.5.6.30#53(a.gtld-servers.net) in 187 ms<br>
+<br>
+www.baidu.com.        1200    IN    CNAME    www.a.shifen.com.<br>
+;; Received 72 bytes from 110.242.68.134#53(ns1.baidu.com) in 29 ms<br>
+
+</details>
+
+<h3 id="抓包"><a href="#抓包" class="headerlink" title="抓包"></a>抓包</h3><p>下面是对应的执行抓到的包：</p>
+<p>首先访问192.5.5.241，192.5.5.241返回了<strong>13台通用顶级域名.com服务器</strong>的信息，如下：</p>
+<p><a target="_blank" rel="noopener" href="https://imgse.com/i/pSz3zXn"><img src="https://s1.ax1x.com/2023/02/24/pSz3zXn.png" srcset="/img/loading.gif" lazyload alt="pSz3zXn.png"></a></p>
+<p>ID 81中Additional records比Authoritative nameservers多了返回addr，他们的IP地址包括IPv4和IPv6，这俩可以通过type区分，type分别为A和AAAA。ID81对应的请求为ID80：<code>Standard query. 0x2935 A www.baidu.com OPT</code></p>
+<p>然后选择了其中的一台，这里选择了a.gtld-servers.net，地址为192.5.6.30，192.5.6.30返回的内容如下：</p>
+<p><a target="_blank" rel="noopener" href="https://imgse.com/i/pSzGdM9"><img src="https://s1.ax1x.com/2023/02/24/pSzGdM9.png" srcset="/img/loading.gif" lazyload alt="pSzGdM9.png"></a></p>
+<p>然后选择了其中的一台，这里选择了ns1.baidu.com，地址为110.242.68.134，110.242.68.134返回的内容如下：</p>
+<p><a target="_blank" rel="noopener" href="https://imgse.com/i/pSzGxZq"><img src="https://s1.ax1x.com/2023/02/24/pSzGxZq.png" srcset="/img/loading.gif" lazyload alt="pSzGxZq.png"></a></p>
+<h2 id="DNS响应时间"><a href="#DNS响应时间" class="headerlink" title="DNS响应时间"></a>DNS响应时间</h2><h3 id="响应和请求相邻时"><a href="#响应和请求相邻时" class="headerlink" title="响应和请求相邻时"></a>响应和请求相邻时</h3><p>首先调整下wireshark的显示设置：</p>
+<p><a target="_blank" rel="noopener" href="https://imgse.com/i/pSzaS8f"><img src="https://s1.ax1x.com/2023/02/24/pSzaS8f.png" srcset="/img/loading.gif" lazyload alt="pSzaS8f.png"></a></p>
+<p>因为发现本次的dns查询的请求和响应都是相邻的，所以响应包里这个设置显示的时间就是响应时间。</p>
+<p>wireshark抓到的包中可以看到响应时间（发出包和接收到这个包的时间差），wireshark抓到的包结果是这样的：</p>
+<p><img src="https://s1.ax1x.com/2023/02/24/pSza6it.png" srcset="/img/loading.gif" lazyload alt="pSza6it.png"></p>
+<p>命令行返回的结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs shell">dig +trace csdn.com +time=1 +noall +stats<br><br>; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; +trace csdn.com +time=1 +noall +stats<br>;; global options: +cmd<br>;; Query time: 51 msec<br>;; SERVER: 8.8.8.8#53(8.8.8.8)<br>;; WHEN: Fri Feb 24 15:11:09 CST 2023<br>;; MSG SIZE  rcvd: 525<br><br>;; Query time: 193 msec<br>;; SERVER: 198.41.0.4#53(198.41.0.4)<br>;; WHEN: Fri Feb 24 15:11:09 CST 2023<br>;; MSG SIZE  rcvd: 1168<br><br>;; Query time: 195 msec<br>;; SERVER: 192.54.112.30#53(192.54.112.30)<br>;; WHEN: Fri Feb 24 15:11:09 CST 2023<br>;; MSG SIZE  rcvd: 946<br><br>;; Query time: 12 msec<br>;; SERVER: 47.118.199.202#53(47.118.199.202)<br>;; WHEN: Fri Feb 24 15:11:09 CST 2023<br>;; MSG SIZE  rcvd: 53<br></code></pre></td></tr></table></figure>
+
+<p>可以看到4个DNS请求的响应时间在wireshark都有对应的结果，包括SERVER字段和wireshark里的也是一致的。</p>
+<h3 id="响应和请求分隔时"><a href="#响应和请求分隔时" class="headerlink" title="响应和请求分隔时"></a>响应和请求分隔时</h3><p>试着执行了下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">dig +trace csdn.com +time=1 +noall +stats &amp;<br>dig +trace zhihu.com +time=1 +noall +stats<br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<details><summary>展开/收起</summary>
+; <<>> DiG 9.10.6 <<>> +trace zhihu.com +time=1 +noall +stats<br>
+;; global options: +cmd<br>
+<br>
+; <<>> DiG 9.10.6 <<>> +trace csdn.com +time=1 +noall +stats<br>
+;; global options: +cmd<br>
+;; Query time: 45 msec<br>
+;; SERVER: 8.8.8.8#53(8.8.8.8)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 525<br>
+<br>
+;; Query time: 46 msec<br>
+;; SERVER: 8.8.8.8#53(8.8.8.8)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 525<br>
+<br>
+;; Query time: 29 msec<br>
+;; SERVER: 199.7.83.42#53(199.7.83.42)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 1168<br>
+<br>
+;; Query time: 81 msec<br>
+;; SERVER: 202.12.27.33#53(202.12.27.33)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 1169<br>
+<br>
+;; Query time: 212 msec<br>
+;; SERVER: 192.48.79.30#53(192.48.79.30)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 946<br>
+<br>
+;; Query time: 5 msec<br>
+;; SERVER: 139.224.142.121#53(139.224.142.121)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 53<br>
+<br>
+;; Query time: 211 msec<br>
+;; SERVER: 192.52.178.30#53(192.52.178.30)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 909<br>
+<br>
+;; Query time: 8 msec<br>
+;; SERVER: 183.192.164.119#53(183.192.164.119)<br>
+;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>
+;; MSG SIZE  rcvd: 108<br>
+
+</details>
+
+<p>wireshark抓到的包为：</p>
+<p><a target="_blank" rel="noopener" href="https://imgse.com/i/pSzgIPg"><img src="https://s1.ax1x.com/2023/02/24/pSzgIPg.png" srcset="/img/loading.gif" lazyload alt="pSzgIPg.png"></a></p>
+<p>共16个包。</p>
+<p>因为加了&amp;，两个<code>dig</code>命令是同一时刻执行的，而且每个DNS请求的响应不全是请求的下一个包。如图响应包和请求包之间就有2个包。我整理了一下：</p>
+<table>
+<thead>
+<tr>
+<th>请求包序号</th>
+<th>响应包序号</th>
+<th>响应时间</th>
+<th>第几个dig命令产生的包</th>
+<th>对应dig命令的输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>23</td>
+<td>25</td>
+<td>0.045652</td>
+<td>不确定，我好像看不出来。。</td>
+<td>;; Query time: 45 msec<br>;; SERVER: 8.8.8.8#53(8.8.8.8)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 525</td>
+</tr>
+<tr>
+<td>24</td>
+<td>26</td>
+<td>0.046427</td>
+<td>不确定，我好像看不出来。。</td>
+<td>;; Query time: 46 msec<br>;; SERVER: 8.8.8.8#53(8.8.8.8)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 525</td>
+</tr>
+<tr>
+<td>27</td>
+<td>34</td>
+<td>0.08078</td>
+<td>2</td>
+<td>;; Query time: 29 msec<br>;; SERVER: 199.7.83.42#53(199.7.83.42)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 1168</td>
+</tr>
+<tr>
+<td>28</td>
+<td>29</td>
+<td>0.028015</td>
+<td>1</td>
+<td>;; Query time: 81 msec<br>;; SERVER: 202.12.27.33#53(202.12.27.33)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 1169</td>
+</tr>
+<tr>
+<td>32</td>
+<td>48</td>
+<td>0.212717</td>
+<td>1</td>
+<td>;; Query time: 212 msec<br>;; SERVER: 192.48.79.30#53(192.48.79.30)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 946</td>
+</tr>
+<tr>
+<td>35</td>
+<td>51</td>
+<td>0.210875</td>
+<td>2</td>
+<td>;; Query time: 5 msec<br>;; SERVER: 139.224.142.121#53(139.224.142.121)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 53</td>
+</tr>
+<tr>
+<td>49</td>
+<td>50</td>
+<td>0.004978</td>
+<td>1</td>
+<td>;; Query time: 211 msec<br>;; SERVER: 192.52.178.30#53(192.52.178.30)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 909</td>
+</tr>
+<tr>
+<td>52</td>
+<td>53</td>
+<td>0.007501</td>
+<td>2</td>
+<td>;; Query time: 8 msec<br>;; SERVER: 183.192.164.119#53(183.192.164.119)<br>;; WHEN: Fri Feb 24 16:50:14 CST 2023<br>;; MSG SIZE  rcvd: 108</td>
+</tr>
+</tbody></table>
+<p>根据之前所说，每次DNS请求的transaction id都是无序的，在本次抓包结果可以验证。</p>
+<p>DNS解析这里是2个命令同时执行的，我理解的就是2个进程分别对应着2个命令的执行，这2个进程分别生成随机的Transaction ID，然后请求，DNS的响应中会有请求的Transaction ID，这2个进程只会处理自己生成的Transaction ID对应的响应，根据响应的结果判断出下一个请求该如何发送。这样发送几次请求后，得到对应的结果。2个进程也不会互相干扰，只会处理跟自己生成的Transaction ID相关的内容。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" class="category-chain-item">计算机网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DNS抓包请求详解</div>
+      <div>https://rhythmnr.github.io/2023/02/24/DNS请求抓包详解/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年2月24日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/03/10/clickhouse%E7%9A%84%E5%B5%8C%E5%A5%97%E7%B1%BB%E5%9E%8B%E4%B8%8ETuple/" title="clickhouse的嵌套类型与Tuple">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">clickhouse的嵌套类型与Tuple</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/02/21/golang%E5%AE%9E%E7%8E%B0%E4%BA%8C%E8%BF%9B%E5%88%B6%E4%BD%8D/" title="golang实现二进制位">
+                        <span class="hidden-mobile">golang实现二进制位</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,737 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="背景因为最近需要开发一个新的exporter，这个exporter就是在每台服务器上运行，exporter读取机器的一些信息然后将信息传输到远程，比如调用某个HTTP POST接口将信息传送给远程的服务器，或者存储到远程的数据库。 目前决定不从零开发exporter，而是在telegraf的基础上二次开发。因为telegraf支持的input插件不包括kafka，所以需要自行开发kafka inp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="telegraf Kafka插件开发与kafka exporter源码阅读">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/08/12/kafka%20exporter%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="背景因为最近需要开发一个新的exporter，这个exporter就是在每台服务器上运行，exporter读取机器的一些信息然后将信息传输到远程，比如调用某个HTTP POST接口将信息传送给远程的服务器，或者存储到远程的数据库。 目前决定不从零开发exporter，而是在telegraf的基础上二次开发。因为telegraf支持的input插件不包括kafka，所以需要自行开发kafka inp">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230815204351715.png">
+<meta property="article:published_time" content="2023-08-12T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.731Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230815204351715.png">
+  
+  
+  <title>telegraf Kafka插件开发与kafka exporter源码阅读 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="telegraf Kafka插件开发与kafka exporter源码阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-08-12 11:00" pubdate>
+          2023年8月12日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          70 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">telegraf Kafka插件开发与kafka exporter源码阅读</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>因为最近需要开发一个新的exporter，这个exporter就是在每台服务器上运行，exporter读取机器的一些信息然后将信息传输到远程，比如调用某个HTTP POST接口将信息传送给远程的服务器，或者存储到远程的数据库。</p>
+<p>目前决定不从零开发exporter，而是在telegraf的基础上二次开发。因为telegraf支持的input插件不包括kafka，所以需要自行开发kafka input插件。</p>
+<p>之前公司用的kafka exporter是<a target="_blank" rel="noopener" href="https://github.com/danielqsj/kafka_exporter%EF%BC%8C%E7%8E%B0%E5%9C%A8%E5%85%AC%E5%8F%B8%E4%BC%9A%E7%94%A8%E8%BF%99%E4%B8%AAexporter%E8%AF%BB%E5%8F%96kafka%E6%8C%87%E6%A0%87%E7%84%B6%E5%90%8E%E6%9A%B4%E9%9C%B2metrics">https://github.com/danielqsj/kafka_exporter，现在公司会用这个exporter读取kafka指标然后暴露metrics</a> API给Prometheus。</p>
+<p>现在可以考虑先阅读下<a target="_blank" rel="noopener" href="https://github.com/danielqsj/kafka_exporter%E7%9A%84%E6%BA%90%E7%A0%81%EF%BC%8C%E5%9B%A0%E4%B8%BA%E6%BA%90%E7%A0%81%E5%8C%85%E6%8B%AC%E4%B8%A4%E4%B8%AA%E9%83%A8%E5%88%86%EF%BC%9A%E5%88%86%E5%88%AB%E6%98%AF%E8%AF%BB%E5%8F%96kafka%E7%9A%84%E6%8C%87%E6%A0%87%EF%BC%8C%E6%9A%B4%E9%9C%B2metrics%E6%8E%A5%E5%8F%A3%E7%BB%99Prometheus%E4%BB%A5%E7%94%A8%E4%BA%8EPrometheus%E8%B0%83%E7%94%A8metrics%E8%AF%BB%E5%8F%96%E5%88%B0kafka%E7%9A%84%E6%8C%87%E6%A0%87%E3%80%82%E6%98%BE%E7%84%B6%E9%98%85%E8%AF%BB%E7%9A%84%E6%97%B6%E5%80%99%E5%8F%AA%E9%9C%80%E8%A6%81%E5%85%B3%E6%B3%A8%E8%AF%BB%E5%8F%96kafka%E7%9A%84%E6%8C%87%E6%A0%87%E8%BF%99%E4%B8%80%E9%83%A8%E5%88%86%E5%8D%B3%E5%8F%AF%EF%BC%8C%E5%9B%A0%E4%B8%BA%E7%AC%94%E8%80%85%E5%AF%B9kafka%E7%9A%84%E6%9E%B6%E6%9E%84%E4%B8%8D%E7%86%9F%E6%82%89%E4%B8%8D%E7%9F%A5%E9%81%93%E8%A6%81%E8%AF%BB%E5%8F%96%E5%93%AA%E4%BA%9B%E6%8C%87%E6%A0%87%E5%92%8C%E8%BF%99%E4%BA%9B%E6%8C%87%E6%A0%87%E5%BA%94%E8%AF%A5%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96%E3%80%82">https://github.com/danielqsj/kafka_exporter的源码，因为源码包括两个部分：分别是读取kafka的指标，暴露metrics接口给Prometheus以用于Prometheus调用metrics读取到kafka的指标。显然阅读的时候只需要关注读取kafka的指标这一部分即可，因为笔者对kafka的架构不熟悉不知道要读取哪些指标和这些指标应该如何获取。</a></p>
+<p>在了解了<a target="_blank" rel="noopener" href="https://github.com/danielqsj/kafka_exporter%E5%A6%82%E4%BD%95%E8%AF%BB%E5%8F%96kafka%E6%8C%87%E6%A0%87%E5%90%8E%EF%BC%8C%E5%8F%AF%E4%BB%A5%E5%8F%82%E8%80%83%E5%85%B6%E8%AF%BB%E5%8F%96%E7%9A%84%E6%96%B9%E6%B3%95%EF%BC%8C%E5%B0%86%E8%AF%BB%E5%8F%96%E6%96%B9%E6%B3%95%E2%80%9C%E5%A4%8D%E5%88%B6%E2%80%9D%E5%88%B0telegraf%E7%9A%84kafka">https://github.com/danielqsj/kafka_exporter如何读取kafka指标后，可以参考其读取的方法，将读取方法“复制”到telegraf的kafka</a> input插件中。</p>
+<h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><h3 id="kafka"><a href="#kafka" class="headerlink" title="kafka"></a>kafka</h3><p>kafka 是由 Apache 软件基金会开发的一个高吞吐量的分布式<strong>消息队列系统</strong>。它主要用于处理大规模的实时数据流，例如日志、事件、指标等。Kafka 设计用来解决传统消息中间件面临的问题，如低吞吐量、高延迟和可靠性不足等。</p>
+<h3 id="zookeeper"><a href="#zookeeper" class="headerlink" title="zookeeper"></a>zookeeper</h3><p>这里主要关注kafka与zookeeper的关系，因为<a target="_blank" rel="noopener" href="https://github.com/danielqsj/kafka_exporter%E6%B6%89%E5%8F%8A%E5%88%B0%E4%BA%86zookeeper%E3%80%82">https://github.com/danielqsj/kafka_exporter涉及到了zookeeper。</a></p>
+<p>kafka会用到zookeeper，有以下几个原因：</p>
+<p>（1）Kafka集群通过Zookeeper来管理kafka的配置，选举leader；</p>
+<p>（2）在Consumer Group发生变化时进行rebalance</p>
+<p>（3）所有的topic与broker的对应关系都由zk维护</p>
+<p>2.kafka的哪些组件需要注册到zookeeper</p>
+<p>（1）Broker注册到zk</p>
+<p>（2）Topic注册到zk</p>
+<p>（3）Consumer注册到zk</p>
+<p>producer（生产者）不注册到zookeeper是因为生产者的状态是瞬间状态，发送完消息就可以宕机了。<br> 3.kafka和zookeeper的理解</p>
+<p><strong>kafka使用zookeeper来实现动态的集群扩展，不需要更改客户端（producer和consumer）的配置。</strong>broker会在zookeeper注册并保持相关的元数据（topic，partition信息等）更新。</p>
+<p>但是发送给Topic本身的数据是不会发到Zk上的。</p>
+<h3 id="telegraf"><a href="#telegraf" class="headerlink" title="telegraf"></a>telegraf</h3><p>Telegraf 是一个开源的、插件驱动的服务器代理程序，用于收集、处理和传输指标数据。它是 InfluxData 公司开发的一个组件，主要用于监控和数据收集。Telegraf 的设计目标是轻量级、高效和易于扩展，它可以用于从各种数据源采集指标数据，然后将这些数据传输到不同的目标存储或可视化工具中。</p>
+<p>源代码地址为：<a target="_blank" rel="noopener" href="https://github.com/influxdata/telegraf%E3%80%82">https://github.com/influxdata/telegraf。</a></p>
+<p>Telegraf最大的特点是支持插件式的二次开发，Telegraf有输入插件、输出插件、处理（processors）插件等多种插件。</p>
+<p>Telegraf还可以<strong>设置采集数据的周期</strong>，以固定的时间间隔定期从数据源获取指标数据。</p>
+<p>telegraf默认情况下已经实现了对很多对象的指标采集，比如Clickhouse，CPU，Docker等，具体可看：<a target="_blank" rel="noopener" href="https://docs.influxdata.com/telegraf/v1.14/plugins/plugin-list/">https://docs.influxdata.com/telegraf/v1.14/plugins/plugin-list/</a> 的Input plugins部分：</p>
+<p><img src="/../images/image-20230815204351715.png" srcset="/img/loading.gif" lazyload alt="image-20230815204351715"></p>
+<h2 id="kafka-exporter源码阅读"><a href="#kafka-exporter源码阅读" class="headerlink" title="kafka exporter源码阅读"></a>kafka exporter源码阅读</h2><p>因为这个项目使用到了go vendor这种比较老的管理第三方依赖库的机制，所以笔者先删掉了vendor模块该用go mod模块管理系统作为第三方依赖库的管理工具。</p>
+<p>这个项目主要使用的三方库有：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/prometheus/client_golang%EF%BC%9A%E8%BF%99%E6%98%AF%E6%99%AE%E7%BD%97%E7%B1%B3%E4%BF%AE%E6%96%AF%E7%9A%84%E5%AE%98%E6%96%B9Go%E5%AE%A2%E6%88%B7%E7%AB%AF%E3%80%82">https://github.com/prometheus/client_golang：这是普罗米修斯的官方Go客户端。</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/IBM/sarama%EF%BC%9A%E8%BF%99%E4%B8%AA%E6%98%AFApache">https://github.com/IBM/sarama：这个是Apache</a> Kafka的官方Go客户端。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/krallistic/kazoo-go%EF%BC%9AKazoo">https://github.com/krallistic/kazoo-go：Kazoo</a> 是一个与 Zookeeper 中的 Kafka 元数据交互的库。 它提供集群代理、主题元数据和消费者组的发现。</p>
+<p>这个项目的目录结构比较简单，主要逻辑就是在<code>kafka_exporter.go</code>文件里。下面依次介绍一些比较关键的代码段：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go">exporter, err := NewExporter(opts, topicFilter, topicExclude, groupFilter, groupExclude)<br><span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>	klog.Fatalln(err)<br>&#125;<br><span class="hljs-keyword">defer</span> exporter.client.Close()<br><span class="hljs-comment">// 注册prometheus收集器，需要实现下面的接口</span><br><span class="hljs-comment">// Describe(chan&lt;- *Desc)</span><br><span class="hljs-comment">// Collect(chan&lt;- Metric)</span><br>prometheus.MustRegister(exporter)<br></code></pre></td></tr></table></figure>
+
+<p>prometheus.MustRegister接收的是一个interface，定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Collector <span class="hljs-keyword">interface</span> &#123;<br>	Describe(<span class="hljs-keyword">chan</span>&lt;- *Desc)<br>	Collect(<span class="hljs-keyword">chan</span>&lt;- Metric)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>首先查看NewExporter返回的Exporter struct是如何实现Collect方法的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(e *Exporter)</span></span> Collect(ch <span class="hljs-keyword">chan</span>&lt;- prometheus.Metric) &#123;<br>	<span class="hljs-keyword">if</span> e.allowConcurrent &#123;<br>		e.collect(ch)<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	<span class="hljs-comment">// allowConcurrent 默认为 false</span><br>	<span class="hljs-comment">// Locking to avoid race add</span><br>	e.sgMutex.Lock()<br>	<span class="hljs-comment">// 把输入的参数 ch 追加到了 sgChans，后面应该会对 sgChans 更改吧</span><br>	e.sgChans = <span class="hljs-built_in">append</span>(e.sgChans, ch)<br>	<span class="hljs-comment">// Safe to compare length since we own the Lock</span><br>	fmt.Println(<span class="hljs-string">&quot;.....len(e.sgChans).......&quot;</span>, <span class="hljs-built_in">len</span>(e.sgChans))<br>	<span class="hljs-comment">//  len(e.sgChans) 如果请求在同时进行的话就不是 1，如果只有 1 个请求的话就是 1</span><br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(e.sgChans) == <span class="hljs-number">1</span> &#123;<br>		e.sgWaitCh = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> <span class="hljs-keyword">struct</span>&#123;&#125;)<br>		<span class="hljs-keyword">go</span> e.collectChans(e.sgWaitCh)<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		klog.V(TRACE).Info(<span class="hljs-string">&quot;concurrent calls detected, waiting for first to finish&quot;</span>)<br>	&#125;<br>	<span class="hljs-comment">// Put in another variable to ensure not overwriting it in another Collect once we wait</span><br>	waiter := e.sgWaitCh<br>	e.sgMutex.Unlock()<br>	<span class="hljs-comment">// Released lock, we have insurance that our chan will be part of the collectChan slice</span><br>	&lt;-waiter<br>	<span class="hljs-comment">// collectChan finished</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>关注collect方法。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(e *Exporter)</span></span> collect(ch <span class="hljs-keyword">chan</span>&lt;- prometheus.Metric) &#123;<br>	<span class="hljs-comment">// 这部分应该比较关注 ch &lt;-  的操作，也就是往返回数据写入了什么数据</span><br>	<span class="hljs-comment">// 好像每请求一次 metrics 接口就会调用一次这个 collect 函数</span><br>	fmt.Println(<span class="hljs-string">&quot;......... collect(ch chan&lt;- prometheus.Metric) &#123;...&quot;</span>)<br>	<span class="hljs-keyword">var</span> wg = sync.WaitGroup&#123;&#125;<br>	ch &lt;- prometheus.MustNewConstMetric(<br>		<span class="hljs-comment">// client 就是  sarama.NewClient 获取的，sarama 是一个 Apacha Kafka的Go client，通过它可以获取 kafka 的一些信息</span><br>		clusterBrokers, prometheus.GaugeValue, <span class="hljs-type">float64</span>(<span class="hljs-built_in">len</span>(e.client.Brokers())),<br>	)<br>	<span class="hljs-keyword">for</span> _, b := <span class="hljs-keyword">range</span> e.client.Brokers() &#123;<br>		ch &lt;- prometheus.MustNewConstMetric(<br>			clusterBrokerInfo, prometheus.GaugeValue, <span class="hljs-number">1</span>, strconv.Itoa(<span class="hljs-type">int</span>(b.ID())), b.Addr(),<br>		)<br>	&#125;<br>	...<br>  <span class="hljs-comment">// client是kafka的client，调用client即kafka客户端库，获取kafka的topic之后对于每个topic，获取其详情组成指标，传入ch</span><br>  topics, err := e.client.Topics()<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		klog.Errorf(<span class="hljs-string">&quot;Cannot get topics: %v&quot;</span>, err)<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>  ...<br>	getTopicMetrics := <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(topic <span class="hljs-type">string</span>)</span></span> &#123;<br>		<span class="hljs-keyword">defer</span> wg.Done()<br><br>		<span class="hljs-keyword">if</span> !e.topicFilter.MatchString(topic) || e.topicExclude.MatchString(topic) &#123;<br>			<span class="hljs-keyword">return</span><br>		&#125;<br><br>		<span class="hljs-comment">// topic 的分区</span><br>		partitions, err := e.client.Partitions(topic)<br>		<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>			klog.Errorf(<span class="hljs-string">&quot;Cannot get partitions of topic %s: %v&quot;</span>, topic, err)<br>			<span class="hljs-keyword">return</span><br>		&#125;<br>		ch &lt;- prometheus.MustNewConstMetric(<br>			<span class="hljs-comment">// topic 分区指标</span><br>			topicPartitions, prometheus.GaugeValue, <span class="hljs-type">float64</span>(<span class="hljs-built_in">len</span>(partitions)), topic,<br>		)<br>  ...<br></code></pre></td></tr></table></figure>
+
+<p>collect的逻辑就是不断往ch里写不同类型的普罗米修斯指标，在allowConcurrent的情况下，这个ch实际上就是<code>func (e *Exporter) Collect(ch chan&lt;- prometheus.Metric) </code>的参数ch。</p>
+<blockquote>
+<p>总的逻辑还是挺简单的，代码的主要实现逻辑就是通过Kafka的Go客户端连接到Kafka集群后，获取到kafka信息，再将信息通过类似<code>prometheus.MustNewConstMetric</code>这样的新建普罗米修斯指标的信息来将信息补充到指标中。kafka信息包括有多少个Topic，Broker，分区等等。</p>
+</blockquote>
+<h2 id="开发telegraf-kafka的input插件"><a href="#开发telegraf-kafka的input插件" class="headerlink" title="开发telegraf kafka的input插件"></a>开发telegraf kafka的input插件</h2><p>要实现telegraf的input插件，需要实现Gather接口，可以参考<a target="_blank" rel="noopener" href="https://github.com/influxdata/telegraf/blob/master/docs/INPUTS.md">官方文档</a>：</p>
+<p>在custom-telegraf&#x2F;plugins&#x2F;inputs新建目录，如simple；</p>
+<p>在simple目录中新建simple.go文件：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">//go:generate ../../../tools/readme_config_includer/generator</span><br><span class="hljs-keyword">package</span> a_simple<br><br><span class="hljs-keyword">import</span> (<br>	_ <span class="hljs-string">&quot;embed&quot;</span><br>	<span class="hljs-string">&quot;time&quot;</span><br><br>	<span class="hljs-string">&quot;github.com/influxdata/telegraf&quot;</span><br>	<span class="hljs-string">&quot;github.com/influxdata/telegraf/plugins/inputs&quot;</span><br>)<br><br><span class="hljs-comment">//go:embed sample.conf</span><br><span class="hljs-keyword">var</span> sampleConfig <span class="hljs-type">string</span><br><br><span class="hljs-keyword">type</span> Simple <span class="hljs-keyword">struct</span> &#123;<br>	Ok  <span class="hljs-type">bool</span>            <span class="hljs-string">`toml:&quot;ok&quot;`</span><br>	Log telegraf.Logger <span class="hljs-string">`toml:&quot;-&quot;`</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(*Simple)</span></span> SampleConfig() <span class="hljs-type">string</span> &#123;<br>	<span class="hljs-keyword">return</span> sampleConfig<br>&#125;<br><br><br><span class="hljs-comment">// Init is for setup, and validating config.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *Simple)</span></span> Init() <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *Simple)</span></span> Gather(acc telegraf.Accumulator) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">if</span> s.Ok &#123;<br>		acc.AddCounter(<span class="hljs-string">&quot;state&quot;</span>, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;&#123;<span class="hljs-string">&quot;value0&quot;</span>: <span class="hljs-number">12</span>&#125;, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>&#123;&#125;)<br>		acc.AddCounter(<span class="hljs-string">&quot;state&quot;</span>, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;&#123;<span class="hljs-string">&quot;value&quot;</span>: <span class="hljs-number">2</span>&#125;, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>&#123;&#125;, time.Now())<br>		acc.AddCounter(<span class="hljs-string">&quot;state&quot;</span>, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;&#123;<span class="hljs-string">&quot;value1&quot;</span>: <span class="hljs-number">2</span>, <span class="hljs-string">&quot;value2&quot;</span>: <span class="hljs-number">2</span>&#125;, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>&#123;&#125;, time.Now())<br>		acc.AddCounter(<span class="hljs-string">&quot;state&quot;</span>, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;&#123;<span class="hljs-string">&quot;value3&quot;</span>: <span class="hljs-number">3</span>, <span class="hljs-string">&quot;value4&quot;</span>: <span class="hljs-number">2</span>&#125;, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;filed&quot;</span>: <span class="hljs-string">&quot;value&quot;</span>&#125;, time.Now())<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		acc.AddFields(<span class="hljs-string">&quot;state&quot;</span>, <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;&#123;<span class="hljs-string">&quot;value&quot;</span>: <span class="hljs-string">&quot;not great&quot;</span>&#125;, <span class="hljs-literal">nil</span>)<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	inputs.Add(<span class="hljs-string">&quot;simple&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> telegraf.Input &#123; <span class="hljs-keyword">return</span> &amp;Simple&#123;&#125; &#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>toml:&quot;ok&quot;</code>后缀表示需要名为ok的配置字段名。</p>
+<p>在simple目录中新建对应的配置文件sample.conf：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs conf">[[inputs.simple]]<br>  ok = true<br></code></pre></td></tr></table></figure>
+
+<p>在simple目录中新建README.md，这个文件可以为空。</p>
+<p>新建custom-telegraf&#x2F;plugins&#x2F;inputs&#x2F;all&#x2F;simple.go文件：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">//go:build !custom || inputs || inputs.simple</span><br><br><span class="hljs-keyword">package</span> all<br><br><span class="hljs-keyword">import</span> _ <span class="hljs-string">&quot;github.com/influxdata/telegraf/plugins/inputs/a_simple&quot;</span> <span class="hljs-comment">// register plugin</span><br></code></pre></td></tr></table></figure>
+
+<p>至此修改完毕，下面在运行时使用的配置文件config.conf新增如下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs conf">[[inputs.simple]]<br>  ok = true<br></code></pre></td></tr></table></figure>
+
+<p>执行：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs dockerfile">cd <span class="hljs-keyword">cmd</span><span class="language-bash">/telegraf</span><br>go <span class="hljs-keyword">run</span><span class="language-bash"> . --config ../../config.conf --<span class="hljs-built_in">test</span> --input-filter simple</span><br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs shell">go run . --config ../../z_tele.conf --test --input-filter simple<br>2023-08-16T10:09:41Z I! Loading config: ../../config.conf<br>2023-08-16T10:09:41Z I! Starting Telegraf unknown<br>2023-08-16T10:09:41Z I! Available plugins: 242 inputs, 9 aggregators, 28 processors, 23 parsers, 59 outputs, 4 secret-stores<br>2023-08-16T10:09:41Z I! Loaded inputs: simple (2x)<br>2023-08-16T10:09:41Z I! Loaded aggregators:<br>2023-08-16T10:09:41Z I! Loaded processors:<br>2023-08-16T10:09:41Z I! Loaded secretstores:<br>2023-08-16T10:09:41Z W! Outputs are not used in testing mode!<br>2023-08-16T10:09:41Z I! Tags enabled: host=Rhetts-MacBook-Pro.local<br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value0=12i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value0=12i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value=2i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value=2i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value1=2i,value2=2i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value1=2i,value2=2i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,filed=value,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value3=3i,value4=2i 1692180582000000000</span><br><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">state,filed=value,host=Rhetts-MacBook-Pro.<span class="hljs-built_in">local</span> value3=3i,value4=2i 1692180582000000000</span><br></code></pre></td></tr></table></figure>
+
+<p>这样打印出来了新增的一些指标。</p>
+<p>主要就是参考<code>func (e *Exporter) collect(ch chan&lt;- prometheus.Metric)</code>函数的实现，使用的实现指标的方法为 <code>acc.AddCounter(matches[1], tm.Fields(), tags, tm.Time())</code>。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4/" class="category-chain-item">运维</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>telegraf Kafka插件开发与kafka exporter源码阅读</div>
+      <div>https://rhythmnr.github.io/2023/08/12/kafka exporter源码阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年8月12日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/08/15/daemon%E4%BB%8B%E7%BB%8D%E4%B8%8E%E5%AF%B9%E5%BA%94Go%E5%8C%85/" title="daemon介绍与对应Go包">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">daemon介绍与对应Go包</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/07/20/skywalking%E7%9A%84%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9B%91%E8%A7%86%E5%8A%9F%E8%83%BD/" title="skywalking的应用程序监视功能">
+                        <span class="hidden-mobile">skywalking的应用程序监视功能</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

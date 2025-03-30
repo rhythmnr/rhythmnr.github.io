@@ -1,0 +1,906 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="我把代码复制到了 ~&#x2F;我的本地文件&#x2F;代码&#x2F;fromweb 目录下了。目前clone了gin项目和go-gin-example项目，此外还有example项目，这个是gin官方提供的示例项目。 ##go-gin-example阅读 读取配置和数据库初始化的过程，可以放在func init() 里，参考： 1234567func init() &amp;#123;	setting">
+<meta property="og:type" content="article">
+<meta property="og:title" content="编写中，未定稿">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/01/01/%EF%BC%88%E6%AD%A3%E5%9C%A8%E7%BC%96%E5%86%99%E4%B8%AD%EF%BC%89gin%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="我把代码复制到了 ~&#x2F;我的本地文件&#x2F;代码&#x2F;fromweb 目录下了。目前clone了gin项目和go-gin-example项目，此外还有example项目，这个是gin官方提供的示例项目。 ##go-gin-example阅读 读取配置和数据库初始化的过程，可以放在func init() 里，参考： 1234567func init() &amp;#123;	setting">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240116143401223.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240118150735607.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240223181338554.png">
+<meta property="article:published_time" content="2023-01-01T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.754Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240116143401223.png">
+  
+  
+  <title>编写中，未定稿 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="编写中，未定稿"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-01 11:00" pubdate>
+          2023年1月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          130 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">编写中，未定稿</h1>
+            
+            <div class="markdown-body">
+              
+              <p>我把代码复制到了 ~&#x2F;我的本地文件&#x2F;代码&#x2F;fromweb 目录下了。目前clone了gin项目和go-gin-example项目，此外还有example项目，这个是gin官方提供的示例项目。</p>
+<p>##go-gin-example阅读</p>
+<p>读取配置和数据库初始化的过程，可以放在func init() 里，参考：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>	setting.Setup() <span class="hljs-comment">// 读取配置文件的所有部分，并对申明好了的全局配置变量赋值</span><br>	models.Setup() <span class="hljs-comment">// 初始化mysql db，并自定义了Create Update Delete时的回调函数</span><br>	logging.Setup() <span class="hljs-comment">// 初始化日志，是基于标准库里面的日志包初始化的</span><br>	gredis.Setup() <span class="hljs-comment">// 初始化redis，包括设置连接redis时会调用的Dial函数</span><br>	util.Setup() <span class="hljs-comment">// 设置pkg包里jwtSecret的值</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>init已经看完了，下面就是看 routers.InitRouter() 的具体内容</p>
+<p>准备看   r.POST(“&#x2F;auth”, api.GetAuth) 及之后的内容了。</p>
+<p>项目里使用到了<a target="_blank" rel="noopener" href="https://github.com/beego/beego%E6%A1%86%E6%9E%B6%EF%BC%8C%E7%94%A8%E4%BA%86%E5%85%B6validation%E5%8C%85%E5%81%9A%E6%95%B0%E6%8D%AE%E9%AA%8C%E8%AF%81%EF%BC%8C%E5%85%B6%E4%BB%96%E7%9A%84%E5%8C%85%E6%B2%A1%E6%9C%89%E4%BD%BF%E7%94%A8%E3%80%82">https://github.com/beego/beego框架，用了其validation包做数据验证，其他的包没有使用。</a></p>
+<blockquote>
+<p>beego框架可以用于开发包括传统的 Web 网站、API 服务、后台管理系统</p>
+</blockquote>
+<p>validation包的使用方法可以参考：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> auth <span class="hljs-keyword">struct</span> &#123;<br>	Username <span class="hljs-type">string</span> <span class="hljs-string">`valid:&quot;Required; MaxSize(50)&quot;`</span> <span class="hljs-comment">// 这个地方要遵循 validation 的语法</span><br>	Password <span class="hljs-type">string</span> <span class="hljs-string">`valid:&quot;Required; MaxSize(50)&quot;`</span><br>&#125;<br>a := auth&#123;Username: username, Password: password&#125;<br>ok, _ := valid.Valid(&amp;a)<br></code></pre></td></tr></table></figure>
+
+<p>用到了<a target="_blank" rel="noopener" href="https://github.com/unknwon/com%E5%8C%85%EF%BC%8C%E8%BF%99%E4%B8%AA%E6%98%AF%E9%92%88%E5%AF%B9">https://github.com/unknwon/com包，这个是针对</a> Go 编程语言常用函数的开源项目。</p>
+<p>router目录存放了rest api的路由定义和rest api的rest部分，而且router的目录结构和路由的结构也是一样的</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs shell">.<br>├── api<br>│   ├── auth.go<br>│   ├── upload.go<br>│   └── v1<br>│       ├── article.go<br>│       └── tag.go<br>└── router.go<br></code></pre></td></tr></table></figure>
+
+
+
+<p>已经读完了，笔记都记录在了项目里，没有记录在这个文档里面</p>
+<h2 id="gin源代码阅读"><a href="#gin源代码阅读" class="headerlink" title="gin源代码阅读"></a>gin源代码阅读</h2><p>我电脑上gin的储存位置为<code> ~/MyLocalFile/代码/fromweb/gopacket-fram</code>，改名是为了上班时看便于伪装，这个项目里记录了我阅读时的笔记记录。</p>
+<p>gin是一个知名的HTTP web框架。</p>
+<p>对于gin的调用处一般都是这样写的：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	gin.SetMode(setting.ServerSetting.RunMode)<br><br>	routersInit := routers.InitRouter() <span class="hljs-comment">// 注意</span><br>	readTimeout := setting.ServerSetting.ReadTimeout<br>	writeTimeout := setting.ServerSetting.WriteTimeout<br>	endPoint := fmt.Sprintf(<span class="hljs-string">&quot;:%d&quot;</span>, setting.ServerSetting.HttpPort)<br>	maxHeaderBytes := <span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">20</span><br>	server := &amp;http.Server&#123;<br>		Addr:           endPoint,<br>		Handler:        routersInit,<br>		ReadTimeout:    readTimeout,<br>		WriteTimeout:   writeTimeout,<br>		MaxHeaderBytes: maxHeaderBytes,<br>	&#125;<br><br>	log.Printf(<span class="hljs-string">&quot;[info] start http server listening %s&quot;</span>, endPoint)<br>	server.ListenAndServe()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">InitRouter</span><span class="hljs-params">()</span></span> *gin.Engine &#123;<br>	r := gin.New()<br>	apiv1 := r.Group(<span class="hljs-string">&quot;/api/v1&quot;</span>)<br>	apiv1.Use(jwt.JWT())<br>	&#123;<br>		<span class="hljs-comment">//获取标签列表</span><br>		apiv1.GET(<span class="hljs-string">&quot;/tags&quot;</span>, v1.GetTags)<br>    <span class="hljs-comment">// ....</span><br>		<span class="hljs-comment">//生成文章海报</span><br>		apiv1.POST(<span class="hljs-string">&quot;/articles/poster/generate&quot;</span>, v1.GenerateArticlePoster)<br>	&#125;<br>	<span class="hljs-keyword">return</span> r<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>gin项目没有main.go文件，其实：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">New</span><span class="hljs-params">()</span></span> *Engine &#123;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>可以理解为通常的入口文件。</p>
+<p>返回的Engine实现了http的ServeHTTP方法</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Handler <span class="hljs-keyword">interface</span> &#123;<br>	ServeHTTP(ResponseWriter, *Request)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>gin官方提供了一个example项目，<a target="_blank" rel="noopener" href="https://github.com/gin-gonic/examples%EF%BC%8C%E9%87%8C%E9%9D%A2%E5%88%97%E4%B8%BE%E4%BA%86%E4%B8%80%E4%BA%9Bgin%E7%9A%84%E7%94%A8%E6%B3%95">https://github.com/gin-gonic/examples，里面列举了一些gin的用法</a></p>
+</blockquote>
+<p>go:build 是一个编译指令（build constraint），用于在不同的Go版本或操作系统之间条件编译代码。<code>!go1.20</code>表示如果Go版本小于1.20，那么以下代码块将会被编译，否则将被忽略。<code>go1.20</code> 表示如果Go版本等于1.20或更高，那么以下代码块将会被编译，否则将被忽略。</p>
+<p>golang有个类型是any，是原生的，其作用和interface相同，其实是interface的别名</p>
+<p>1.16更新</p>
+<p>看关于cleanPath的实现</p>
+<p><img src="/../images/image-20240116143401223.png" srcset="/img/loading.gif" lazyload alt="image-20240116143401223"></p>
+<h2 id="进度记录"><a href="#进度记录" class="headerlink" title="进度记录"></a>进度记录</h2><p>1.18准备看这个tree.go文件</p>
+<p><img src="/../images/image-20240118150735607.png" srcset="/img/loading.gif" lazyload alt="image-20240118150735607"></p>
+<p>还是在看tree相关的</p>
+<blockquote>
+<p>gin的路由功能使用了“前缀树“的数据结构</p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2255850">参考</a></p>
+<p>前缀树的插入操作是添加一个新的字符串到 Trie 树中并尝试最小化<a target="_blank" rel="noopener" href="https://cloud.tencent.com/product/cdcs?from_column=20065&from=20065">数据存储</a>（即对某些节点进行合并）。</p>
+<p>因为基数树的本质依然属于字典树，因此在查找使用上和字典树并无不同。从根节点开始遍历字符串，对于每个字符，检查当前节点的子节点是否包含该字符，如果包含，则继续遍历下一个字符，否则说明该字符串不存在于 Radix 树中。</p>
+<p>Radix 树的查找操作相对于 Trie 树的查找操作有一个优点，<strong>因为基数树通过压缩，使得在前缀有一定规律的串在树中的深度更低，因此查找效率也较高。</strong></p>
+<p>因为 Engine 就实现了 ServeHTTP，这里会将 Engine 本身传给 ListenAndServe 方法，当监听的端口有新的连接时，ListenAndServe 会负责 accept 建立连接，并且在连接上有数据时，会调用 handler 的 ServeHTTP 方法进行处理。</p>
+</blockquote>
+<p>阅读源代码可以参考<a target="_blank" rel="noopener" href="https://wmf.im/p/gin-%E6%A1%86%E6%9E%B6%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">网上的文章</a>，围绕gin的这几个特点来阅读：</p>
+<ul>
+<li>Middleware support</li>
+<li>Crash-free</li>
+<li>JSON validation</li>
+<li>Routes grouping</li>
+<li>Error management</li>
+<li>Rendering built-in&#x2F;Extendable</li>
+</ul>
+<p>1.31 在看</p>
+<h2 id="runtime-Caller"><a href="#runtime-Caller" class="headerlink" title="runtime.Caller"></a>runtime.Caller</h2><p>a_tester下的func stack(skip int) []byte </p>
+<p>关于runtime.Caller函数：</p>
+<p>用于获取调用栈的信息，包括调用者的文件名、行号和函数名。函数定义为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">func Caller(skip int) (pc uintptr, file string, line int, ok bool)<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>pc</code> 表示调用者函数的程序计数器（program counter），用于标识调用者函数的指令地址。</li>
+<li><code>file</code> 表示调用者函数所在的文件名。</li>
+<li><code>line</code> 表示调用者函数所在的行号。</li>
+<li><code>ok</code> 表示是否成功获取了调用者的信息，如果成功为 true，否则为 false。当传递的i值太大了，没有对应的调用者信息，返回的ok就是false。</li>
+</ul>
+<p>传递0表示调用Caller函数的位置的信息，传递1表示调用Caller函数的位置所在函数 的调用者的信息，比如：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	stackTest(<span class="hljs-number">0</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">stackTest</span><span class="hljs-params">(i <span class="hljs-type">int</span>)</span></span> &#123;<br>	pc, file, line, ok := runtime.Caller(i)<br>	fmt.Println(<span class="hljs-string">&quot;..........&quot;</span>, pc, file, line, ok)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>传递0打印出来的结果是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">.......... 17359146 /Users/rhettnina/MyLocalFile/代码/fromweb/gopacket-fram/a_tester/main.go 15 true<br></code></pre></td></tr></table></figure>
+
+<p>也就是调用runtime.Caller这一行的代码信息，包括所在文件，行号等等</p>
+<p>传递1打印出来的结果是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">.......... 17359069 /Users/rhettnina/MyLocalFile/代码/fromweb/gopacket-fram/a_tester/main.go 11 true<br></code></pre></td></tr></table></figure>
+
+<p>因为调用runtime.Caller的函数是stackTest，也就是runtime.Caller的一级调用者是stackTest，传递0返回的是1级调用者的调用详情。传递1表示的是一级调用者的调用者 也就是二级调用者的调用信息，二级调用者main函数是在main.go的第11行调用的。</p>
+<h2 id="router匹配"><a href="#router匹配" class="headerlink" title="router匹配"></a>router匹配</h2><p>主要就是看<code>tree.go</code>这个文件</p>
+<p>24.2.22 正在研究ginrouter的匹配方法</p>
+<p> gin的路径匹配部分使用的是基数树（Radix Trie）数据结构，这是一种多叉树，是一种更节省空间的Trie（前缀树）。也就是努力将多个节点合并为一个。基数树中作为唯一子结点的每个结点都与其父结点合并，每个内部结点的子结点数最多为基数树的基数 r，r 为正整数且等于2^n(n&gt;&#x3D;1)。<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2255850">参考文章</a></p>
+<p>要解决的问题：</p>
+<p>gin.PrintNode打印出来的indices字段是什么意思，这个字段的euqsa、&#x2F;、euq、pu、ts这些值是什么意思</p>
+<p>wildChild字段是干什么的</p>
+<h3 id="indices作用"><a href="#indices作用" class="headerlink" title="indices作用"></a>indices作用</h3><p>indices是所有子child的path的第一个字母连起来的字符串，比如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs shell">...............printNode....  HEAD<br>    path:  /<br>    indices:  euq<br>    wildChild:  false<br>    nType:  root<br>    priority:  3<br>    fullPath:  /<br>    handlers:  []<br>    has  3 child........<br>       path:  export<br>       indices:  /<br>       wildChild:  false<br>       nType:  static<br>       priority:  1<br>       fullPath:  /<br>       handlers:  []<br>       has  1 child........<br>             path:<br>             indices:<br>             wildChild:  true<br>             nType:  catchAll<br>             priority:  1<br>             fullPath:  /export/*filepath<br>             handlers:  []<br>             has  1 child........<br>                         path:  /*filepath<br>                         indices:<br>                         wildChild:  false<br>                         nType:  catchAll<br>                         priority:  1<br>                         fullPath:  /export/*filepath<br>                         handlers:  [0x155c600 0x155d400 0x1560340]<br>       path:  upload/images<br>       indices:  /<br>       wildChild:  false<br>       nType:  static<br>       priority:  1<br>       fullPath:  /upload/images/*filepath<br>       handlers:  []<br>       has  1 child........<br>             path:<br>             indices:<br>             wildChild:  true<br>             nType:  catchAll<br>             priority:  1<br>             fullPath:  /upload/images/*filepath<br>             handlers:  []<br>             has  1 child........<br>                         path:  /*filepath<br>                         indices:<br>                         wildChild:  false<br>                         nType:  catchAll<br>                         priority:  1<br>                         fullPath:  /upload/images/*filepath<br>                         handlers:  [0x155c600 0x155d400 0x1560340]<br>       path:  qrcode<br>       indices:  /<br>       wildChild:  false<br>       nType:  static<br>       priority:  1<br>       fullPath:  /qrcode/*filepath<br>       handlers:  []<br>       has  1 child........<br>             path:<br>             indices:<br>             wildChild:  true<br>             nType:  catchAll<br>             priority:  1<br>             fullPath:  /qrcode/*filepath<br>             handlers:  []<br>             has  1 child........<br>                         path:  /*filepath<br>                         indices:<br>                         wildChild:  false<br>                         nType:  catchAll<br>                         priority:  1<br>                         fullPath:  /qrcode/*filepath<br>                         handlers:  [0x155c600 0x155d400 0x1560340]<br></code></pre></td></tr></table></figure>
+
+<p>这里第一个indices的值是euq，然后它有三个child，三个child的path分别为export、upload&#x2F;images、qrcode，其实euq就是这三个path的首字母拼起来的。</p>
+<p>作用：目前看起来是寻找路径对应的handler时会根据indices的每个字符进行匹配，验证该路径的hander是否存在于当前节点。但是这个字段好像是和wildChild一起使用的？？？</p>
+<h3 id="wildChild"><a href="#wildChild" class="headerlink" title="wildChild"></a>wildChild</h3><p>wildChild似乎是表示children中是否包含通配符，即 : 或者 *</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs shell">...............printNode....  GET<br>    path:  /<br>    indices:  euqsa<br>    wildChild:  false<br>    nType:  root<br>    priority:  5<br>    fullPath:  /<br>    handlers:  []<br>    has  5 child........<br>       path:  export<br>       indices:  /<br>       wildChild:  false # 只有一个child，这个child的path为空，没有通配符，wildChild为false<br>       nType:  static<br>       priority:  1<br>       fullPath:  /<br>       handlers:  []<br>       has  1 child........<br>             path:<br>             indices:<br>             wildChild:  true# 只有一个child，这个child的path为/*filepath，有通配符，wildChild为true<br>             nType:  catchAll<br>             priority:  1<br>             fullPath:  /export/*filepath<br>             handlers:  []<br>             has  1 child........<br>                         path:  /*filepath<br>                         indices:<br>                         wildChild:  false# 没有child，为false<br>                         nType:  catchAll<br>                         priority:  1<br>                         fullPath:  /export/*filepath<br>                         handlers:  [0x155c600 0x155d400 0x1560340]<br></code></pre></td></tr></table></figure>
+
+<h3 id="priority？"><a href="#priority？" class="headerlink" title="priority？"></a>priority？</h3><p>好像不是child的数量</p>
+<h3 id="handler"><a href="#handler" class="headerlink" title="handler"></a>handler</h3><p>handler中记录了所有的中间件和处理函数，</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">InitRouter</span><span class="hljs-params">()</span></span> *gin.Engine &#123;<br>	r := gin.New()<br>	r.Use(gin.Logger())<br>	r.Use(gin.Recovery())<br>	<span class="hljs-comment">// r 的 Handers 长度是 2，就是对应了两个中间件</span><br><br>	<span class="hljs-comment">// 这里其实是调用 r.RouterGroup.StaticFS 等路由</span><br>	r.StaticFS(<span class="hljs-string">&quot;/export&quot;</span>, http.Dir(<span class="hljs-string">&quot;xxxx&quot;</span>))<br></code></pre></td></tr></table></figure>
+
+<p>export对应的handler是最后一个，里面有三个元素，分别对应了gin.Logger()、(gin.Recovery()和http.Dir(“xxxx”)，注意这个handler的父各个节点的handlers都是空</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs shell">...............printNode....  GET<br>    path:  /<br>    indices:  euqsa<br>    wildChild:  false<br>    nType:  root<br>    priority:  5<br>    fullPath:  /<br>    handlers:  []<br>    has  5 child........<br>       path:  export<br>       indices:  /<br>       wildChild:  false<br>       nType:  static<br>       priority:  1<br>       fullPath:  /<br>       handlers:  []<br>       has  1 child........<br>             path:<br>             indices:<br>             wildChild:  true<br>             nType:  catchAll<br>             priority:  1<br>             fullPath:  /export/*filepath<br>             handlers:  []<br>             has  1 child........<br>                         path:  /*filepath<br>                         indices:<br>                         wildChild:  false<br>                         nType:  catchAll<br>                         priority:  1<br>                         fullPath:  /export/*filepath<br>                         handlers:  [0x155c600 0x155d400 0x1560340]<br></code></pre></td></tr></table></figure>
+
+<p>24.2.23更新：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// addRoute adds a node with the given handle to the path.</span><br><br><span class="hljs-comment">// Not concurrency-safe!</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node)</span></span> addRoute(path <span class="hljs-type">string</span>, handlers HandlersChain)<br></code></pre></td></tr></table></figure>
+
+<p>addRoute这个的实现是最关键的</p>
+<p>这是是关于如何添加路由</p>
+<p>还有需要看的是 </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node)</span></span> getValue(path <span class="hljs-type">string</span>, params *Params, skippedNodes *[]skippedNode, unescape <span class="hljs-type">bool</span>) (value nodeValue)<br></code></pre></td></tr></table></figure>
+
+<p>这是是关于如何寻找路由</p>
+<p>都是tree.go里的函数，我决定把tree.go里面的函数都看一遍，先看简单的，看懂了就标记下来，看不懂的最难的放到最后。</p>
+<p><img src="/../images/image-20240223181338554.png" srcset="/img/loading.gif" lazyload alt="image-20240223181338554"></p>
+<p><strong>utf8包的RuneStart函数解析</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">RuneStart</span><span class="hljs-params">(b <span class="hljs-type">byte</span>)</span></span> <span class="hljs-type">bool</span> &#123; <span class="hljs-keyword">return</span> b&amp;<span class="hljs-number">0xC0</span> != <span class="hljs-number">0x80</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个函数是用来判断一个字节是否是 UTF-8 编码的字符序列的起始字节的</p>
+<p>0xC0的二进制是1100 0000，0x80的二进制是1000 0000</p>
+<p>b&amp;0xC0相当于只取b二进制的前两位，b&amp;0xC0 !&#x3D; 0x80 就是判断b的前两位不是10</p>
+<blockquote>
+<p>这里补充下utf8编码规范：</p>
+<p>对于某一个字符的UTF-8编码，如果只有一个字节则其最高二进制位为0。</p>
+<p>如果是多字节，其第一个字节从最高位开始，连续的二进制位值为1的个数决定了其编码的位数，其余各字节均以10开头。UTF-8最多可用到6个字节。<br>如表：<br>1字节 0xxxxxxx<br>2字节 110xxxxx 10xxxxxx<br>3字节 1110xxxx 10xxxxxx 10xxxxxx<br>4字节 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx<br>5字节 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx<br>6字节 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx </p>
+</blockquote>
+<p>根据上面的编码规则可以看出，utf8编码的第一个字节只能为0xxxxxxx、110xxxxx、1110xxxx 、11110xxx 、 111110xx 、1111110x 中的某一个，显然如果是10开头就不满足要求，不可能是utf8编码的第一个字节。所以是10的话就是UTF-8 编码中的非起始字节。</p>
+<p><strong>utf8包的DecodeRune函数解析</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">DecodeRune</span><span class="hljs-params">(p []<span class="hljs-type">byte</span>)</span></span> (r <span class="hljs-type">rune</span>, size <span class="hljs-type">int</span>)<br></code></pre></td></tr></table></figure>
+
+<p>接受一个字节切片 <code>p</code> 作为参数，并返回两个值：<code>rune</code> 类型的字符值 <code>r</code> 和 <code>int</code> 类型的字符所占用的字节数 <code>size</code>。</p>
+<p>函数的作用是解码字节切片 <code>p</code> 中的 UTF-8 编码字符序列，并返回第一个 Unicode 字符以及其所占用的字节数。如果字节切片 <code>p</code> 不是一个有效的 UTF-8 编码字符序列，函数将返回 <code>rune</code> 类型的 Unicode 替代字符 <code>RuneError</code>（通常是 Unicode 编码中的 <code>U+FFFD</code>）以及 0。</p>
+<p>3.7 更新：最近以及之后大概一直在阅读tree.go文件</p>
+<h2 id="阅读-findCaseInsensitivePathRec-函数"><a href="#阅读-findCaseInsensitivePathRec-函数" class="headerlink" title="阅读 findCaseInsensitivePathRec 函数"></a>阅读 findCaseInsensitivePathRec 函数</h2><blockquote>
+<p>3.7 更新：</p>
+<p>看得差不多了，但是还有 rb 和 off 这两个变量相关的东西没看懂，不知道这俩干啥的，测试也测试不到我想要的路径，已经在gin源代码里添加TODO了。🤡🤡🤡</p>
+</blockquote>
+<p>函数定义为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">func (n *node) findCaseInsensitivePathRec(path string, ciPath []byte, rb [4]byte, fixTrailingSlash bool) []byte<br></code></pre></td></tr></table></figure>
+
+<p>fixTrailingSlash的意思是修复尾部斜杠</p>
+<p>wildChild是用于标记子节点中是否有通配符的，如果有则wildChild为true</p>
+<h3 id="举例示例"><a href="#举例示例" class="headerlink" title="举例示例"></a>举例示例</h3><h4 id="findCaseInsensitivePathRec函数fixTrailingSlash的作用"><a href="#findCaseInsensitivePathRec函数fixTrailingSlash的作用" class="headerlink" title="findCaseInsensitivePathRec函数fixTrailingSlash的作用"></a>findCaseInsensitivePathRec函数fixTrailingSlash的作用</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	n := node&#123;<br>		path:      <span class="hljs-string">&quot;/&quot;</span>,<br>		indices:   <span class="hljs-string">&quot;au&quot;</span>,<br>		wildChild: <span class="hljs-literal">false</span>,<br>		fullPath:  <span class="hljs-string">&quot;/&quot;</span>,<br>		priority:  <span class="hljs-number">3</span>,<br>		handlers:  <span class="hljs-literal">nil</span>,<br>		nType:     root,<br>		<span class="hljs-comment">// children 嵌套使用了 node</span><br>		children: []*node&#123;<br>			&#123;<br>				path:      <span class="hljs-string">&quot;api/v1/tags&quot;</span>,<br>				indices:   <span class="hljs-string">&quot;_&quot;</span>,<br>				wildChild: <span class="hljs-literal">false</span>,<br>				nType:     static,<br>				priority:  <span class="hljs-number">2</span>,<br>				fullPath:  <span class="hljs-string">&quot;/api/v1/tags&quot;</span>,<br>				handlers:  []HandlerFunc&#123;<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;&#125;,<br>				children: []*node&#123;<br>					&#123;<br>						path:      <span class="hljs-string">&quot;_1&quot;</span>,<br>						indices:   <span class="hljs-string">&quot;&quot;</span>,<br>						wildChild: <span class="hljs-literal">false</span>,<br>						nType:     static,<br>						priority:  <span class="hljs-number">1</span>,<br>						fullPath:  <span class="hljs-string">&quot;/api/v1/tags_1&quot;</span>,<br>						handlers:  []HandlerFunc&#123;<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;&#125;,<br>					&#125;,<br>				&#125;,<br>			&#125;,<br>			&#123;<br>				path:      <span class="hljs-string">&quot;users/&quot;</span>,<br>				indices:   <span class="hljs-string">&quot;&quot;</span>,<br>				wildChild: <span class="hljs-literal">true</span>,<br>				nType:     static,<br>				priority:  <span class="hljs-number">1</span>,<br>				fullPath:  <span class="hljs-string">&quot;/&quot;</span>,<br>				children: []*node&#123;<br>					&#123;<br>						path:      <span class="hljs-string">&quot;:id&quot;</span>,<br>						indices:   <span class="hljs-string">&quot;&quot;</span>,<br>						wildChild: <span class="hljs-literal">false</span>,<br>						nType:     param,<br>						priority:  <span class="hljs-number">1</span>,<br>						fullPath:  <span class="hljs-string">&quot;users/:id&quot;</span>,<br>						handlers:  []HandlerFunc&#123;<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(*Context)</span></span> &#123;&#125;&#125;,<br>					&#125;,<br>				&#125;,<br>				<span class="hljs-comment">// handlers:  [0x13dede0 0x13e0060 0x13e7b60],</span><br>			&#125;,<br>		&#125;,<br>	&#125;<br>	r := n.findCaseInsensitivePathRec(<span class="hljs-string">&quot;/users/user1/&quot;</span>, <span class="hljs-literal">nil</span>, [<span class="hljs-number">4</span>]<span class="hljs-type">byte</span>&#123;&#125;, <span class="hljs-literal">false</span>)<br>	fmt.Println(<span class="hljs-string">&quot;.....findCaseInsensitivePathRec.....&quot;</span>, <span class="hljs-type">string</span>(r))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>因为传递的findCaseInsensitivePathRec的第三个参数为false，打印出来的r是空的。如果传递的findCaseInsensitivePathRec为true，那么打印出来的findCaseInsensitivePathRec就是 &#x2F;users&#x2F;user1&#x2F;</p>
+<h4 id="当两个路径中都有参数时，且参数后都有一个路径，生成的tree是什么样子的"><a href="#当两个路径中都有参数时，且参数后都有一个路径，生成的tree是什么样子的" class="headerlink" title="当两个路径中都有参数时，且参数后都有一个路径，生成的tree是什么样子的"></a>当两个路径中都有参数时，且参数后都有一个路径，生成的tree是什么样子的</h4><p>比如对于这两个路由：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/users/:id/ccc&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取路径参数的值</span><br>	id := c.Param(<span class="hljs-string">&quot;id&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;CCC User ID: %s&quot;</span>, id)<br>&#125;)<br><br>r.GET(<span class="hljs-string">&quot;/users/:id/dddd&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取路径参数的值</span><br>	id := c.Param(<span class="hljs-string">&quot;id&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;DDD User ID: %s&quot;</span>, id)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>调用时可以这样传递参数：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/users/user1/dddd&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>返回的结果是：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs txt">DDD User ID: user1<br></code></pre></td></tr></table></figure>
+
+<p>那么对于路径&#x2F;users&#x2F;:id&#x2F;ccc和&#x2F;users&#x2F;:id&#x2F;dddd，生成的路由tree是什么样子的呢？</p>
+<p>我预期的生成结果是类似：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell">users/<br>   - :id<br>     - ccc<br>     - dddd<br></code></pre></td></tr></table></figure>
+
+<p>但是实际上的结果是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell">users/<br>  - :id<br>    - /<br>      - ccc<br>      - dddd<br></code></pre></td></tr></table></figure>
+
+<p>打印出来的完整node结果是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs shell">path:  /<br> indices:  ua<br> wildChild:  false<br> nType:  root<br> priority:  4<br> fullPath:  /<br> handlers:  []<br> has  2 child........<br>    path:  users/<br>    indices:<br>    wildChild:  true<br>    nType:  static<br>    priority:  2<br>    fullPath:  /<br>    handlers:  []<br>    has  1 child........<br>          path:  :id<br>          indices:<br>          wildChild:  false<br>          nType:  param<br>          priority:  2<br>          fullPath:  /users/:id/ccc<br>          handlers:  []<br>          has  1 child........<br>                      path:  /<br>                      indices:  cd<br>                      wildChild:  false<br>                      nType:  static<br>                      priority:  2<br>                      fullPath:  /use<br>                      handlers:  []<br>                      has  2 child........<br>                                              path:  ccc<br>                                              indices:<br>                                              wildChild:  false<br>                                              nType:  static<br>                                              priority:  1<br>                                              fullPath:  /users/:id/ccc<br>                                              handlers:  [0x13d5860 0x13d6ae0 0x13dea00]<br>                                              path:  dddd<br>                                              indices:<br>                                              wildChild:  false<br>                                              nType:  static<br>                                              priority:  1<br>                                              fullPath:  /users/:id/dddd<br>                                              handlers:  [0x13d5860 0x13d6ae0 0x13deba0]<br>    path:  a/<br>    .... 另一个节点的信息这里省略。<br></code></pre></td></tr></table></figure>
+
+<p>为什么非要把这两条路径相同的<code>:id/</code>部分拆成两个node呢？分别是<code>:id</code>和<code>/</code>，且<code>/</code>是<code>:id</code>的子节点？</p>
+<p>主要是因为findCaseInsensitivePathRec实现的过程中有一些特殊之处。关键在于下面的一段代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">switch</span> n.nType &#123;<br><span class="hljs-keyword">case</span> param:<br>	<span class="hljs-comment">// Find param end (either &#x27;/&#x27; or path end)</span><br>	end := <span class="hljs-number">0</span><br>	<span class="hljs-keyword">for</span> end &lt; <span class="hljs-built_in">len</span>(path) &amp;&amp; path[end] != <span class="hljs-string">&#x27;/&#x27;</span> &#123;<br>		end++<br>	&#125;<br><br>	<span class="hljs-comment">// Add param value to case insensitive path</span><br>	ciPath = <span class="hljs-built_in">append</span>(ciPath, path[:end]...)<br><br>	<span class="hljs-comment">// We need to go deeper!</span><br>	<span class="hljs-keyword">if</span> end &lt; <span class="hljs-built_in">len</span>(path) &#123;<br>		<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(n.children) &gt; <span class="hljs-number">0</span> &#123;<br>			<span class="hljs-comment">// Continue with child node</span><br>			<span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> 测试这里的 n.children 长度大于 2 的情况</span><br>			n = n.children[<span class="hljs-number">0</span>]<br>			npLen = <span class="hljs-built_in">len</span>(n.path)<br>			path = path[end:]<br>			<span class="hljs-keyword">continue</span><br>		&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这一段，只有节点的nType为param时才能执行到这里。显然path为<code>:id</code>的node执行findCaseInsensitivePathRec会走到这里。因为这里直接在len(n.children) &gt; 0的情况下使用了n.children[0]，并且执行了continue操作进入下个循环。所以显然gin默认执行到<code>if len(n.children) &gt; 0 &#123;</code>这里时只有一个children，所以需要在设置tree时让这里只有一个节点，所以设置<code>/</code>为<code>:id</code>的下一个节点而不是设置<code>:id/</code>为一个节点才能满足这里n.children[0]的需求。如果设置<code>:id/</code>为一个节点，那么这个节点必然有两个children，也就是<code>ccc</code>和<code>dddd</code>，那么这里直接取n.children[0]就无法取到第二个path为<code>dddd</code>的节点，就会出现问题了。</p>
+<h3 id="路由里的特殊参数"><a href="#路由里的特殊参数" class="headerlink" title="路由里的特殊参数"></a>路由里的特殊参数</h3><p>**路由里的<code>:</code>**，用于匹配参数，用法如下：</p>
+<p>比如对于这两个路由：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/users/:id/ccc&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取路径参数的值</span><br>	id := c.Param(<span class="hljs-string">&quot;id&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;CCC User ID: %s&quot;</span>, id)<br>&#125;)<br><br>r.GET(<span class="hljs-string">&quot;/users/:id/dddd&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取路径参数的值</span><br>	id := c.Param(<span class="hljs-string">&quot;id&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;DDD User ID: %s&quot;</span>, id)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>调用时可以这样传递参数：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/users/user1/dddd&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>返回的结果是：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs txt">DDD User ID: user1<br></code></pre></td></tr></table></figure>
+
+<p><strong>路由里的<code>*</code></strong></p>
+<p>符号通常用于匹配任意的路径片段，被称为通配符路由。</p>
+<p>使用 * 符号时，这意味着该路由会匹配所有以它之后的路径。这样的路由通常用于处理动态的、不固定的路径。</p>
+<p>比如：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/static/*filepath&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	filepath := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, filepath)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>下面调用一下进行测试：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/static/abc&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">Static file path: /abc<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/static/*filepath&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">Static file path: /*filepath<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/static/*filepath&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">Static file path: /abc/dddd<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">curl --location &#x27;http://localhost:9934/static/*filepath/xxxx&#x27; <br></code></pre></td></tr></table></figure>
+
+<p>运行结果为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">Static file path: /*filepath/xxxx<br></code></pre></td></tr></table></figure>
+
+<p>可见<code>/static/*filepath</code>路由中的<code>filepath</code>会把<code>/static</code>之后的所有内容都匹配出来。一直匹配到传入路由的末尾。</p>
+<p>我试了下，如果再在<code>*filepath</code> 后面追加东西，显然追加东西的话是多余的、不正确的操作，比如这样写：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/static/*filepath/xxx&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	filepath := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, filepath)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>程序会在启动时直接panic。</p>
+<h2 id="阅读-getValue函数"><a href="#阅读-getValue函数" class="headerlink" title="阅读 getValue函数"></a>阅读 getValue函数</h2><p>getValue函数的定义是：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node)</span></span> getValue(path <span class="hljs-type">string</span>, params *Params, skippedNodes *[]skippedNode, unescape <span class="hljs-type">bool</span>) (value nodeValue) <br></code></pre></td></tr></table></figure>
+
+<p>3.13 更新，看得差不多了，但是还有一些细节不太明白，可能要把tree的代码都大概过一遍之后再看第二次</p>
+<h2 id="阅读-findWildcard函数"><a href="#阅读-findWildcard函数" class="headerlink" title="阅读 findWildcard函数"></a>阅读 findWildcard函数</h2><p>这个很简单，飞快看懂了，小问题！</p>
+<h2 id="阅读-insertChild函数"><a href="#阅读-insertChild函数" class="headerlink" title="阅读 insertChild函数"></a>阅读 insertChild函数</h2><p>看得大概懂了，但是不是100%</p>
+<h2 id="阅读-addRoute函数"><a href="#阅读-addRoute函数" class="headerlink" title="阅读 addRoute函数"></a>阅读 addRoute函数</h2><p>函数定义为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node)</span></span> addRoute(path <span class="hljs-type">string</span>, handlers HandlersChain) <br></code></pre></td></tr></table></figure>
+
+
+
+<blockquote>
+<p>注意：定义相同的路由会直接panic</p>
+<p>比如</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/notnow/:filepath/*xxxx&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	name := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, name)<br>&#125;)<br><br>r.GET(<span class="hljs-string">&quot;/notnow/:filepath/*yyyy&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	name := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, name)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>如果这样定义路由，程序会直接Panic，因为<code>/notnow/:filepath/*xxxx</code>和<code>/notnow/:filepath/*yyyy</code>本质上是一条路由。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go">r.GET(<span class="hljs-string">&quot;/notnow/:filepath/*xxxx&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	name := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, name)<br>&#125;)<br><br>r.GET(<span class="hljs-string">&quot;/notnow/:filepath/abc/*yyyy&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(c *gin.Context)</span></span> &#123;<br>	<span class="hljs-comment">// 获取 *filepath 匹配的路径</span><br>	name := c.Param(<span class="hljs-string">&quot;filepath&quot;</span>)<br>	c.String(<span class="hljs-number">200</span>, <span class="hljs-string">&quot;Static file path: %s&quot;</span>, name)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>这样的也会报错，因为有些路由匹配时会有歧义，比如&#x2F;notnow&#x2F;love&#x2F;abc&#x2F;1 既可以匹配第一个，此时xxxx的值是abc&#x2F;1，也可以匹配到第二个路由，此时yyyy的值是1。</p>
+</blockquote>
+<p>3.18 更新，这个函数也都看完了，但是没有怎么懂。我准备画gin的架构图，根据架构图来画一个系统之类的。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>编写中，未定稿</div>
+      <div>https://rhythmnr.github.io/2023/01/01/（正在编写中）gin源码阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年1月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/01/tcpdump%E6%98%AF%E5%A6%82%E4%BD%95%E6%8A%93%E5%8C%85%E7%9A%84/" title="tcpdump是如何抓包的">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">tcpdump是如何抓包的</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/01/01/%EF%BC%88%E6%AD%A3%E5%9C%A8%E7%BC%96%E5%86%99%E4%B8%AD%EF%BC%89gopher-lua%E4%BD%BF%E7%94%A8%E4%B8%8E%E7%AE%80%E4%BB%8B/" title="编写中，未定稿">
+                        <span class="hidden-mobile">编写中，未定稿</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

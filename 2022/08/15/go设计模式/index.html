@@ -1,0 +1,730 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="原文 Go语言并非是像C++和Java一样的面向对象语言，但是设计模式同样适用 创建型Creational Design Patterns单例Singleton主要用于保证一个类仅有一个实例，并提供一个访问它的全局访问点。 如何判断一个对象是否应该被建模成单例？ 通常，被建模成单例的对象都有“中心点”的含义，比如线程池就是管理所有线程的中心。所以，在判断一个对象是否适合单例模式时，先思考下，这个对">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go设计模式">
+<meta property="og:url" content="https://rhythmnr.github.io/2022/08/15/go%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="原文 Go语言并非是像C++和Java一样的面向对象语言，但是设计模式同样适用 创建型Creational Design Patterns单例Singleton主要用于保证一个类仅有一个实例，并提供一个访问它的全局访问点。 如何判断一个对象是否应该被建模成单例？ 通常，被建模成单例的对象都有“中心点”的含义，比如线程池就是管理所有线程的中心。所以，在判断一个对象是否适合单例模式时，先思考下，这个对">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-08-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.726Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>go设计模式 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="go设计模式"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-08-15 00:00" pubdate>
+          2022年8月15日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          62 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">go设计模式</h1>
+            
+            <div class="markdown-body">
+              
+              <p><a target="_blank" rel="noopener" href="https://studygolang.com/articles/18059">原文</a></p>
+<p>Go语言并非是像C++和Java一样的面向对象语言，但是设计模式同样适用</p>
+<h2 id="创建型Creational-Design-Patterns"><a href="#创建型Creational-Design-Patterns" class="headerlink" title="创建型Creational Design Patterns"></a>创建型Creational Design Patterns</h2><h3 id="单例Singleton"><a href="#单例Singleton" class="headerlink" title="单例Singleton"></a>单例Singleton</h3><p>主要用于<strong>保证一个类仅有一个实例，并提供一个访问它的全局访问点</strong>。</p>
+<p><em>如何判断一个对象是否应该被建模成单例？</em></p>
+<p>通常，被建模成单例的对象都有“<strong>中心点</strong>”的含义，比如线程池就是管理所有线程的中心。所以，在判断一个对象是否适合单例模式时，先思考下，这个对象是一个中心点吗？</p>
+<blockquote>
+<p>需要初始化一次</p>
+<p>mulock   *sync.Mutex 初始化的时候可以通过mulock:   new(sync.Mutex) 赋值</p>
+<p>sync.Once只会执行一次</p>
+</blockquote>
+<h3 id="建造者Builder"><a href="#建造者Builder" class="headerlink" title="建造者Builder"></a>建造者Builder</h3><p>如果某个结构体初始化的时候<strong>有很多字段需要赋值</strong>，一个个赋值字段太多，可以先初始化空的结构体，然后写多个方法，挨个给各字段赋值，类似慢慢建造这个结构体的模式。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Message <span class="hljs-keyword">struct</span> &#123;<br>Header *Header<br>Body   *Body<br>&#125;<br><span class="hljs-keyword">type</span> Header <span class="hljs-keyword">struct</span> &#123;<br>SrcAddr  <span class="hljs-type">string</span><br>SrcPort  <span class="hljs-type">uint64</span><br>DestAddr <span class="hljs-type">string</span><br>DestPort <span class="hljs-type">uint64</span><br>Items    <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span><br>&#125;<br><span class="hljs-keyword">type</span> Body <span class="hljs-keyword">struct</span> &#123;<br>Items []<span class="hljs-type">string</span><br>&#125;<br><span class="hljs-comment">// 多层的嵌套实例化</span><br>message := msg.Message&#123;<br>Header: &amp;msg.Header&#123;<br>SrcAddr:  <span class="hljs-string">&quot;192.168.0.1&quot;</span>,<br>SrcPort:  <span class="hljs-number">1234</span>,<br>DestAddr: <span class="hljs-string">&quot;192.168.0.2&quot;</span>,<br>DestPort: <span class="hljs-number">8080</span>,<br>Items:    <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">string</span>),<br>&#125;,<br>Body:   &amp;msg.Body&#123;<br>Items: <span class="hljs-built_in">make</span>([]<span class="hljs-type">string</span>, <span class="hljs-number">0</span>),<br>&#125;,<br>&#125;<br><span class="hljs-comment">// 需要知道对象的实现细节</span><br>message.Header.Items[<span class="hljs-string">&quot;contents&quot;</span>] = <span class="hljs-string">&quot;application/json&quot;</span><br>message.Body.Items = <span class="hljs-built_in">append</span>(message.Body.Items, <span class="hljs-string">&quot;record1&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>改成：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Message对象的Builder对象</span><br> <span class="hljs-keyword">type</span> builder <span class="hljs-keyword">struct</span> &#123;<br> once *sync.Once<br> msg *Message<br> &#125;<br> <span class="hljs-comment">// 返回Builder对象</span><br> <span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Builder</span><span class="hljs-params">()</span></span> *builder &#123;<br> <span class="hljs-keyword">return</span> &amp;builder&#123;<br> once: &amp;sync.Once&#123;&#125;,<br> msg: &amp;Message&#123;Header: &amp;Header&#123;&#125;, Body: &amp;Body&#123;&#125;&#125;,<br> &#125;<br> &#125;<br> <span class="hljs-comment">// 以下是对Message成员对构建方法</span><br> <span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *builder)</span></span> WithSrcAddr(srcAddr <span class="hljs-type">string</span>) *builder &#123;<br> b.msg.Header.SrcAddr = srcAddr<br> <span class="hljs-keyword">return</span> b<br> &#125;<br> <span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *builder)</span></span> WithSrcPort(srcPort <span class="hljs-type">uint64</span>) *builder &#123;<br> b.msg.Header.SrcPort = srcPort<br> <span class="hljs-keyword">return</span> b<br> &#125;<br>...<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>   message := msg.Builder().<br> WithSrcAddr(<span class="hljs-string">&quot;192.168.0.1&quot;</span>).<br> WithSrcPort(<span class="hljs-number">1234</span>).<br> WithDestAddr(<span class="hljs-string">&quot;192.168.0.2&quot;</span>).<br> WithDestPort(<span class="hljs-number">8080</span>).<br> WithHeaderItem(<span class="hljs-string">&quot;contents&quot;</span>, <span class="hljs-string">&quot;application/json&quot;</span>).<br> WithBodyItem(<span class="hljs-string">&quot;record1&quot;</span>).<br> WithBodyItem(<span class="hljs-string">&quot;record2&quot;</span>).<br> Build()<br> <span class="hljs-keyword">if</span> message.Header.SrcAddr != <span class="hljs-string">&quot;192.168.0.1&quot;</span> &#123;<br> t.Errorf(<span class="hljs-string">&quot;expect src address 192.168.0.1, but actual %s.&quot;</span>, message.Header.SrcAddr)<br> &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="工厂Factory-Design"><a href="#工厂Factory-Design" class="headerlink" title="工厂Factory Design"></a>工厂Factory Design</h3><p>都是<strong>将对象创建的逻辑封装起来，为使用者提供一个简单易用的对象创建接口</strong>。与建造者模式类似，但是建造者模式适用于更多参数的情况。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 这个是创建处，iGun是一个interface</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">getGun</span><span class="hljs-params">(gunType <span class="hljs-type">string</span>)</span></span> (iGun, <span class="hljs-type">error</span>) &#123;<br>    <span class="hljs-keyword">if</span> gunType == <span class="hljs-string">&quot;ak47&quot;</span> &#123;<br>        <span class="hljs-keyword">return</span> newAk47(), <span class="hljs-literal">nil</span><br>    &#125;<br>    <span class="hljs-keyword">if</span> gunType == <span class="hljs-string">&quot;maverick&quot;</span> &#123;<br>        <span class="hljs-keyword">return</span> newMaverick(), <span class="hljs-literal">nil</span><br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;Wrong gun type passed&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="抽象工厂-Abstract-Factory"><a href="#抽象工厂-Abstract-Factory" class="headerlink" title="抽象工厂 Abstract Factory"></a>抽象工厂 Abstract Factory</h3><p>在工厂方法模式中，我们通过一个工厂对象来创建一个产品族，具体创建哪个产品，则通过<code>swtich-case</code>的方式去判断。这也意味着该产品组上，每新增一类产品对象，都必须修改原来工厂对象的代码；而且随着产品的不断增多，工厂对象的职责也越来越重，违反了<strong>单一职责原则</strong>。</p>
+<p>抽象工厂模式通过给工厂类新增一个抽象层解决了该问题，</p>
+<p>该模式让您创建一系列相关对象。</p>
+<p>应该就是实现了某个interface的两个struct都嵌套了一个共同的struct？？？</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> adidasShort <span class="hljs-keyword">struct</span> &#123;<br>    short<br>&#125;<br><span class="hljs-keyword">type</span> nikeShort <span class="hljs-keyword">struct</span> &#123;<br>    short<br>&#125;<br><span class="hljs-keyword">type</span> iShort <span class="hljs-keyword">interface</span> &#123;<br>    setLogo(logo <span class="hljs-type">string</span>)<br>    setSize(size <span class="hljs-type">int</span>)<br>    getLogo() <span class="hljs-type">string</span><br>    getSize() <span class="hljs-type">int</span><br>&#125;<br><span class="hljs-keyword">type</span> short <span class="hljs-keyword">struct</span> &#123;<br>    logo <span class="hljs-type">string</span><br>    size <span class="hljs-type">int</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *short)</span></span> setLogo(logo <span class="hljs-type">string</span>) &#123;<br>    s.logo = logo<br>&#125;<br><span class="hljs-comment">// short实现了iShort的所有接口，adidasShort和nikeShort不需要再实现任何接口了</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="原型Prototype"><a href="#原型Prototype" class="headerlink" title="原型Prototype"></a>原型Prototype</h3><p>主要解决对象复制的问题，它的核心就是<code>clone()</code>方法，clone返回interface然后对interface强制转换</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"> <span class="hljs-comment">// 原型复制抽象接口</span><br> <span class="hljs-keyword">type</span> Prototype <span class="hljs-keyword">interface</span> &#123;<br> clone() Prototype<br> &#125;<br> <span class="hljs-keyword">type</span> Message <span class="hljs-keyword">struct</span> &#123;<br> Header *Header<br> Body   *Body<br> &#125;<br> <span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(m *Message)</span></span> clone() Prototype &#123;<br> msg := *m<br> <span class="hljs-keyword">return</span> &amp;msg<br> &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>  newMessage := message.Clone().(*msg.Message)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="结构模式（Creational-Pattern）"><a href="#结构模式（Creational-Pattern）" class="headerlink" title="结构模式（Creational Pattern）"></a><strong>结构模式</strong>（Creational Pattern）</h2><h3 id="组合-Composite"><a href="#组合-Composite" class="headerlink" title="组合 Composite"></a>组合 Composite</h3><p>适用于文件-目录这种树状结构，比如搜索操作，目录会包括多个文件，会调用文件的search操作。</p>
+<h3 id="适配器模式-Adapter"><a href="#适配器模式-Adapter" class="headerlink" title="适配器模式 Adapter"></a>适配器模式 Adapter</h3><p>适配器模式所做的就是<strong>将一个接口<code>Adaptee</code>，通过适配器<code>Adapter</code>转换成Client所期望的另一个接口<code>Target</code>来使用</strong>，实现原理也很简单，就是<code>Adapter</code>通过实现<code>Target</code>接口，并在对应的方法中调用<code>Adaptee</code>的接口实现。</p>
+<p>不适配的struct命名为xxxAdapter</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> computer <span class="hljs-keyword">interface</span> &#123;<br>    insertInSquarePort()<br>&#125;<br><br><span class="hljs-keyword">type</span> mac <span class="hljs-keyword">struct</span> &#123;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(m *mac)</span></span> insertInSquarePort() &#123;<br>    fmt.Println(<span class="hljs-string">&quot;Insert square port into mac machine&quot;</span>)<br>&#125;<br><br><span class="hljs-keyword">type</span> windowsAdapter <span class="hljs-keyword">struct</span> &#123;<br>	windowMachine *windows<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(w *windowsAdapter)</span></span> insertInSquarePort() &#123;<br>	w.windowMachine.insertInCirclePort()<br>&#125;<br><br><span class="hljs-keyword">type</span> windowsAdapter <span class="hljs-keyword">struct</span> &#123;<br>	windowMachine *windows<br>&#125;<br><span class="hljs-comment">// 增加了windowsAdapter，可以调用insertInSquarePort用于mac和windows的调用</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(w *windowsAdapter)</span></span> insertInSquarePort() &#123;<br>	w.windowMachine.insertInCirclePort()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="桥接Bridge"><a href="#桥接Bridge" class="headerlink" title="桥接Bridge"></a>桥接Bridge</h3><p>m*n优化为m+n</p>
+<p>举一个例子，一个产品有形状和颜色两个特征（变化方向），其中形状分为方形和圆形，颜色分为红色和蓝色。如果采用继承的设计方案，那么就需要新增4个产品子类：方形红色、圆形红色、方形蓝色、圆形红色。如果形状总共有m种变化，颜色有n种变化，那么就需要新增m*n个产品子类！现在我们使用桥接模式进行优化，将形状和颜色分别设计为一个抽象接口独立出来，这样需要新增2个形状子类：方形和圆形，以及2个颜色子类：红色和蓝色。同样，如果形状总共有m种变化，颜色有n种变化，总共只需要新增m+n个子类！</p>
+<p>类似积木，可以自由的组合和拼接</p>
+<h3 id="装饰器Decorator"><a href="#装饰器Decorator" class="headerlink" title="装饰器Decorator"></a>装饰器Decorator</h3><p>它允许您提供附加功能或装饰对象而不更改该对象</p>
+<p>装饰者也就是附加的部分嵌套了原来的东西 </p>
+<p>这里的例子是披萨的增加调料的实现</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> pizza <span class="hljs-keyword">interface</span> &#123;<br>	getPrice() <span class="hljs-type">int</span><br>&#125;<br><br><span class="hljs-keyword">type</span> cheeseTopping <span class="hljs-keyword">struct</span> &#123;<br>	pizza pizza<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(c *cheeseTopping)</span></span> getPrice() <span class="hljs-type">int</span> &#123;<br>	pizzaPrice := c.pizza.getPrice()<br>	<span class="hljs-keyword">return</span> pizzaPrice + <span class="hljs-number">10</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="正面Facade"><a href="#正面Facade" class="headerlink" title="正面Facade"></a>正面Facade</h3><p>将复杂逻辑封装在被调用端，调用端可以无脑调，两边都不用定义interface就定义方法即可</p>
+<h3 id="蝇量级Flyweight"><a href="#蝇量级Flyweight" class="headerlink" title="蝇量级Flyweight"></a>蝇量级Flyweight</h3><p>当需要创建大量可能导致内存问题的对象时使用</p>
+<h3 id="代理proxy"><a href="#代理proxy" class="headerlink" title="代理proxy"></a>代理proxy</h3><p>为对主要对象的受控和智能访问提供额外的间接层。</p>
+<p>在这种模式中，创建了一个新的代理类，它实现了与主对象相同的接口。 这使您可以在主对象的实际逻辑之前执行一些行为。 比如nginx服务器会在实际处理前做一些处理（比如统计API调用次数等）。</p>
+<p>下面的例子中，实际的nginx是被使用的，它嵌套了业务处理application，也实现了handleRequest，在handleRequest中做了自定义的前置处理checkRateLimiting然后调用application的handleRequest。适用方直接用最外层的nginx的handleRequest即可。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> server <span class="hljs-keyword">interface</span> &#123;<br>    handleRequest(<span class="hljs-type">string</span>, <span class="hljs-type">string</span>) (<span class="hljs-type">int</span>, <span class="hljs-type">string</span>)<br>&#125;<br><br><span class="hljs-keyword">type</span> application <span class="hljs-keyword">struct</span> &#123;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a *application)</span></span> handleRequest(url, method <span class="hljs-type">string</span>) (<span class="hljs-type">int</span>, <span class="hljs-type">string</span>) &#123;<br>    ....<br>&#125;<br><br><span class="hljs-keyword">type</span> nginx <span class="hljs-keyword">struct</span> &#123;<br>    application       *application<br>    maxAllowedRequest <span class="hljs-type">int</span><br>    rateLimiter       <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-type">int</span><br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">newNginxServer</span><span class="hljs-params">()</span></span> *nginx &#123;<br>    <span class="hljs-keyword">return</span> &amp;nginx&#123;<br>        application:       &amp;application&#123;&#125;,<br>    &#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *nginx)</span></span> handleRequest(url, method <span class="hljs-type">string</span>) (<span class="hljs-type">int</span>, <span class="hljs-type">string</span>) &#123;<br>    allowed := n.checkRateLimiting(url)<br>    <span class="hljs-keyword">if</span> !allowed &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">403</span>, <span class="hljs-string">&quot;Not Allowed&quot;</span><br>    &#125;<br>    <span class="hljs-keyword">return</span> n.application.handleRequest(url, method)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *nginx)</span></span> checkRateLimiting(url <span class="hljs-type">string</span>) <span class="hljs-type">bool</span> &#123;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    nginxServer := newNginxServer()<br>    appStatusURL := <span class="hljs-string">&quot;/app/status&quot;</span><br>    httpCode, body := nginxServer.handleRequest(appStatusURL, <span class="hljs-string">&quot;GET&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>##行为设计模式Behavioural Design Patterns</p>
+<h3 id="责任链Chain-of-Responsiblity"><a href="#责任链Chain-of-Responsiblity" class="headerlink" title="责任链Chain of Responsiblity"></a>责任链Chain of Responsiblity</h3><p>责任链设计模式是一种行为设计模式。 它允许您创建一系列请求处理程序。 对于每个传入的请求，它都通过链和每个处理程序传递：</p>
+<p>处理请求或跳过处理。<br>决定是否将请求传递给链中的下一个处理程序</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 以病人去医院看病为例子</span><br><span class="hljs-keyword">type</span> department <span class="hljs-keyword">interface</span> &#123;<br>    execute(*patient)<br>    setNext(department)<br>&#125;<br><br><span class="hljs-keyword">type</span> reception <span class="hljs-keyword">struct</span> &#123;<br>    next department<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *reception)</span></span> execute(p *patient) &#123;<br>	m.next.execute(p)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *reception)</span></span> setNext(next department) &#123;<br>    r.next = next<br>&#125;<br><span class="hljs-keyword">type</span> cashier <span class="hljs-keyword">struct</span> &#123;<br>	next department<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(c *cashier)</span></span> execute(p *patient) &#123;<br>	fmt.Println(<span class="hljs-string">&quot;Cashier getting money from patient patient&quot;</span>)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(c *cashier)</span></span> setNext(next department) &#123;<br>	c.next = next<br>&#125;<br><br><span class="hljs-keyword">type</span> patient <span class="hljs-keyword">struct</span> &#123;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    cashier := &amp;cashier&#123;&#125;<br>    medical := &amp;medical&#123;&#125;<br>    medical.setNext(cashier)<br>    doctor := &amp;doctor&#123;&#125;<br>    doctor.setNext(medical)<br>    patient := &amp;patient&#123;name: <span class="hljs-string">&quot;abc&quot;</span>&#125;<br>    <span class="hljs-comment">//Patient visiting</span><br>    reception.execute(patient)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="命令Command"><a href="#命令Command" class="headerlink" title="命令Command"></a>命令Command</h3><h3 id="迭代器Iterator"><a href="#迭代器Iterator" class="headerlink" title="迭代器Iterator"></a>迭代器Iterator</h3><p>迭代器设计模式是一种行为设计模式。 在这种模式中，集合结构提供了一个迭代器，它允许它按顺序遍历集合结构中的每个元素，而不会暴露其底层实现。</p>
+<h3 id="调解员Mediator"><a href="#调解员Mediator" class="headerlink" title="调解员Mediator"></a>调解员Mediator</h3><p>中介者设计模式是一种行为设计模式。 这种模式建议创建一个中介对象来防止对象之间的直接通信，从而避免它们之间的直接依赖关系。</p>
+<h3 id="备忘录Memento"><a href="#备忘录Memento" class="headerlink" title="备忘录Memento"></a>备忘录Memento</h3><p>Memento 设计模式是一种行为设计模式。 它允许我们保存对象的检查点，从而允许对象恢复到之前的状态。 基本上它有助于对对象进行撤消重做操作。</p>
+<h3 id="空对象Null-Object"><a href="#空对象Null-Object" class="headerlink" title="空对象Null Object"></a>空对象Null Object</h3><p>空对象设计模式是一种行为设计模式。 当客户端代码依赖于某些可以为空的依赖项时，它很有用。 使用这种设计模式可以防止客户端对这些依赖项的结果进行空检查。 话虽如此，还应该注意的是，客户端行为也适用于此类空依赖项。</p>
+<h3 id="订阅者Observer"><a href="#订阅者Observer" class="headerlink" title="订阅者Observer"></a>订阅者Observer</h3><p>适用于一个订阅者，多个发布者。订阅者订阅某个主题（subject）。</p>
+<h3 id="状态State"><a href="#状态State" class="headerlink" title="状态State"></a>状态State</h3><p>作用于有限状态机</p>
+<p>###策略Strategy</p>
+<p>改变对象的行为，比如根据实际情况的变化动态的调整缓存策略，所谓的调整缓存策略还是得需要代码里手动set</p>
+<h3 id="模板方法Template-Method"><a href="#模板方法Template-Method" class="headerlink" title="模板方法Template Method"></a>模板方法Template Method</h3><p>定义多个有顺序要求的接口，调用处按顺序调用接口</p>
+<h3 id="访问者Visitor"><a href="#访问者Visitor" class="headerlink" title="访问者Visitor"></a>访问者Visitor</h3><p>给struct增加一些行为，而不用改变struct</p>
+<p>比如给interface多加一些方法，不用修改实现的struct，通过visitor修改。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>go设计模式</div>
+      <div>https://rhythmnr.github.io/2022/08/15/go设计模式/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年8月15日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/08/17/gohangout%E9%98%85%E8%AF%BB/" title="gohangout项目代码阅读总结">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">gohangout项目代码阅读总结</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/07/30/python%E5%85%A5%E9%97%A8%E6%80%BB%E7%BB%93/" title="python入门总结">
+                        <span class="hidden-mobile">python入门总结</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

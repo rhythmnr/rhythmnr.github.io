@@ -1,0 +1,714 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="简介iperf3是一个网络性能测试工具，可以用来模拟大流量的传输。可以用来TCP和UDP带宽的性能，可以用来测试最大UDP带宽。 iperf3对于每次测试，都会报告带宽，损耗和其他数据。 使用场景测试发送端和接收端的最大带宽有时候需要知晓发送端和接收端的最大带宽，使用iperf3可以测量出两端之间的最大带宽，因为iperf3会输出使用传输的速率，可以指定iperf3传输一个比较高的无法达到的速率，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iperf3使用">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/04/10/iperf3%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="简介iperf3是一个网络性能测试工具，可以用来模拟大流量的传输。可以用来TCP和UDP带宽的性能，可以用来测试最大UDP带宽。 iperf3对于每次测试，都会报告带宽，损耗和其他数据。 使用场景测试发送端和接收端的最大带宽有时候需要知晓发送端和接收端的最大带宽，使用iperf3可以测量出两端之间的最大带宽，因为iperf3会输出使用传输的速率，可以指定iperf3传输一个比较高的无法达到的速率，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240424105616301.png">
+<meta property="article:published_time" content="2023-04-09T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.727Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240424105616301.png">
+  
+  
+  <title>iperf3使用 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="iperf3使用"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-04-10 00:00" pubdate>
+          2023年4月10日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">iperf3使用</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>iperf3是一个网络性能测试工具，可以用来模拟大流量的传输。可以用来TCP和UDP带宽的性能，可以用来测试最大UDP带宽。</p>
+<p>iperf3对于每次测试，都会报告带宽，损耗和其他数据。</p>
+<h2 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h2><h3 id="测试发送端和接收端的最大带宽"><a href="#测试发送端和接收端的最大带宽" class="headerlink" title="测试发送端和接收端的最大带宽"></a>测试发送端和接收端的最大带宽</h3><p>有时候需要知晓发送端和接收端的最大带宽，使用iperf3可以测量出两端之间的最大带宽，因为iperf3会输出使用传输的速率，可以指定iperf3传输一个比较高的无法达到的速率，再查看iperf3显示的实际传输速率。</p>
+<h3 id="模拟大流量"><a href="#模拟大流量" class="headerlink" title="模拟大流量"></a>模拟大流量</h3><p>有时候需要测试程序在大流量的场景下能否正确运行与处理 ，首先在程序所在机器运行iperf3接收服务，在其他机器想iperf3所在机器传输流量，传输流量时可以自定义传输速率，然后查看传输速率。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>macOS下安装</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">brew install iperf3<br></code></pre></td></tr></table></figure>
+
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>启动服务端：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">iperf3 -s<br></code></pre></td></tr></table></figure>
+
+<p>启动客户端：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">iperf3</span> -c localhost -b <span class="hljs-number">500</span>M -t <span class="hljs-number">3</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-c</code> 参数用于指定客户端要连接的服务器的地址，这里使用的是localhost，如果不是向本机打流则需要换成iperf3服务所在机器的IP</p>
+<p><code>-b 500M</code> 表示设置客户端发送的带宽限制为500Mbps</p>
+<p>-t 表示打流的持续时间为3秒</p>
+<p>这个命令的意思是把最大速率500Mbps的流量传输到服务端，打流的最大速率为500Mbps。数据传输持续3秒，3秒后自动停止传输。</p>
+</blockquote>
+<p>因为这里的客户端和服务端都在同一台机器上，所以走的网卡是lo0。</p>
+<p>运行结果查看：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs shell">iperf3 -s                                              <br>-----------------------------------------------------------<br>Server listening on 5201 (test #1)<br>-----------------------------------------------------------<br>Accepted connection from ::1, port 64123<br>[  5] local ::1 port 5201 connected to ::1 port 64124<br>[ ID] Interval           Transfer     Bitrate<br>[  5]   0.00-1.00   sec  59.8 MBytes   500 Mbits/sec<br>[  5]   1.00-2.00   sec  59.8 MBytes   500 Mbits/sec<br>[  5]   2.00-3.00   sec  59.2 MBytes   499 Mbits/sec<br>[  5]   3.00-3.00   sec   128 KBytes  1.19 Gbits/sec<br>- - - - - - - - - - - - - - - - - - - - - - - - -<br>[ ID] Interval           Transfer     Bitrate<br>[  5]   0.00-3.00   sec   179 MBytes   500 Mbits/sec                  receiver<br>-----------------------------------------------------------<br>Server listening on 5201 (test #2)<br>-----------------------------------------------------------<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs shell">iperf3 -c localhost -b 500M -t 3          <br>Connecting to host localhost, port 5201<br>[  7] local ::1 port 64124 connected to ::1 port 5201<br>[ ID] Interval           Transfer     Bitrate<br>[  7]   0.00-1.00   sec  59.6 MBytes   500 Mbits/sec<br>[  7]   1.00-2.00   sec  59.6 MBytes   500 Mbits/sec<br>[  7]   2.00-3.00   sec  59.6 MBytes   500 Mbits/sec<br>- - - - - - - - - - - - - - - - - - - - - - - - -<br>[ ID] Interval           Transfer     Bitrate<br>[  7]   0.00-3.00   sec   179 MBytes   500 Mbits/sec                  sender<br>[  7]   0.00-3.00   sec   179 MBytes   500 Mbits/sec                  receiver<br><br>iperf Done.<br></code></pre></td></tr></table></figure>
+
+<p>可以看到打流持续了3秒，客户端的Bitrate列输出了3行：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell">[ ID] Interval           Transfer     Bitrate<br>[  7]   0.00-1.00   sec  59.6 MBytes   500 Mbits/sec<br>[  7]   1.00-2.00   sec  59.6 MBytes   500 Mbits/sec<br>[  7]   2.00-3.00   sec  59.6 MBytes   500 Mbits/sec<br></code></pre></td></tr></table></figure>
+
+<p>下面是对数据结果的一些解析：</p>
+<p>Bitrate（比特率）是500 Mbits&#x2F;sec 即500Mbps，这表示当前网络是千兆网络。</p>
+<blockquote>
+<p>iperf3默认发送的是TCP包，如果想发送UDP包，可以在客户端命令添加<code>-u</code>参数，则会发送UDP包。同一个网络，发送TCP和UDP的最大带宽可能是不同的。</p>
+</blockquote>
+<p>除了上述功能外，还有一个重要功能，就是<strong>对于发送UDP的包，可以指定发送的数据包的payload的大小</strong>，可以通过<code>-l</code>参数实现，<code>-l</code>的值的单位为字节。比如如下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">iperf3 -c localhost -l 100 -u<br></code></pre></td></tr></table></figure>
+
+<p>其含义是指定发送的数据包的payload大小是100，运行iperf3的同时抓包，抓到的内容是：</p>
+<p><img src="/../images/image-20240424105616301.png" srcset="/img/loading.gif" lazyload alt="image-20240424105616301"></p>
+<p>可以看到传输的payload是100个字节，如绿色方框内所示。实际传输的整个数据包的大小是大于100个字节的，是100个字节加上各层的Header的长度，这里的总的数据包大小是152个字节。</p>
+<h2 id="不同速率的网络接口"><a href="#不同速率的网络接口" class="headerlink" title="不同速率的网络接口"></a>不同速率的网络接口</h2><p>iperf3运行的传输速率受到网络接口速率的影响，网络接口有不同的等级，比如10G的网络接口和1G的网络接口，那么二者有什么区别呢？</p>
+<p><strong>传输速率</strong>：10G 网络接口的传输速率为 10 千兆比特每秒（Gbps），而 1G 网络接口的传输速率为 1 千兆比特每秒（Gbps）。因此，10G 网络接口的传输速率比 1G 网络接口快 10 倍。</p>
+<p><strong>带宽</strong>：10G 网络接口具有更大的带宽，能够传输更多的数据。这使得它更适合于大型数据中心、高性能计算和要求高带宽的应用场景。</p>
+<p><strong>成本</strong>：由于硬件和技术上的差异，10G 网络接口通常比 1G 网络接口更昂贵。这包括网卡、交换机和光纤等设备的成本。</p>
+<p><strong>距离</strong>：10G 网络接口通常可以支持更远的传输距离，例如，使用单模光纤可以达到数十公里的传输距离，而 1G 网络接口则通常在数百米范围内。</p>
+<p><strong>功耗</strong>：10G 网络接口通常消耗更多的功耗，因为它需要更多的处理能力来处理更高的传输速率和带宽。这可能会增加服务器和网络设备的能耗。</p>
+<p>总的来说，10G 网络接口适用于需要更高带宽和更快传输速率的场景，而 1G 网络接口则更适用于一般的办公环境和普通数据中心应用。</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>iperf3使用</div>
+      <div>https://rhythmnr.github.io/2023/04/10/iperf3使用/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年4月10日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/04/11/ipmi%E5%B8%A6%E5%A4%96%E7%AE%A1%E7%90%86/" title="ipmi带外管理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ipmi带外管理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/17/clickhouse%E5%88%86%E5%B8%83%E5%BC%8F%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/" title="clickhous分布式操作与错误复盘">
+                        <span class="hidden-mobile">clickhous分布式操作与错误复盘</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

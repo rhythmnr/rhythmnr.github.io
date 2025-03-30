@@ -1,0 +1,825 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。   因为Go的 net&#x2F;http 包提供了基础的路由函数组合与丰富的功 能函数。所以在社区里流行一种用Go编写api不需要框架的观点;在我们看来，如果你的项目的路由在个位数、URI 固定且 不通过 URI 来传递参数，那么确实使用官方库也就足够。  只要你的路由带有参数，并且 这个项目的 api 数目超过了 10，就尽量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go语言高级编程-第5章go和web">
+<meta property="og:url" content="https://rhythmnr.github.io/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC5%E7%AB%A0go%E5%92%8Cweb/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。   因为Go的 net&#x2F;http 包提供了基础的路由函数组合与丰富的功 能函数。所以在社区里流行一种用Go编写api不需要框架的观点;在我们看来，如果你的项目的路由在个位数、URI 固定且 不通过 URI 来传递参数，那么确实使用官方库也就足够。  只要你的路由带有参数，并且 这个项目的 api 数目超过了 10，就尽量">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.696Z">
+<meta property="article:author" content="NR">
+<meta property="article:tag" content="读书">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>Go语言高级编程-第5章go和web - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go语言高级编程-第5章go和web"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-12-04 00:00" pubdate>
+          2021年12月4日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          82 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Go语言高级编程-第5章go和web</h1>
+            
+            <div class="markdown-body">
+              
+              <blockquote>
+<p>Go语言高级编程系列是我读《Go语言高级编程》时的一些要点总结。</p>
+</blockquote>
+<ol>
+<li><p>因为Go的 net&#x2F;http 包提供了基础的路由函数组合与丰富的功 能函数。所以在社区里流行一种用Go编写api不需要框架的观点;在我们看来，如果你的项目的路由在个位数、URI 固定且 不通过 URI 来传递参数，那么确实使用官方库也就足够。</p>
+</li>
+<li><p>只要你的路由带有参数，并且 这个项目的 api 数目超过了 10，就尽量不要使用 net&#x2F;http 中默 认的路由。</p>
+</li>
+<li><p>在常见的 web 框架中，router 是必备的组件。golang 圈子里 router 也时常被称为 http 的 multiplexer。在上一节中我们通过 对 Burrow 代码的简单学习，已经知道如何用 http 标准库中内 置的 mux 来完成简单的路由功能了。</p>
+</li>
+<li><p>restful 中常见的请求路径:</p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs elixir"><span class="hljs-title class_">GET</span> /repos/<span class="hljs-symbol">:owner/</span><span class="hljs-symbol">:repo/comments/</span><span class="hljs-symbol">:id/reactions</span><br><span class="hljs-title class_">POST</span> /projects/<span class="hljs-symbol">:project_id/columns</span><br><span class="hljs-title class_">PUT</span> /user/starred/<span class="hljs-symbol">:owner/</span><span class="hljs-symbol">:repo</span><br><span class="hljs-title class_">DELETE</span> /user/starred/<span class="hljs-symbol">:owner/</span><span class="hljs-symbol">:repo</span><br></code></pre></td></tr></table></figure>
+
+<p>restful 风格的 API 重度依赖请求路径。会将很 多参数放在请求 URI 中。除此之外还会使用很多并不那么常 见的 HTTP 状态码，</p>
+</li>
+<li><p>较流行的开源 golang web 框架大多使用 httprouter，或是基于 httprouter 的变种对路由进行支持。前面提到的 github 的参数 式路由在 httprouter 中都是可以支持的。</p>
+<p>因为 httprouter 中使用的是显式匹配，所以在设计路由的时候 需要规避一些会导致路由冲突的情况，例如:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go">conflict:<br>  GET /user/info/:name<br>  GET /user/:id<br>  no conflict:<br>  GET /user/info/:name<br>  POST /user/:id<br></code></pre></td></tr></table></figure>
+
+<p>简单来讲的话，如果两个路由拥有一致的 http method (指 GET&#x2F;POST&#x2F;PUT&#x2F;DELETE) 和请求路径前缀，且在某个位置出 现了 A 路由是 wildcard (指 :id 这种形式) 参数，B 路由则是普 通字符串，那么就会发生路由冲突。</p>
+<p>因为 httprouter 考虑到字典树的深度，在 初始化时会对参数的数量进行限制，所以在路由中的参数数目 不能超过 255，否则会导致 httprouter 无法识别后续的参数。</p>
+<p>除支持路径中的wildcard参数之外，httprouter还可以支持 <em>号来进行通配，不过</em> 号开头的参数只能放在路由的结尾， 例如下面这样:</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arcade">Pattern: <span class="hljs-regexp">/src/</span>*filepath<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>除了正常情况下的路由支持，httprouter 也支持对一些特殊情 况下的回调函数进行定制，例如 404 的时候</p>
+<p>目前开源界最为流行(star 数最多)的 web 框架 gin 使用的就是 httprouter 的变种。</p>
+</li>
+<li><p>httprouter 和众多衍生 router 使用的数据结构被称为 radix tree， 压缩字典树。读者可能没有接触过压缩字典树，但对字典树 trie tree 应该有所耳闻。</p>
+</li>
+<li><p>我们犯的最大的错误是把业务代码和非业务代码揉在 了一起。对于大多数的场景来讲，非业务的需求都是在 http 请 求处理前做一些事情，或者&#x2F;并且在响应完成之后做一些事 情。一个middleware可以类似这样写，注意<code>next.ServeHTTP(wr, r)</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">hello</span><span class="hljs-params">(wr http.ResponseWriter, r *http.Request)</span></span> &#123;<br>      wr.Write([] <span class="hljs-type">byte</span> ( <span class="hljs-string">&quot;hello&quot;</span> ))<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">timeMiddleware</span><span class="hljs-params">(next http.Handler)</span></span> http.Handler &#123;<br>       <span class="hljs-keyword">return</span>                    <span class="hljs-function"><span class="hljs-keyword">func</span></span><br>          timeStart := time.Now()<br>           <span class="hljs-comment">// next handler</span><br>          next.ServeHTTP(wr, r)<br>          timeElapsed := time.Since(timeStart)<br>          logger.Println(timeElapsed)<br>      &#125;)<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br> http.Handle(<br><span class="hljs-string">&quot;/&quot;</span><br> , timeMiddleware(http.HandlerFunc(hello)))<br>err := http.ListenAndServe( <span class="hljs-string">&quot;:8080&quot;</span> ,  <span class="hljs-literal">nil</span> )<br>...<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>一般为了验证请求是否正确，我们得为每一个 http 请求都去写这么一套差不多的 validate 函数，有没有更好的办法来帮助我们解除这项体力劳 动?答案就是 validator。</p>
+<p>这里我们引入一个新的 validator 库:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">import</span>   <span class="hljs-string">&quot;gopkg.in/go-playground/validator.v9&quot;</span><br><span class="hljs-keyword">type</span> RegisterReq <span class="hljs-keyword">struct</span> &#123;<br><span class="hljs-comment">// 字符串的 gt=0 表示长度必须 &gt; 0，gt = greater than</span><br>Username <span class="hljs-type">string</span> <span class="hljs-string">`validate:&quot;gt=0&quot;`</span> <span class="hljs-comment">// 同上</span><br>PasswordNew <span class="hljs-type">string</span> <span class="hljs-string">`validate:&quot;gt=0&quot;`</span> <span class="hljs-comment">// eqfield 跨字段相等校验</span><br>      PasswordRepeat   <span class="hljs-type">string</span><br>  <span class="hljs-string">`validate:&quot;eqfield=PasswordNew&quot;`</span><br><span class="hljs-comment">// 合法 email 格式校验</span><br>Email   <span class="hljs-type">string</span> <span class="hljs-string">`validate:&quot;email&quot;`</span><br>&#125;<br><br><br>  <span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">validate</span><span class="hljs-params">(req RegisterReq)</span></span> <span class="hljs-type">error</span> &#123;<br>      err := validate.Struct(mystruct)<br>       <span class="hljs-keyword">if</span>  err !=  <span class="hljs-literal">nil</span>  &#123;<br>          doSomething()<br>&#125;<br>...<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>注意下面函数写法，对于reflect</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">validate</span><span class="hljs-params">(v <span class="hljs-keyword">interface</span> &#123;&#125;)</span></span>(<span class="hljs-type">bool</span>, <span class="hljs-type">string</span>) &#123;<br>    validateResult: = <span class="hljs-literal">true</span><br>    errmsg: = <span class="hljs-string">&quot;success&quot;</span><br>    vt: = reflect.TypeOf(v)<br>    vv: = reflect.ValueOf(v)<br>    <span class="hljs-keyword">for</span> i: = <span class="hljs-number">0</span>;i &lt; vv.NumField();i++&#123;<br>        fieldVal: = vv.Field(i)<br>        tagContent: = vt.Field(i).Tag.Get(<span class="hljs-string">&quot;validate&quot;</span>)<br>        k: = fieldVal.Kind()<br>        <span class="hljs-keyword">switch</span> k &#123;<br>            <span class="hljs-keyword">case</span> reflect.String:<br>                val: = fieldVal.String() tagValStr: = tagContent<br>                <span class="hljs-keyword">switch</span> tagValStr &#123;<br><br>                    <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;email&quot;</span>:<br>                        nestedResult: = validateEmail(val)<br>                        <span class="hljs-keyword">if</span> nestedResult == <span class="hljs-literal">false</span> &#123;<br>                            errmsg =<br>                                <span class="hljs-string">&quot;validate mail failed, field val is: &quot;</span> + val<br>                            validateResult = <span class="hljs-literal">false</span><br>                        &#125;<br>                &#125;<br>            <span class="hljs-keyword">case</span> reflect.Struct:<br>                <span class="hljs-comment">// 如果有内嵌的 struct，那么深度优先遍历 // 就是一个递归过程</span><br>                valInter: = fieldVal.Interface() nestedResult, msg: = validate(valInter) <span class="hljs-keyword">if</span> nestedResult == <span class="hljs-literal">false</span> &#123;<br>                    validateResult = <span class="hljs-literal">false</span><br>                    errmsg = msg<br>                &#125;<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> validateResult,<br>    errmsg<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>我们对 struct 进行 validate 时大量使用了 reflect，而 go 的 reflect 在性 能上不太出众，有时甚至会影响到我们程序的性能。这样的考 虑确实有一些道理，但需要对 struct 进行大量校验的场景往往 出现在 web 服务，这里并不一定是程序的性能瓶颈所在，实 际的效果还是要从 pprof 中做更精确的判断。</p>
+</li>
+<li><p>Go官方提供了 database&#x2F;sql 包来给用户进行和数据库打交道 的工作，实际上 database&#x2F;sql 库就只是提供了一套操作数据 库的接口和规范，例如抽象好的 sql 预处理(prepare)，连接池 管理，数据绑定，事务，错误处理等等。官方并没有提供具体 某种数据库实现的协议支持。</p>
+<p><strong>和具体的数据库，例如 MySQL 打交道，还需要再引入 MySQL 的驱动，像下面这样</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">import</span>   <span class="hljs-string">&quot;database/sql&quot;</span><br><span class="hljs-keyword">import</span>  _  <span class="hljs-string">&quot;github.com/go-sql-driver/mysql&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>这一句 import，实际上是调用了 mysql 包的 init 函数，做的事 情也很简单:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span>  <span class="hljs-title">init</span><span class="hljs-params">()</span></span> &#123;<br>    sql.Register( <span class="hljs-string">&quot;mysql&quot;</span> , &amp;MySQLDriver&#123;&#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>注意读取出来内容后，必须要把 rows 里的内容读完，否则<strong>连接</strong>永远不会释放</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"> rows, err := db.Query(<br><span class="hljs-string">&quot;select id, name from users where id = ?&quot;</span> ,  <span class="hljs-number">1</span> )<br>     <span class="hljs-keyword">if</span>  err !=  <span class="hljs-literal">nil</span>  &#123;<br>        log.Fatal(err)<br>    &#125;<br>     <span class="hljs-keyword">defer</span>  rows.Close()<br><span class="hljs-comment">// 必须要把 rows 里的内容读完，否则连接永远不会释放 </span><br><span class="hljs-keyword">for</span> rows.Next() &#123;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>在 web 开发领域常常提到的 ORM 是什么?我们先看看万能的 维基百科:</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">对象关系映射(英语:<span class="hljs-keyword">Object</span> Relational <span class="hljs-keyword">Mapping</span>，简称ORM，或O/RM，或 O/R <span class="hljs-keyword">mapping</span>)，<br>是一种程序设计技术，用于实现面向对象编程语言里不同类型系统的数据之间的转换。<br>从效果上说，它其实是创建了一个可在编程语言里使用的“虚拟对象数据库”。<br></code></pre></td></tr></table></figure>
+
+<p>最为常见的 ORM 实际上做的是从 db -&gt; 程序的 class &#x2F; struct 这 样的映射。所以你手边的程序可能是从 mysql 的表 -&gt; 你的程 序内 class。</p>
+<p> ORM 的目的就是屏蔽掉DB 层，实际上很多语言的 ORM 只要把你的 class&#x2F;struct 定义好， 再用特定的语法将结构体之间的一对一或者一对多关系表达出 来。那么任务就完成了。然后你就可以对这些映射好了数据库 表的对象进行各种操作，例如 save，create，retrieve，delete。 至于 orm在背地里做了什么阴险的勾当，你是不一定清楚的。</p>
+<p>ORM 一类的工具在出发点上就是屏蔽 sql，让我们对数据 库的操作更接近于人类的思维方式。</p>
+</li>
+<li><p>有些 orm 背后隐藏了非常难以察觉的细节， 那就是生成的 sql 语句会自动 limit 1000。喜欢强类型语言的人一般都不喜欢语 言隐式地去做什么事情，例如各种语言在赋值操作时进行的隐 式类型转换然后又在转换中丢失了精度的勾当，一定让你非常 的头疼。所以一个程序库背地里做的事情还是越少越好，如果 一定要做，那也一定要在显眼的地方做。比如上面的例子，去 掉这种默认的自作聪明的行为，或者要求用户强制传入 limit 参数都是更好的选择。orm 想从设计上隐去太多的细 节。而方便的代价是其背后的运行完全失控。</p>
+</li>
+<li><p>相比 ORM 来说，sql builder 在 sql 和项目可维护性之间取得了 比较好的平衡。首先 sql builer 不像 ORM 那样屏蔽了过多的细 节，其次从开发的角度来讲，sql builder 简单进行封装后也可 以非常高效地完成开发，举个例子:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go">where :=  <span class="hljs-keyword">map</span> [ <span class="hljs-type">string</span> ] <span class="hljs-keyword">interface</span> &#123;&#125; &#123;<br>      <span class="hljs-string">&quot;order_id &gt; ?&quot;</span>  :  <span class="hljs-number">0</span> ,<br>      <span class="hljs-string">&quot;customer_id != ?&quot;</span>  :  <span class="hljs-number">0</span> ,<br> &#125;<br> limit := [] <span class="hljs-type">int</span> &#123; <span class="hljs-number">0</span> , <span class="hljs-number">100</span> &#125;<br> orderBy := [] <span class="hljs-type">string</span> &#123; <span class="hljs-string">&quot;id asc&quot;</span> ,  <span class="hljs-string">&quot;create_time desc&quot;</span> &#125;<br> orders := orderModel.GetList(where, limit, orderBy)<br></code></pre></td></tr></table></figure>
+
+<p>说白了 sql builder 是 sql 在代码里的一种特殊方言，如果你们 没有DBA但研发有自己分析和优化 sql 的能力，或者你们公司 的 dba 对于学习这样一些 sql 的方言没有异议。那么使用 sql builder 是一个比较好的选择，不会导致什么问题。</p>
+</li>
+<li><p>所以现如今，大型的互联网公司核心线上业务都会在代码中把 sql 放在显眼的位置提供给 DBA review，以此来控制系统在数 据层的风险。</p>
+</li>
+<li><p>web 系统打交道最多的是网络，无论是接收，解析用户请求， 访问存储，还是把响应数据返回给用户，都是要走网络的。在 没有 epoll&#x2F;kqueue 之类的系统提供的 IO 多路复用接口之前， 多个核心的现代计算机最头痛的是 C10k 问题，C10k 问题会导 致计算机没有办法充分利用 CPU 来处理更多的用户连接，进 而没有办法通过优化程序提升 CPU 利用率来处理更多的请 求。</p>
+<p>自从 linux 实现了 epoll，freebsd 实现了 kqueue，这个问题基 本解决了，我们可以借助内核提供的 API 轻松解决当年的 C10k 问题，<strong>也就是说如今如果你的程序主要是和网络打交 道，那么瓶颈一定在用户程序而不在操作系统内核。</strong></p>
+</li>
+<li><p>Go 的 net 库针对不同平台封装了不同的 syscall API，http 库又是构建 在 net 库之上，所以在 Go 我们可以借助标准库，很轻松地写 出高性能的 http 服务，</p>
+</li>
+<li><p>如果 碰到业务逻辑复杂代码量巨大的模块，其瓶颈并不是三下五除 二可以推测出来的，还是需要从压力测试中得到更为精确的结 论。</p>
+</li>
+<li><p>对于 IO&#x2F;Network bound 类的程序，其表现是网卡&#x2F;磁盘 IO 会先 于 CPU 打满，这种情况即使优化 CPU 的使用也不能提高整个 系统的吞吐量，<strong>只能提高磁盘的读写速度，增加内存大小</strong>，提 升网卡的带宽来提升整体性能。而 CPU bound 类的程序，则 是在存储和网卡未打满之前 CPU 占用率提前到达 100%，CPU 忙于各种计算任务，IO 设备相对则较闲。</p>
+<p>无论哪种类型的服务，在资源使用到极限的时候都会导致请求 堆积，超时，系统 hang 死，最终伤害到终端用户。对于分布 式的 web 服务来说，瓶颈还不一定总在系统内部，也有可能 在外部。非计算密集型的系统往往会在关系型数据库环节失 守，而这时候 web 模块本身还远远未达到瓶颈。</p>
+<p>不管我们的服务瓶颈在哪里，最终要做的事情都是一样的，那就是流量限制。</p>
+</li>
+<li><p>流量限制的手段有很多，最常见的:漏桶、令牌桶两种</p>
+</li>
+<li><p>QoS 全称是 Quality of Service，顾名思义是服务质 量。QoS 包含有可用性、吞吐量、时延、时延变化和丢失等指 标。一般来讲我们可以通过优化系统，来提高 web 服务的 CPU 利用率，从而提高整个系统的吞吐量。</p>
+</li>
+<li><p>流行的 web 框架大多数是 MVC 框架，MVC 这个概念最早由 Trygve Reenskaug 在 1978 年提出，为了能够对 GUI 类型的应 用进行方便扩展，将程序划分为:</p>
+<ol>
+<li>控制器(Controller)- 负责转发请求，对请求进行处理。</li>
+<li>视图(View)-界面设计人员进行图形界面设计。</li>
+<li>模型(Model)-程序员编写程序应有的功能(实现算法等等)、数据库专家进行数据管理和数据库设计(可以实现 具体的功能)。</li>
+</ol>
+<p>随着时代的发展，前端也变成了越来越复杂的工程，为了更好 地工程化，现在更为流行的一般是前后分离的架构。前后端之间通过 ajax 来交 互，有时候要解决跨域的问题</p>
+</li>
+<li><p>业务流程也算是一种“模型”，是对 真实世界用户行为或者既有流程的一种建模，并非只有按格式 组织的数据才能叫模型</p>
+</li>
+<li><p>现在比较流行的 纯后端 api 模块一般采用下述划分方法:</p>
+<ol>
+<li><p>Controller，与上述类似，服务入口，负责处理路由，参数 校验，请求转发。</p>
+</li>
+<li><p>Logic&#x2F;Service，逻辑(服务)层，一般是业务逻辑的入口，可 以认为从这里开始，所有的请求参数一定是合法的。业务 逻辑和业务流程也都在这一层中。常见的设计中会将该层 称为 Business Rules。</p>
+</li>
+<li><p>DAO&#x2F;Repository，这一层主要负责和数据、存储打交道。 将下层存储以更简单的函数、接口形式暴露给 Logic 层来 使用。负责数据的持久化工作。</p>
+</li>
+</ol>
+<p>可以认为，我 们的代码运行到 controller 层之后，就没有任何与“协议”相关 的代码了。在这里你找不到 http.Request，也找不到 http.ResponseWriter，也找不到任何与 thrift 或者 gRPC 相关的 字眼。</p>
+</li>
+<li><p>我们的外部依赖总是为了自己爽而不断地做升级，且不想做向前兼容</p>
+</li>
+<li><p>非实时的统计类系统，那么就没有必 要在主流程里为每一套系统做一套 RPC 流程。我们只要将下 游需要的数据打包成一条消息，传入消息队列，之后的事情与 主流程一概无关</p>
+</li>
+<li><p>一件事情本身变的复杂的话，这时候拆解和异步化就不灵了。我们还是要对事情本身进行一定程度的封装抽象。</p>
+</li>
+<li><p>引入 interface 对 我们的系统本身是否有意义，这是要按照场景去进行分析的。 假如我们的系统只服务一条产品线，并且内部的代码只是针对 很具体的场景进行定制化开发，那么实际上引入 interface 是不 会带来任何收益的。</p>
+</li>
+<li><p>当我们接手了一个 几十万行的系统时，如果看到定义了很多 interface，例如订单 流程的 interface，<strong>我们希望能直接找到这些 interface 都被哪些 对象实现了。但直到现在，这个简单的需求也就只有 goland 实现了，</strong>并且体验尚可。</p>
+</li>
+<li><p>熟悉开源 lint 工具的同学应该见到过圈复杂度的说法，<strong>在函数 中如果有 if 和 switch 的话，会使函数的圈复杂度上升。</strong>所以 有强迫症的同学即使在入口一个函数中有 switch，还是想要干 掉这个 switch，有没有什么办法呢?当然有，用表驱动的方式 来存储我们需要实例:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">entry</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">var</span> bi BusinessInstance<br>    <span class="hljs-keyword">switch</span> businessType &#123;<br>        <span class="hljs-keyword">case</span> TravelBusiness:<br>            bi = travelorder.New()<br>        <span class="hljs-keyword">case</span> MarketBusiness:<br>            bi = marketorder.New()<br>        <span class="hljs-keyword">default</span>:<br>            <span class="hljs-keyword">return</span> errors.New(<span class="hljs-string">&quot;not supported business&quot;</span>)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>可以修改为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> businessInstanceMap = <span class="hljs-keyword">map</span>[<span class="hljs-type">int</span>] BusinessInstance &#123;<br>    TravelBusiness: travelorder.New(),<br>    MarketBusiness: marketorder.New(),<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">entry</span><span class="hljs-params">()</span></span> &#123;<br>    bi: = businessInstanceMap[businessType]<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>table driven 的设计方式，很多设计模式相关的书籍并没有把它 作为一种设计模式来讲，但我认为这依然是一种非常重要的帮 助我们来简化代码的手段。在日常的开发工作中可以多多思 考，<strong>不必要的 switch case 可以用一个字典和一行代码就可 以轻松搞定。</strong></p>
+</li>
+<li><p>灰度非常重要，灰度发布也称为金丝雀 发布。互联网系统的灰度发布一般通过两种方式实现:</p>
+<ol>
+<li>通过分批次部署实现灰度发布 2. 通过业务规则进行灰度发布</li>
+</ol>
+<p>在对系统的旧功能进行升级迭代时，第一种方式用的比较多。新功能上线时，第二种方式用的比较多。当然，对比较重要的老功能进行较大幅度的修改时，一般也会选择按业务规则来进行发布，因为直接全量开放给所有用户风险实在太大。</p>
+</li>
+<li><p>假如服务部署在 15 个实例(可能是物理机，也可能是容器) 上，我们把这 7 个实例分为三组，按照先后顺序，分别有 1-2- 4-8 台机器，保证每次扩展时大概都是二倍的关系。为什么要用 2 倍?这样能够保证我们不管有多少台机器，都不 会把组划分得太多。例如 1024 台机器，实际上也就只需要 1- 2-4-8-16-32-64-128-256-512 部署十次就可以全部部署完毕。</p>
+</li>
+<li><p>在上线时，最有效的观察手法是查看程序的错误日志，如果较 明显的逻辑错误，一般错误日志的滚动速度都会有肉眼可见的 增加。</p>
+</li>
+<li><p><strong>map 的查询比数组稍慢，但扩展会灵活一 些</strong></p>
+</li>
+<li><p>求哈希可用的算法非常多，比如 md5，crc32，sha1 等等，但 我们这里的目的只是为了给这些数据做个映射，并不想要因为 计算哈希消耗过多的 cpu，所以现在业界使用较多的算法是 murmurhash，下面是我们对这些常见的 hash 算法的简单benchmark</p>
+<p>hash.go:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><span class="hljs-keyword">import</span><br><span class="hljs-keyword">import</span><br><span class="hljs-keyword">import</span> <span class="hljs-string">&quot;crypto/md5&quot;</span><br><span class="hljs-string">&quot;crypto/sha1&quot;</span><br><span class="hljs-string">&quot;github.com/spaolacci/murmur3&quot;</span><br><span class="hljs-keyword">var</span> str = <span class="hljs-string">&quot;hello world&quot;</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">md5Hash</span><span class="hljs-params">()</span></span>[<span class="hljs-number">16</span>] <span class="hljs-type">byte</span> &#123;<br>    <span class="hljs-keyword">return</span> md5.Sum([] <span class="hljs-type">byte</span>(str))<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">sha1Hash</span><span class="hljs-params">()</span></span>[<span class="hljs-number">20</span>] <span class="hljs-type">byte</span> &#123;<br>    <span class="hljs-keyword">return</span> sha1.Sum([] <span class="hljs-type">byte</span>(str))<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">murmur32</span><span class="hljs-params">()</span></span> <span class="hljs-type">uint32</span> &#123;<br>    <span class="hljs-keyword">return</span> murmur3.Sum32([] <span class="hljs-type">byte</span>(str))<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">murmur64</span><span class="hljs-params">()</span></span> <span class="hljs-type">uint64</span> &#123;<br>    <span class="hljs-keyword">return</span> murmur3.Sum64([] <span class="hljs-type">byte</span>(str))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>hash_test.go</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><span class="hljs-keyword">import</span> <span class="hljs-string">&quot;testing&quot;</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">BenchmarkMD5</span><span class="hljs-params">(b * testing.B)</span></span> &#123;<br>    <span class="hljs-keyword">for</span> i: = <span class="hljs-number">0</span>;<br>    i &lt; b.N;<br>    i++&#123;<br>        md5Hash()<br>    &#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">BenchmarkSHA1</span><span class="hljs-params">(b * testing.B)</span></span> &#123;<br>    <span class="hljs-keyword">for</span> i: = <span class="hljs-number">0</span>;<br>    i &lt; b.N;<br>    i++&#123;<br>        sha1Hash()<br>    &#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">BenchmarkMurmurHash32</span><span class="hljs-params">(b * testing.B)</span></span> &#123;<br>    <span class="hljs-keyword">for</span> i: = <span class="hljs-number">0</span>;<br>    i &lt; b.N;<br>    i++&#123;<br>        murmur32()<br>    &#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">BenchmarkMurmurHash64</span><span class="hljs-params">(b * testing.B)</span></span> &#123;<br>    <span class="hljs-keyword">for</span> i: = <span class="hljs-number">0</span>;<br>    i &lt; b.N;<br>    i++&#123;<br>        murmur64()<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>~&#x2F;t&#x2F;g &#x2F; hash_bench git: master❯❯❯ go test - bench &#x3D; .goos: darwin<br>goarch: amd64<br>BenchmarkMD5 - 4<br>BenchmarkSHA1 - 4<br>BenchmarkMurmurHash32 - 4<br>BenchmarkMurmurHash64 - 4<br>PASS</p>
+<p>10000000<br>10000000<br>50000000<br>20000000<br>180 ns &#x2F; op<br>211 ns &#x2F; op<br>25.7 ns &#x2F; op<br>66.2 ns &#x2F; op<br>7.050 s<br>ok _ &#x2F; Users &#x2F; caochunhui &#x2F; test &#x2F; go &#x2F; hash_bench</p>
+</blockquote>
+</li>
+</ol>
+<p>​  可见 murmurhash 相比其它的算法有三倍以上的性能提升。</p>
+<ol start="38">
+<li>对于哈希算法来说，性能是一方面的问题，另一方面还要考虑哈希后的值是否分布均匀。</li>
+<li>web 甚至可以 不用非得基于 http 协议。<strong>只要是 CS 或者 BS 架构，都可以认 为是 web 系统。</strong></li>
+</ol>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6/">#读书</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go语言高级编程-第5章go和web</div>
+      <div>https://rhythmnr.github.io/2021/12/04/Go语言高级编程-第5章go和web/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2021年12月4日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC4%E7%AB%A0%20RPC%E5%92%8CProtobuf/" title="Go语言高级编程-第4章 RPC和Protobuf">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go语言高级编程-第4章 RPC和Protobuf</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/12/04/Go%E8%AF%AD%E8%A8%80%E9%AB%98%E7%BA%A7%E7%BC%96%E7%A8%8B-%E7%AC%AC6%E7%AB%A0%20%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" title="Go语言高级编程-第6章 分布式系统">
+                        <span class="hidden-mobile">Go语言高级编程-第6章 分布式系统</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,833 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="原文 功能gohangout类似logstash，从输入（ES，Kafka，Stdin等）读取数据，经过一些过滤和加工，将处理好的数据输出到指定输出中（ES，Stdin等） 代码可学习多个flag的结构化如果有多个flag参数，可以把参数的读取定义在init()中，这些参数在main所在文件里定义成一个option 注意option是个指针 1234567891011121314151617181">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gohangout项目代码阅读总结">
+<meta property="og:url" content="https://rhythmnr.github.io/2022/08/17/gohangout%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="原文 功能gohangout类似logstash，从输入（ES，Kafka，Stdin等）读取数据，经过一些过滤和加工，将处理好的数据输出到指定输出中（ES，Stdin等） 代码可学习多个flag的结构化如果有多个flag参数，可以把参数的读取定义在init()中，这些参数在main所在文件里定义成一个option 注意option是个指针 1234567891011121314151617181">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-08-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.714Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>gohangout项目代码阅读总结 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="gohangout项目代码阅读总结"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-08-17 00:00" pubdate>
+          2022年8月17日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          12k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          96 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">gohangout项目代码阅读总结</h1>
+            
+            <div class="markdown-body">
+              
+              <p><a target="_blank" rel="noopener" href="https://studygolang.com/articles/18059">原文</a></p>
+<h2 id="功能"><a href="#功能" class="headerlink" title="功能"></a>功能</h2><p><strong>gohangout类似logstash，从输入（ES，Kafka，Stdin等）读取数据，经过一些过滤和加工，将处理好的数据输出到指定输出中（ES，Stdin等）</strong></p>
+<h2 id="代码可学习"><a href="#代码可学习" class="headerlink" title="代码可学习"></a>代码可学习</h2><h3 id="多个flag的结构化"><a href="#多个flag的结构化" class="headerlink" title="多个flag的结构化"></a>多个flag的结构化</h3><p><strong>如果有多个flag参数，可以把参数的读取定义在init()中，这些参数在main所在文件里定义成一个option</strong></p>
+<p><strong>注意option是个指针</strong></p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">var options = &amp;<span class="hljs-keyword">struct</span> &#123;<br>config     <span class="hljs-built_in">string</span><br>autoReload <span class="hljs-built_in">bool</span> <span class="hljs-comment">// 配置文件更新自动重启</span><br>pprof      <span class="hljs-built_in">bool</span><br>pprofAddr  <span class="hljs-built_in">string</span><br>cpuprofile <span class="hljs-built_in">string</span><br>memprofile <span class="hljs-built_in">string</span><br><br>prometheus <span class="hljs-built_in">string</span><br><br>exitWhenNil <span class="hljs-built_in">bool</span><br>&#125;&#123;&#125;<br><br>func init<span class="hljs-literal">()</span> &#123;<br>flag.<span class="hljs-constructor">StringVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">config</span>, <span class="hljs-string">&quot;config&quot;</span>, <span class="hljs-params">options</span>.<span class="hljs-params">config</span>, <span class="hljs-string">&quot;path to configuration file or directory&quot;</span>)</span><br>flag.<span class="hljs-constructor">BoolVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">autoReload</span>, <span class="hljs-string">&quot;reload&quot;</span>, <span class="hljs-params">options</span>.<span class="hljs-params">autoReload</span>, <span class="hljs-string">&quot;if auto reload while config file changed&quot;</span>)</span><br><br>flag.<span class="hljs-constructor">BoolVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">pprof</span>, <span class="hljs-string">&quot;pprof&quot;</span>, <span class="hljs-params">false</span>, <span class="hljs-string">&quot;pprof or not&quot;</span>)</span><br>flag.<span class="hljs-constructor">StringVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">pprofAddr</span>, <span class="hljs-string">&quot;pprof-address&quot;</span>, <span class="hljs-string">&quot;127.0.0.1:8899&quot;</span>, <span class="hljs-string">&quot;default: 127.0.0.1:8899&quot;</span>)</span><br>flag.<span class="hljs-constructor">StringVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">cpuprofile</span>, <span class="hljs-string">&quot;cpuprofile&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;write cpu profile to `file`&quot;</span>)</span><br>flag.<span class="hljs-constructor">StringVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">memprofile</span>, <span class="hljs-string">&quot;memprofile&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;write mem profile to `file`&quot;</span>)</span><br><br>flag.<span class="hljs-constructor">StringVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">prometheus</span>, <span class="hljs-string">&quot;prometheus&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;address to expose prometheus metrics&quot;</span>)</span><br><br>flag.<span class="hljs-constructor">BoolVar(&amp;<span class="hljs-params">options</span>.<span class="hljs-params">exitWhenNil</span>, <span class="hljs-string">&quot;exit-when-nil&quot;</span>, <span class="hljs-params">false</span>, <span class="hljs-string">&quot;triger gohangout to exit when receive a nil event&quot;</span>)</span><br><br>flag.<span class="hljs-constructor">Parse()</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h3><p><strong>日志打印小写开头</strong></p>
+<h3 id="配置文件转换"><a href="#配置文件转换" class="headerlink" title="配置文件转换"></a>配置文件转换</h3><p><strong>定义了一个Parser interface</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Parser <span class="hljs-keyword">interface</span> &#123;<br>parse(filename <span class="hljs-type">string</span>) (<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, <span class="hljs-type">error</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>虽然只有一个YamlParser实现了：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> YamlParser <span class="hljs-keyword">struct</span>&#123;&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(yp *YamlParser)</span></span> parse(filepath <span class="hljs-type">string</span>) (<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, <span class="hljs-type">error</span>) &#123;<br>  ...<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>读取配置文件根据文件的大小读取：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go">configFile, err := os.Open(filepath)<br><span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br><span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>&#125;<br>fi, _ := configFile.Stat()<br><br><span class="hljs-keyword">if</span> fi.Size() == <span class="hljs-number">0</span> &#123;<br><span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, fmt.Errorf(<span class="hljs-string">&quot;config file (%s) is empty&quot;</span>, filepath)<br>&#125;<br><br>buffer = <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, fi.Size())<br>_, err = configFile.Read(buffer)<br></code></pre></td></tr></table></figure>
+
+<h3 id="小的代码书写注意项"><a href="#小的代码书写注意项" class="headerlink" title="小的代码书写注意项"></a>小的代码书写注意项</h3><ul>
+<li><strong>多个变量声明</strong></li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> (<br>buffer []<span class="hljs-type">byte</span><br>err    <span class="hljs-type">error</span><br>)<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><p><strong>这个项目叫gohangout，main函数被定义在gohangout.go里</strong></p>
+</li>
+<li><p><strong>返回的被包装的错误也是小写字母开头的，错误包装例子</strong> <code>fmt.Errorf(&quot;config file (%s) is empty&quot;, filepath)</code></p>
+</li>
+<li><p><strong>同一个文件中，被调用的函数定义在调用处前面，靠近调用处</strong></p>
+</li>
+<li><p><strong>不用公开访问的函数小写字母开头即可</strong></p>
+</li>
+<li><p><strong>文件名，用下划线分割，http_input.go，tcp_input.go这样</strong></p>
+</li>
+<li><p><strong>可以加上go build flag，这样在一个文件下可以有同名的函数，比如</strong></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs awk"><span class="hljs-regexp">//</span> +build linux darwin<br><br><span class="hljs-keyword">func</span> listenSignal() &#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs awk"><span class="hljs-regexp">//</span> +build linux darwin<br><br><span class="hljs-keyword">func</span> listenSignal() &#123;&#125;<br></code></pre></td></tr></table></figure></li>
+<li><p><strong>多个返回值命名</strong> <code>func getUserPasswordAndHost(url string) (scheme, user, password, host string)</code></p>
+</li>
+</ul>
+<h2 id="一些工具"><a href="#一些工具" class="headerlink" title="一些工具"></a>一些工具</h2><p><strong>pprof</strong>是golang 官方提供的性能调优分析工具，可以对程序进行性能分析，并可视化数据，看起来相当的直观。 当你的go 程序遇到性能瓶颈时，可以使用这个工具来进行调试并优化程序</p>
+<p><strong>go plugin</strong>：需要 <code>go build -buildmode=plugin -o=plugin_doctor.so plugin_bad_docter.go</code>这样先编译成so文件，然后使用处执行 <code>plugin.Open(&quot;xxx.so&quot;)</code>，Open完毕才会执行插件的init函数，然后调用 <code>plug.Lookup(&quot;Doctor&quot;)</code>，再将结果转换为自己需要定义的interface等再使用。总而言之，如何使用还得自己定义，和使用相关的方法等还得自己定义，虽然被编译的go文件里可能已经定义了。so文件就像一个黑盒子。</p>
+<p><strong>用到了</strong><a target="_blank" rel="noopener" href="https://github.com/childe/healer">https://github.com/childe/healer</a>，这是作者写的一个消费者Group Consumer</p>
+<p><strong>Grok</strong>：解析日志数据时最常见的任务是将原始文本行分解为其他工具可以操作的一组结构化字段。 如果你使用 Elastic Stack，则可以利用 Elasticsearch 的聚合和 Kibana 的可视化，从日志中提取的信息（如 IP 地址，时间戳和特定域的数据）解释业务和操作问题。对于 Logstash，这个解构工作由 <a target="_blank" rel="noopener" href="https://link.segmentfault.com/?enc=qL2t+D3iTe4xOINVN8omxg==.3vfUTFyLK/HOPhM16wcpIivEyOePYxpfZ6aPYXHss7dXpRZqHHChG3womHjDEFQI/vBjMXm71DO2Wl8vSTY2k0a3AWlt95iOqD4NkBEYtf8=">logstash-filter-grok</a> 来承担，它是一个过滤器插件，可以帮助你描述日志格式的结构。grok 过滤器用于将非结构化数据解析为结构化数据。简而言之，grok是一种将行与正则表达式匹配，将行的特定部分映射到专用字段中以及根据此映射执行操作的方法。简而言之，grok是一种将行与正则表达式匹配，将行的特定部分映射到专用字段中以及根据此映射执行操作的方法。</p>
+<p><strong>map修改是会互相影响的</strong>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>e := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[<span class="hljs-keyword">interface</span>&#123;&#125;]<span class="hljs-keyword">interface</span>&#123;&#125;)<br>e[<span class="hljs-number">1</span>] = <span class="hljs-number">1</span><br>f(e)<br>fmt.Println(e)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">f</span><span class="hljs-params">(m <span class="hljs-keyword">map</span>[<span class="hljs-keyword">interface</span>&#123;&#125;]<span class="hljs-keyword">interface</span>&#123;&#125;)</span></span> &#123;<br>m[<span class="hljs-number">2</span>] = <span class="hljs-number">2</span><br>fmt.Println(m)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>运行结果为：</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">map</span>[<span class="hljs-number">1</span>:<span class="hljs-number">1</span> <span class="hljs-number">2</span>:<span class="hljs-number">2</span>]<br><span class="hljs-attribute">map</span>[<span class="hljs-number">1</span>:<span class="hljs-number">1</span> <span class="hljs-number">2</span>:<span class="hljs-number">2</span>]<br></code></pre></td></tr></table></figure>
+
+<p><strong>go的text&#x2F;template包</strong></p>
+<h2 id="每个包里的定义"><a href="#每个包里的定义" class="headerlink" title="每个包里的定义"></a>每个包里的定义</h2><h3 id="codec包"><a href="#codec包" class="headerlink" title="codec包"></a>codec包</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Decoder <span class="hljs-keyword">interface</span> &#123;<br>Decode([]<span class="hljs-type">byte</span>) <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="condition-filter包"><a href="#condition-filter包" class="headerlink" title="condition_filter包"></a>condition_filter包</h3><figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs reasonml"><span class="hljs-keyword">type</span> Condition interface &#123;<br><span class="hljs-constructor">Pass(<span class="hljs-params">event</span> <span class="hljs-params">map</span>[<span class="hljs-params">string</span>]<span class="hljs-params">interface</span>&#123;&#125;)</span> <span class="hljs-built_in">bool</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="field-deleter包"><a href="#field-deleter包" class="headerlink" title="field_deleter包"></a>field_deleter包</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> FieldDeleter <span class="hljs-keyword">interface</span> &#123;<br>Delete(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="field-setter包"><a href="#field-setter包" class="headerlink" title="field_setter包"></a>field_setter包</h3><figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs reasonml"><span class="hljs-keyword">type</span> FieldSetter interface &#123;<br><span class="hljs-constructor">SetField(<span class="hljs-params">event</span> <span class="hljs-params">map</span>[<span class="hljs-params">string</span>]<span class="hljs-params">interface</span>&#123;&#125;, <span class="hljs-params">value</span> <span class="hljs-params">interface</span>&#123;&#125;, <span class="hljs-params">fieldName</span> <span class="hljs-params">string</span>, <span class="hljs-params">overwrite</span> <span class="hljs-params">bool</span>)</span> map<span class="hljs-literal">[<span class="hljs-identifier">string</span>]</span>interface&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="filter包"><a href="#filter包" class="headerlink" title="filter包"></a>filter包</h3><figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-keyword">type</span> <span class="hljs-type">Converter</span> interface &#123;<br>convert(v interface&#123;&#125;) (interface&#123;&#125;, error)<br>&#125;<br><span class="hljs-keyword">type</span> <span class="hljs-type">DateParser</span> interface &#123;<br><span class="hljs-type">Parse</span>(interface&#123;&#125;) (time.<span class="hljs-type">Time</span>, error)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="input包"><a href="#input包" class="headerlink" title="input包"></a>input包</h3><figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-keyword">type</span> <span class="hljs-type">Converter</span> interface &#123;<br>convert(v interface&#123;&#125;) (interface&#123;&#125;, error)<br>&#125;<br><span class="hljs-keyword">type</span> <span class="hljs-type">DateParser</span> interface &#123;<br><span class="hljs-type">Parse</span>(interface&#123;&#125;) (time.<span class="hljs-type">Time</span>, error)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="output包"><a href="#output包" class="headerlink" title="output包"></a>output包</h3><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs stylus">type Event interface &#123;<br><span class="hljs-function"><span class="hljs-title">Encode</span><span class="hljs-params">()</span></span> <span class="hljs-selector-attr">[]</span>byte<br>&#125;<br><br>type BulkRequest interface &#123;<br><span class="hljs-function"><span class="hljs-title">add</span><span class="hljs-params">(Event)</span></span><br><span class="hljs-function"><span class="hljs-title">bufSizeByte</span><span class="hljs-params">()</span></span> int<br><span class="hljs-function"><span class="hljs-title">eventCount</span><span class="hljs-params">()</span></span> int<br><span class="hljs-function"><span class="hljs-title">readBuf</span><span class="hljs-params">()</span></span> <span class="hljs-selector-attr">[]</span>byte<br>&#125;<br>type NewBulkRequestFunc <span class="hljs-built_in">func</span>() BulkRequest<br><br>type BulkProcessor interface &#123;<br><span class="hljs-function"><span class="hljs-title">add</span><span class="hljs-params">(Event)</span></span><br><span class="hljs-function"><span class="hljs-title">bulk</span><span class="hljs-params">()</span></span><br><span class="hljs-function"><span class="hljs-title">awaitclose</span><span class="hljs-params">(time.Duration)</span></span><br>&#125;<br><br>type HostSelector interface &#123;<br><span class="hljs-function"><span class="hljs-title">Next</span><span class="hljs-params">()</span></span> interface&#123;&#125;<br><span class="hljs-function"><span class="hljs-title">ReduceWeight</span><span class="hljs-params">()</span></span><br><span class="hljs-function"><span class="hljs-title">AddWeight</span><span class="hljs-params">()</span></span><br><span class="hljs-function"><span class="hljs-title">Size</span><span class="hljs-params">()</span></span> int<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="simplejson包"><a href="#simplejson包" class="headerlink" title="simplejson包"></a>simplejson包</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> SimpleJsonDecoder <span class="hljs-keyword">struct</span> &#123;<br>bytes.Buffer<br>scratch [<span class="hljs-number">64</span>]<span class="hljs-type">byte</span><br>&#125;<br><br><span class="hljs-keyword">type</span> JSONMarshaler <span class="hljs-keyword">interface</span> &#123;<br>MarshalJSON() ([]<span class="hljs-type">byte</span>, <span class="hljs-type">error</span>)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(d *SimpleJsonDecoder)</span></span> <span class="hljs-type">string</span>(s <span class="hljs-type">string</span>) <span class="hljs-type">int</span> &#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="topology包（拓扑）"><a href="#topology包（拓扑）" class="headerlink" title="topology包（拓扑）"></a><strong>topology包（拓扑）</strong></h3><p><strong>这个包里定义了：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Filter <span class="hljs-keyword">interface</span> &#123;<br>Filter(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) (<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, <span class="hljs-type">bool</span>)<br>&#125;<br><span class="hljs-keyword">type</span> Input <span class="hljs-keyword">interface</span> &#123;<br>ReadOneEvent() <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;<br>Shutdown()<br>&#125;<br><span class="hljs-keyword">type</span> Output <span class="hljs-keyword">interface</span> &#123;<br>Emit(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;)<br>Shutdown()<br>&#125;<br><span class="hljs-keyword">type</span> Processor <span class="hljs-keyword">interface</span> &#123;<br>Process(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="value-render包"><a href="#value-render包" class="headerlink" title="value_render包"></a>value_render包</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> ValueRender <span class="hljs-keyword">interface</span> &#123;<br>Render(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) <span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="结构总结"><a href="#结构总结" class="headerlink" title="结构总结"></a>结构总结</h2><p><strong>input包的init函数有</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">Register</span><span class="hljs-params">(<span class="hljs-string">&quot;Kafka&quot;</span>, newKafkaInput)</span></span><br><span class="hljs-function"><span class="hljs-title">Register</span><span class="hljs-params">(<span class="hljs-string">&quot;Random&quot;</span>, newRandomInput)</span></span><br><span class="hljs-function"><span class="hljs-title">Register</span><span class="hljs-params">(<span class="hljs-string">&quot;Stdin&quot;</span>, newStdinInput)</span></span><br><span class="hljs-function"><span class="hljs-title">Register</span><span class="hljs-params">(<span class="hljs-string">&quot;TCP&quot;</span>, newTCPInput)</span></span><br><span class="hljs-function"><span class="hljs-title">Register</span><span class="hljs-params">(<span class="hljs-string">&quot;UDP&quot;</span>, newUDPInput)</span></span><br></code></pre></td></tr></table></figure>
+
+<p><strong>topology没有init函数，</strong></p>
+<h3 id="调用大纲"><a href="#调用大纲" class="headerlink" title="调用大纲"></a>调用大纲</h3><p><strong>main调用buildPluginLink构建input，</strong></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arduino">boxes, err := <span class="hljs-built_in">buildPluginLink</span>(config)<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>buildPluginLink详情：</strong></p>
+<p><strong>根据配置input中的类型获得对应的topology.Input</strong></p>
+<p><strong>根据topology.Input初始化InputBox struct</strong></p>
+<p><strong>根据配置的****add_fields</strong>，调用field_setter.NewFieldSetter(k)，给InputBox struct增加addFields即b.addFields[fieldSetter] &#x3D; value_render.GetValueRender(v.(string))</p>
+<p><strong>给 InputBox 的shutdownWhenNil &#x3D; shutdownWhenNil赋值</strong></p>
+</blockquote>
+<p><strong>将boxes转换：</strong></p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">inputs</span> <span class="hljs-operator">=</span> gohangoutInputs(boxes)<br></code></pre></td></tr></table></figure>
+
+<p><strong>调用</strong> <code>input.start()</code>，其具体逻辑就是将input强制转换为 <code>boxes := ([]*input.InputBox)(inputs)</code>，依次调用boexes的Beat，如下：</p>
+<p><strong>main中使用了InputBox这个struct，通过每个InputBox的Beat启动，Beat调用beat，beat的内容包括：</strong></p>
+<p><strong>buildTopology返回了一个Node</strong></p>
+<blockquote>
+<p><strong>buildTopology详情：</strong></p>
+<p><strong>读取配置中的output，</strong><code>box.outputsInAllWorker[workerIdx] = outputs</code>，根据output获取outputProcessor，</p>
+<p><strong>读取 filter信息，</strong><code>filterBoxes := topology.BuildFilterBoxes(box.config, filter.BuildFilter)</code>，filterBoxes 是 []*FilterBox</p>
+<blockquote>
+<p><strong>BuildFilterBoxes详情</strong></p>
+<p><strong>根据filters的各个类型，获得对应的 topology.Filter interface</strong></p>
+<p><strong>NewFilterBox获得FilterBox struct，这个步骤还包括根据配置中的if设置conditionFilter，根据配置的failTag设置failTag，根据remove_fields，****add_fields</strong>设置等</p>
+</blockquote>
+<p><strong>根据filterBoxes和outputProcessor，构建拓扑，返回拓扑</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus">  <span class="hljs-selector-tag">var</span> firstNode *topology<span class="hljs-selector-class">.ProcessorNode</span> <span class="hljs-comment">// ProcessorNode是个struct</span><br><span class="hljs-keyword">for</span> _, <span class="hljs-selector-tag">b</span> := range filterBoxes &#123;<br>firstNode = topology<span class="hljs-selector-class">.AppendProcessorsToLink</span>(firstNode, b)<br>&#125;<br>firstNode = topology<span class="hljs-selector-class">.AppendProcessorsToLink</span>(firstNode, outputProcessor)<br></code></pre></td></tr></table></figure>
+</blockquote>
+<p><strong>对于每个box（一个box对应一个input）。首先获取box.input.ReadOneEvent()，然后对于读取出来的结果，增加addFields</strong></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs csharp"><span class="hljs-keyword">for</span> fs, v := range box.addFields &#123;<br><span class="hljs-keyword">event</span> = fs.SetField(<span class="hljs-keyword">event</span>, v.Render(<span class="hljs-keyword">event</span>), <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-literal">false</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>接下来递归调用Process</strong></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs csharp"><span class="hljs-keyword">for</span> fs, v := range box.addFields &#123;<br><span class="hljs-keyword">event</span> = fs.SetField(<span class="hljs-keyword">event</span>, v.Render(<span class="hljs-keyword">event</span>), <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-literal">false</span>)<br>&#125;<br>firstNode.Process(<span class="hljs-keyword">event</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>主要是执行</strong> <code>func (b *FilterBox) Process(event map[string]interface&#123;&#125;) map[string]interface&#123;&#125;</code>和 <code>func (p *OutputBox) Process(event map[string]interface&#123;&#125;) map[string]interface&#123;&#125;</code>或者 <code>func (p OutputsProcessor) Process(event map[string]interface&#123;&#125;) map[string]interface&#123;&#125;</code></p>
+<p><strong>单个****OutputsProcessor</strong>的调用过程（<strong>OutputsProcessor</strong>是在有多个output配置的情况下使用的）：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-keyword">type</span> <span class="hljs-type">OutputsProcessor </span>[]*OutputBox<br></code></pre></td></tr></table></figure>
+
+<p><strong>挨个调用OutputBox，每个OutputBox都会调用Pass和Emit，和上面的类似。</strong></p>
+<p><strong>FilterBox</strong>的调用：</p>
+<p><strong>b.conditionFilter.Pass(event) 后调用</strong></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs csharp"><span class="hljs-keyword">event</span>, rst = b.Filter.Filter(<span class="hljs-keyword">event</span>)<br><span class="hljs-keyword">if</span> <span class="hljs-keyword">event</span> == nil &#123;<br><span class="hljs-keyword">return</span> nil<br>&#125;<br><span class="hljs-keyword">event</span> = b.PostProcess(<span class="hljs-keyword">event</span>, rst)<br></code></pre></td></tr></table></figure>
+
+<p><strong>PostProcess会根据FilterBox的conditionFilter，failTag，removeFields等字段，增加或者删除一些字段。也就是过滤完毕后的字段处理。</strong></p>
+<h3 id="函数详情"><a href="#函数详情" class="headerlink" title="函数详情"></a>函数详情</h3><p><strong>topology包的</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs stylus">type Input interface &#123;<br><span class="hljs-function"><span class="hljs-title">ReadOneEvent</span><span class="hljs-params">()</span></span> map<span class="hljs-selector-attr">[string]</span>interface&#123;&#125;<br><span class="hljs-function"><span class="hljs-title">Shutdown</span><span class="hljs-params">()</span></span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>实现这些接口的地方在input包内。</strong></p>
+<p><strong>一些实现Input的struct在返回前会调用Decode，比如</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus">func (<span class="hljs-selector-tag">p</span> *RandomInput) <span class="hljs-built_in">ReadOneEvent</span>() map<span class="hljs-selector-attr">[string]</span>interface&#123;&#125; &#123;<br>return <span class="hljs-selector-tag">p</span><span class="hljs-selector-class">.decoder</span><span class="hljs-selector-class">.Decode</span>(<span class="hljs-selector-attr">[]</span><span class="hljs-built_in">byte</span>(strconv<span class="hljs-selector-class">.Itoa</span>(n)))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>关于Decode的定义在codec&#x2F;decoder.go里：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Decoder <span class="hljs-keyword">interface</span> &#123;<br>Decode([]<span class="hljs-type">byte</span>) <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>PlainDecoder，JsonEncoder等都实现了这个interface</strong></p>
+<p><strong>Filter的配置读取是根据类型读取到</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Filter <span class="hljs-keyword">interface</span> &#123;<br>Filter(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) (<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, <span class="hljs-type">bool</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>上的，然后再根据单个filter的配置读取为FilterBox。根据failTag，if，remove_fields等读取到FilterBox的conditionFilter，failTag，removeFields等字段中，之前读取的Filter为FilterBox的Filter字段。</strong></p>
+<p><code>firstNode.Process(event)</code>里单个FilterBox的调用过程：</p>
+<p><strong>先通过conditionFilter查看event是否满足条件，满足条件的情况下才继续执行。接下来调用Filter的Filter方法（其实是个interface）。至于Filter方法的实现，会涉及到field_setter和value_render，</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> FieldSetter <span class="hljs-keyword">interface</span> &#123;<br>SetField(event <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, value <span class="hljs-keyword">interface</span>&#123;&#125;, fieldName <span class="hljs-type">string</span>, overwrite <span class="hljs-type">bool</span>) <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br><span class="hljs-keyword">type</span> ValueRender <span class="hljs-keyword">interface</span> &#123;<br>Render(<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) <span class="hljs-keyword">interface</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>其中一个Filter的调用处为：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(plugin *AddFilter)</span></span> Filter(event <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;) (<span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125;, <span class="hljs-type">bool</span>) &#123;<br><span class="hljs-keyword">for</span> fs, v := <span class="hljs-keyword">range</span> plugin.fields &#123;<br>event = fs.SetField(event, v.Render(event), <span class="hljs-string">&quot;&quot;</span>, plugin.overwrite)<br>&#125;<br><span class="hljs-keyword">return</span> event, <span class="hljs-literal">true</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>会修改传入的event，再把修改完毕的event返回。</strong></p>
+<p><strong>将处理完毕的event调用</strong> <code>event = b.PostProcess(event, rst)</code>。rst是Filter返回的布尔值。</p>
+<h3 id="配置更新"><a href="#配置更新" class="headerlink" title="配置更新"></a>配置更新</h3><p><strong>main中开启了线程，该线程序一旦从configChannel接受到了变更，将执行：</strong></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs awk">    inputs.stop()<br>boxes, err := buildPluginLink(cfg)<br><span class="hljs-keyword">if</span> err == nil &#123;<br>inputs = gohangoutInputs(boxes)<br>go inputs.start()<br>&#125; <span class="hljs-keyword">else</span> &#123;<br>glog.Errorf(<span class="hljs-string">&quot;build plugin link error: %v&quot;</span>, err)<br><span class="hljs-keyword">exit</span>()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>通过三方viper，监视配置，监听到了配置的变更后，将变更后的配置发送到configChannel这个channel中。这个没有开启单独线程。</strong></p>
+<h3 id="程序停止"><a href="#程序停止" class="headerlink" title="程序停止"></a>程序停止</h3><p><strong>listenSignal中接收到停止信号，调用每个InputBox的Shutdown，Shutdown做了如下操作：</strong></p>
+<p><strong>执行box.input.Shutdown()，然后挨个调用Output的o.Output.Shutdown()</strong></p>
+<h3 id="零碎点整理"><a href="#零碎点整理" class="headerlink" title="零碎点整理"></a>零碎点整理</h3><p><strong>condition_filter的Condition interface被output&#x2F;elasticsearch_output.go使用，condition_filter&#x2F;parse.go使用。</strong></p>
+<p><strong>output包里的struct里用到了codec.Encoder，intput包里的struct里用到了codec.Decoder，codec.Encoder和codec.Decoder似乎也只在这两个地方用。</strong></p>
+<h3 id="一些实现了interface的struct和原生struct"><a href="#一些实现了interface的struct和原生struct" class="headerlink" title="一些实现了interface的struct和原生struct"></a>一些实现了interface的struct和原生struct</h3><p><strong>实现了 topology.Input interface：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> KafkaInput <span class="hljs-keyword">struct</span> &#123;<br>config         <span class="hljs-keyword">map</span>[<span class="hljs-keyword">interface</span>&#123;&#125;]<span class="hljs-keyword">interface</span>&#123;&#125;<br>decorateEvents <span class="hljs-type">bool</span><br><br>messages <span class="hljs-keyword">chan</span> *healer.FullMessage<br><br>decoder codec.Decoder<br><br>groupConsumers []*healer.GroupConsumer<br>consumers      []*healer.Consumer<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> InputBox <span class="hljs-keyword">struct</span> &#123;<br>config             <span class="hljs-keyword">map</span>[<span class="hljs-type">string</span>]<span class="hljs-keyword">interface</span>&#123;&#125; <span class="hljs-comment">// whole config</span><br>input              topology.Input<br>outputsInAllWorker [][]*topology.OutputBox<br>stop               <span class="hljs-type">bool</span><br>once               sync.Once<br>shutdownChan       <span class="hljs-keyword">chan</span> <span class="hljs-type">bool</span><br><br>promCounter prometheus.Counter<br><br>shutdownWhenNil    <span class="hljs-type">bool</span><br>mainThreadExitChan <span class="hljs-keyword">chan</span> <span class="hljs-keyword">struct</span>&#123;&#125;<br><br>addFields <span class="hljs-keyword">map</span>[field_setter.FieldSetter]value_render.ValueRender<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>实现了topology.Output interface：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> ElasticsearchOutput <span class="hljs-keyword">struct</span> &#123;<br>config <span class="hljs-keyword">map</span>[<span class="hljs-keyword">interface</span>&#123;&#125;]<span class="hljs-keyword">interface</span>&#123;&#125;<br><br>action             <span class="hljs-type">string</span><br>index              value_render.ValueRender<br>index_type         value_render.ValueRender<br>id                 value_render.ValueRender<br>routing            value_render.ValueRender<br>source_field       value_render.ValueRender<br>bytes_source_field value_render.ValueRender<br>es_version         <span class="hljs-type">int</span><br>bulkProcessor      BulkProcessor<br><br>scheme   <span class="hljs-type">string</span><br>user     <span class="hljs-type">string</span><br>password <span class="hljs-type">string</span><br>hosts    []<span class="hljs-type">string</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>实现了 topology.Filter：</strong></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> GrokFilter <span class="hljs-keyword">struct</span> &#123;<br>config    <span class="hljs-keyword">map</span>[<span class="hljs-keyword">interface</span>&#123;&#125;]<span class="hljs-keyword">interface</span>&#123;&#125;<br>overwrite <span class="hljs-type">bool</span><br>groks     []*Grok<br>target    <span class="hljs-type">string</span><br>src       <span class="hljs-type">string</span><br>vr        value_render.ValueRender<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>实现了field_setter.FieldSetter：</strong></p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs gauss"><span class="hljs-built_in">type</span> MultiLevelFieldSetter <span class="hljs-keyword">struct</span> &#123;<br>preFields []<span class="hljs-keyword">string</span><br>lastField <span class="hljs-keyword">string</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="信号"><a href="#信号" class="headerlink" title="信号"></a>信号</h2><h3 id="mainThreadExitChan"><a href="#mainThreadExitChan" class="headerlink" title="mainThreadExitChan"></a>mainThreadExitChan</h3><p><strong>加载配置失时，会执行</strong> <code>mainThreadExitChan &lt;- struct&#123;&#125;&#123;&#125;</code>退出</p>
+<p><strong>当启动exitWhenNil选项时，beat会在没有event的时候调用</strong> <code>box.mainThreadExitChan &lt;- struct&#123;&#125;&#123;&#125;</code>退出</p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>gohangout项目代码阅读总结</div>
+      <div>https://rhythmnr.github.io/2022/08/17/gohangout阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年8月17日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/09/01/docker%E5%AD%A6%E4%B9%A0%E5%B0%8F%E8%AE%B0/" title="docker学习小记">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">docker学习小记</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/08/15/go%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" title="go设计模式">
+                        <span class="hidden-mobile">go设计模式</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

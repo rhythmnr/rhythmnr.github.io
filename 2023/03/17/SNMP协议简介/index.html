@@ -1,0 +1,764 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="协议简介简单网络管理协议SNMP（Simple Network Management Protocol）是广泛应用于TCP&#x2F;IP网络的网络管理标准协议。是应用层协议。 目前有SNMPv1，SNMPv2c，SNMPv3三个版本，在SNMP报文中，对应的整数分别为0，1，2. SNMP系统由以下四个部分组成：  SNMP管理模型  MIBMIB定义了被管理对象的很多属性：包括对象的名称，对象">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SNMP协议简介">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/03/17/SNMP%E5%8D%8F%E8%AE%AE%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="协议简介简单网络管理协议SNMP（Simple Network Management Protocol）是广泛应用于TCP&#x2F;IP网络的网络管理标准协议。是应用层协议。 目前有SNMPv1，SNMPv2c，SNMPv3三个版本，在SNMP报文中，对应的整数分别为0，1，2. SNMP系统由以下四个部分组成：  SNMP管理模型  MIBMIB定义了被管理对象的很多属性：包括对象的名称，对象">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313145118798.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313145826810.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313153111504.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313154835336.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313153603033.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313154015787.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313154437832.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230313160230831.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317172734642.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317172754912.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317172814269.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317172832099.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317164823325.png">
+<meta property="article:published_time" content="2023-03-17T02:30:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.700Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230313145118798.png">
+  
+  
+  <title>SNMP协议简介 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="SNMP协议简介"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-17 10:30" pubdate>
+          2023年3月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          39 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">SNMP协议简介</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="协议简介"><a href="#协议简介" class="headerlink" title="协议简介"></a>协议简介</h2><p>简单网络管理协议SNMP（Simple Network Management Protocol）是广泛应用于TCP&#x2F;IP网络的网络管理标准协议。是应用层协议。</p>
+<p>目前有SNMPv1，SNMPv2c，SNMPv3三个版本，在SNMP报文中，对应的整数分别为0，1，2.</p>
+<p>SNMP系统由以下四个部分组成：</p>
+<p><img src="/../images/image-20230313145118798.png" srcset="/img/loading.gif" lazyload alt="image-20230313145118798"></p>
+<center>SNMP管理模型</center>
+
+<h3 id="MIB"><a href="#MIB" class="headerlink" title="MIB"></a>MIB</h3><p>MIB定义了被管理对象的很多属性：包括对象的名称，对象的状态，对象的访问权限，对象的数据类型。<br>MIB是管理信息数据库，采用和DNS相似的树形结构。根在最上面，根没有名字。<br>如下图所示的是管理信息库的一部分，它又称为<strong>对象命名树</strong>。每个<strong>OID（object identifier，对象标识符）</strong>对应于树中的一个管理对象，如system的OID为1.3.6.1.2.1.1，interfaces的OID为1.3.6.1.2.1.2。</p>
+<p><img src="/../images/image-20230313145826810.png" srcset="/img/loading.gif" lazyload alt="image-20230313145826810"></p>
+<center>OID数结构</center>
+
+<p>当用户在配置Agent时，可以通过<strong>MIB视图</strong>来限制NMS能够访问的MIB对象。MIB视图实际上是MIB的子集合。</p>
+<h2 id="抓包详解"><a href="#抓包详解" class="headerlink" title="抓包详解"></a>抓包详解</h2><p>###SNMPv1和SNMPv2c</p>
+<p>两个版本的报文结构都是</p>
+<p><img src="/../images/image-20230313153111504.png" srcset="/img/loading.gif" lazyload alt="image-20230313153111504"></p>
+<p>我用wireshark抓到的v1的数据如下，可以和上面的报文结构对应着看看：</p>
+<p><img src="/../images/image-20230313154835336.png" srcset="/img/loading.gif" lazyload alt="image-20230313154835336"></p>
+<p>团体名：有可读和可写两种情况。</p>
+<p>PDU：包含PDU类型、请求标识符、变量绑定列表等信息</p>
+<p>v1和v2c都有的基本操作类型如下（中间的是PDU类型）：</p>
+<p><img src="/../images/image-20230313153603033.png" srcset="/img/loading.gif" lazyload alt="image-20230313153603033"></p>
+<blockquote>
+<p>Trap信息是Agent主动向NMS发出的信息，告知管理进程设备端出现的情况。 </p>
+<p>Trap不需要NMS回复（与v2c的InformRequest相比）。Trap不属于NMS对被管理设备的基本操作，它是被管理设备的自发行为。当被管理设备达到告警的触发条件时，会通过Agent向NMS发送Trap消息，告知设备侧出现的异常情况，便于网络管理人员及时处理。</p>
+</blockquote>
+<p>SNMPv2c版本新增支持了<strong>GetBulk</strong>和<strong>Inform</strong>操作，如下：</p>
+<p><img src="/../images/image-20230313154015787.png" srcset="/img/loading.gif" lazyload alt="image-20230313154015787"></p>
+<p>GetBulk操作实现了NMS对被管理设备的信息群查询。<strong>基于GetNext实现，相当于连续执行多次GetNext操作。</strong>在NMS上可以设置被管理设备在一次GetBulk报文交互时，执行GetNext操作的次数。</p>
+<p>InformRequest也是被管理设备向NMS主动发送告警。与Trap告警不同的是，被管理设备发送Inform告警后，需要NMS回复InformResponse来进行确认。使用Inform告警会占用较多的系统资源。</p>
+<h3 id="SNMPv3"><a href="#SNMPv3" class="headerlink" title="SNMPv3"></a>SNMPv3</h3><p><strong>主要改进就是安全性方面</strong></p>
+<p>数据认证：防止SNMP消息在传输过程中被篡改，或SNMP消息来自伪造的SNMP实体</p>
+<p>数据加密：防止SNMP消息在传输过程中被窃听</p>
+<p>报文结构如下：<br><img src="/../images/image-20230313154437832.png" srcset="/img/loading.gif" lazyload alt="image-20230313154437832"></p>
+<p>和前两个版本相比，去掉了团体名，新增了报头数据到Context Name这四个字段。</p>
+<p>SNMPv3的PDU和v2c的好像一样，包括GetRequest PDU、GetNextRequest PDU、SetRequest PDU、Response PDU、Trap PDU、GetBulkRequest PDU和InformRequest PDU。</p>
+<p><img src="/../images/image-20230313160230831.png" srcset="/img/loading.gif" lazyload alt="image-20230313160230831"></p>
+<center>以Get为例的SNMPv3的工作过程</center>
+
+<p>通过抓包，可以看到一次SNMP请求的4个步骤，和上图的一致，实际的传输的数据是被加密的：</p>
+<blockquote>
+<p>Ps:用gosnmp SDK发送SNMP请求得到的是解密后的结果，因为SDK已经对返回的被加密了的数据进行了解密。</p>
+</blockquote>
+<p><img src="/../images/image-20230317172734642.png" srcset="/img/loading.gif" lazyload alt="image-20230317172734642"></p>
+<p><img src="/../images/image-20230317172754912.png" srcset="/img/loading.gif" lazyload alt="image-20230317172754912"></p>
+<p><img src="/../images/image-20230317172814269.png" srcset="/img/loading.gif" lazyload alt="image-20230317172814269"></p>
+<p><img src="/../images/image-20230317172832099.png" srcset="/img/loading.gif" lazyload alt="image-20230317172832099"></p>
+<h2 id="客户端工具"><a href="#客户端工具" class="headerlink" title="客户端工具"></a>客户端工具</h2><h3 id="net-snmp"><a href="#net-snmp" class="headerlink" title="net-snmp"></a>net-snmp</h3><blockquote>
+<p>mac上或者linux机器上可能默认可能无法访问本机的SNMP服务，需要进行如下配置：</p>
+<p>修改<code> /etc/snmp/snmpd.conf</code>文件为以下内容：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">com2sec mynetwork &lt;NETWORK/CIDR&gt; public<br>rocommunity public default .1<br></code></pre></td></tr></table></figure>
+
+<p>比如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">com2sec mynetwork 192.168.1.6/24 public<br>rocommunity public default .1<br></code></pre></td></tr></table></figure>
+
+<p>再重启SNMP服务：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs awk">sudo launchctl unload <span class="hljs-regexp">/System/</span>Library<span class="hljs-regexp">/LaunchDaemons/</span>org.net-snmp.snmpd.plist <span class="hljs-comment"># 关闭SNMP服务</span><br>sudo launchctl load -w <span class="hljs-regexp">/System/</span>Library<span class="hljs-regexp">/LaunchDaemons/</span>org.net-snmp.snmpd.plist <span class="hljs-comment"># 重启SNMP服务</span><br></code></pre></td></tr></table></figure>
+</blockquote>
+<p>mac安装SNMP客户端</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">brew install net-snmp<br></code></pre></td></tr></table></figure>
+
+<p>可以使用snmpget命令来获取指定OID的值。例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">snmpget -v2c -c public localhost 1.3.6.1.2.1.11.4.0<br></code></pre></td></tr></table></figure>
+
+<p>-v2c表示使用SNMP版本2c协议，-c表示指定SNMP社区字符串，这里是获取本机上的OID为1.3.6.1.2.1.11.4.0的信息。</p>
+<p>或者请求多个OID</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">snmpget -v1 -c public localhost 1.3.6.1.2.1.11.4.0 1.3.6.1.2.1.11.15.0<br></code></pre></td></tr></table></figure>
+
+<h3 id="MIB-Browser"><a href="#MIB-Browser" class="headerlink" title="MIB Browser"></a>MIB Browser</h3><p>这是一个GUI客户端。界面如下：</p>
+<p><img src="/../images/image-20230317164823325.png" srcset="/img/loading.gif" lazyload alt="image-20230317164823325"></p>
+<p>我在Mac上下载了MIB Browser，可以通过这个查看本地MIB的信息。在查看的过程中，通过wireshark抓本地网络接口如lo0的包，可以抓到对应的SNMP的包。</p>
+<h3 id="SDK"><a href="#SDK" class="headerlink" title="SDK"></a>SDK</h3><p>使用<a href="github.com/gosnmp/gosnmp">gosnmp</a>，可以发送SNMP数据，获取一些OID信息。实际使用中我用这个比较多，因为参数很明确。</p>
+<p>参考官方文档，基本用法如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">import</span> (<br>	<span class="hljs-string">&quot;fmt&quot;</span><br>	<span class="hljs-string">&quot;log&quot;</span><br><br>	g <span class="hljs-string">&quot;github.com/gosnmp/gosnmp&quot;</span><br>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">v1</span><span class="hljs-params">()</span></span> &#123;<br>	g.Default.Target = <span class="hljs-string">&quot;127.0.0.1&quot;</span><br>	err := g.Default.Connect()<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;Connect() err: %v&quot;</span>, err)<br>	&#125;<br>	<span class="hljs-keyword">defer</span> g.Default.Conn.Close()<br>	oids := []<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;1.3.6.1.2.1.11.4.0&quot;</span>, <span class="hljs-string">&quot;1.3.6.1.2.1.11.15.0&quot;</span>&#125;<br>	result, err2 := g.Default.Get(oids)<br>	<span class="hljs-keyword">if</span> err2 != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;Get() err: %v&quot;</span>, err2)<br>	&#125;<br>	<span class="hljs-keyword">for</span> i, variable := <span class="hljs-keyword">range</span> result.Variables &#123;<br>		fmt.Printf(<span class="hljs-string">&quot;%d: oid: %s &quot;</span>, i, variable.Name)<br>		<span class="hljs-keyword">switch</span> variable.Type &#123;<br>		<span class="hljs-keyword">case</span> g.OctetString:<br>			fmt.Printf(<span class="hljs-string">&quot;string: %s\n&quot;</span>, <span class="hljs-type">string</span>(variable.Value.([]<span class="hljs-type">byte</span>)))<br>		<span class="hljs-keyword">default</span>:<br>			fmt.Printf(<span class="hljs-string">&quot;number: %d\n&quot;</span>, g.ToBigInt(variable.Value))<br>		&#125;<br>	&#125;<br>&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">v3</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-comment">// build our own GoSNMP struct, rather than using g.Default</span><br>	params := &amp;g.GoSNMP&#123;<br>		Target:        <span class="hljs-string">&quot;127.0.0.1&quot;</span>,<br>		Port:          <span class="hljs-number">161</span>,<br>		Version:       g.Version3,<br>		SecurityModel: g.UserSecurityModel,<br>		MsgFlags:      g.AuthPriv,<br>		Timeout:       time.Duration(<span class="hljs-number">10</span>) * time.Second,<br>		SecurityParameters: &amp;g.UsmSecurityParameters&#123;UserName: <span class="hljs-string">&quot;v3test&quot;</span>,<br>			AuthenticationProtocol:   g.SHA,<br>			AuthenticationPassphrase: <span class="hljs-string">&quot;v3testtest&quot;</span>,<br>			PrivacyProtocol:          g.AES,<br>			PrivacyPassphrase:        <span class="hljs-string">&quot;v3testtest&quot;</span>,<br>		&#125;,<br>	&#125;<br>	err := params.Connect()<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;Connect() err: %v&quot;</span>, err)<br>	&#125;<br>	<span class="hljs-keyword">defer</span> params.Conn.Close()<br><br>	oids := []<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;1.3.6.1.2.1.11.4.0&quot;</span>, <span class="hljs-string">&quot;1.3.6.1.2.1.11.15.0&quot;</span>&#125;<br>	result, err2 := params.Get(oids) <span class="hljs-comment">// Get() accepts up to g.MAX_OIDS</span><br>	<span class="hljs-keyword">if</span> err2 != <span class="hljs-literal">nil</span> &#123;<br>		log.Fatalf(<span class="hljs-string">&quot;Get() err: %v&quot;</span>, err2)<br>	&#125;<br><br>	<span class="hljs-keyword">for</span> i, variable := <span class="hljs-keyword">range</span> result.Variables &#123;<br>		fmt.Printf(<span class="hljs-string">&quot;%d: oid: %s &quot;</span>, i, variable.Name)<br><br>		<span class="hljs-comment">// the Value of each variable returned by Get() implements</span><br>		<span class="hljs-comment">// interface&#123;&#125;. You could do a type switch...</span><br>		<span class="hljs-keyword">switch</span> variable.Type &#123;<br>		<span class="hljs-keyword">case</span> g.OctetString:<br>			fmt.Printf(<span class="hljs-string">&quot;string: %s\n&quot;</span>, <span class="hljs-type">string</span>(variable.Value.([]<span class="hljs-type">byte</span>)))<br>		<span class="hljs-keyword">default</span>:<br>			<span class="hljs-comment">// ... or often you&#x27;re just interested in numeric values.</span><br>			<span class="hljs-comment">// ToBigInt() will return the Value as a BigInt, for plugging</span><br>			<span class="hljs-comment">// into your calculations.</span><br>			fmt.Printf(<span class="hljs-string">&quot;number: %d\n&quot;</span>, g.ToBigInt(variable.Value))<br>		&#125;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="使用gopacket对包内容解析"><a href="#使用gopacket对包内容解析" class="headerlink" title="使用gopacket对包内容解析"></a>使用gopacket对包内容解析</h2><p>因为网上这类项目真的很少，我只找到了一个很久之前的，然后根据这个项目进行了改编，具体的内容可以看 </p>
+<p><a target="_blank" rel="noopener" href="https://github.com/nrbackback/code-in-blog/tree/main/snmp">code-in-blog&#x2F;snmp</a></p>
+<p>这个项目可以解析出大部分的SNMP数据，解析出来的所有 Pdu.PduType 包括<br>GetRequest<br>GetResponse<br>Report<br>SNMPTrapV2<br>GetBulkRequest</p>
+<p>trap v1 无法解析<br>snmp v3 被解析成了GetRequest</p>
+<ul>
+<li>参考资料</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://support.huawei.com/enterprise/zh/doc/EDOC1100138435/5ee8dfb">华为云的SNMP配置</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.heelpbook.net/2016/enable-icmp-protocol-on-macos/">Enable ICMP protocol on MacOS</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/jijian_jinan/article/details/43054879">SNMPv3的基本概念</a></p>
+<p><a target="_blank" rel="noopener" href="https://support.auvik.com/hc/en-us/articles/360000536163-How-to-enable-SNMP-on-Mac-OSX">How to enable SNMP on Mac OSX</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SNMP协议简介</div>
+      <div>https://rhythmnr.github.io/2023/03/17/SNMP协议简介/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月17日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/03/17/clickhouse%E5%88%86%E5%B8%83%E5%BC%8F%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/" title="clickhous分布式操作与错误复盘">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">clickhous分布式操作与错误复盘</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/11/DNS%E6%8A%A5%E6%96%87%E8%AF%A6%E8%A7%A3/" title="DNS报文详解">
+                        <span class="hidden-mobile">DNS报文详解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

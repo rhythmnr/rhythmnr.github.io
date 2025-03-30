@@ -1,0 +1,730 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="docker学习小记 Dockerfile命令解析COPY语法 12COPY [--chown&#x3D;&lt;user&gt;:&lt;group&gt;] &lt;源路径&gt;... &lt;目标路径&gt;COPY [--chown&#x3D;&lt;user&gt;:&lt;group&gt;] [&quot;&lt;源路径1&gt;&quot;,... &quot;&lt;目标路径&gt;&quot;]">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker学习小记">
+<meta property="og:url" content="https://rhythmnr.github.io/2022/09/01/docker%E5%AD%A6%E4%B9%A0%E5%B0%8F%E8%AE%B0/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="docker学习小记 Dockerfile命令解析COPY语法 12COPY [--chown&#x3D;&lt;user&gt;:&lt;group&gt;] &lt;源路径&gt;... &lt;目标路径&gt;COPY [--chown&#x3D;&lt;user&gt;:&lt;group&gt;] [&quot;&lt;源路径1&gt;&quot;,... &quot;&lt;目标路径&gt;&quot;]">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-01T08:14:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.706Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  <title>docker学习小记 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="docker学习小记"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-09-01 16:14" pubdate>
+          2022年9月1日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          20k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          170 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">docker学习小记</h1>
+            
+            <div class="markdown-body">
+              
+              <p>docker学习小记</p>
+<h2 id="Dockerfile命令解析"><a href="#Dockerfile命令解析" class="headerlink" title="Dockerfile命令解析"></a>Dockerfile命令解析</h2><h3 id="COPY"><a href="#COPY" class="headerlink" title="COPY"></a>COPY</h3><p>语法</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">COPY [--chown=&lt;user&gt;:&lt;group&gt;] &lt;源路径&gt;... &lt;目标路径&gt;<br>COPY [--chown=&lt;user&gt;:&lt;group&gt;] [&quot;&lt;源路径1&gt;&quot;,... &quot;&lt;目标路径&gt;&quot;]<br></code></pre></td></tr></table></figure>
+
+<p><code>&lt;目标路径&gt;</code> 可以是容器内的绝对路径，也可以是相对于工作目录的相对路径（工作目录可以用 <code>WORKDIR</code> 指令来指定）。目标路径不需要事先创建，如果目录不存在会在复制文件前先行创建缺失目录。</p>
+<p>使用 <code>COPY</code> 指令，源文件的各种元数据都会保留。比如读、写、执行权限、文件变更时间等。</p>
+<p>如果源路径为文件夹，复制的时候不是直接复制该文件夹，而是将文件夹中的内容复制到目标路径。</p>
+<p>###ADD</p>
+<p>在COPY基础上多加了一些命令</p>
+<p>这个功能其实并不实用，而且不推荐使用。</p>
+<p>比如 <code>&lt;源路径&gt;</code> 可以是一个 <code>URL</code>，这种情况下，Docker 引擎会试图去下载这个链接的文件放到 <code>&lt;目标路径&gt;</code> 去。此外如果 <code>&lt;源路径&gt;</code> 为一个 <code>tar</code> 压缩文件的话，压缩格式为 <code>gzip</code>, <code>bzip2</code> 以及 <code>xz</code> 的情况下，<code>ADD</code> 指令将会自动解压缩这个压缩文件到 <code>&lt;目标路径&gt;</code> 去</p>
+<p>###CMD</p>
+<h3 id="ENTRYPOINT"><a href="#ENTRYPOINT" class="headerlink" title="ENTRYPOINT"></a>ENTRYPOINT</h3><p>配置容器启动后执行的命令，并且不可被 docker run 提供的参数覆盖。</p>
+<h3 id="我的使用🌟"><a href="#我的使用🌟" class="headerlink" title="我的使用🌟"></a>我的使用🌟</h3><p>使得docker run支持go flag参数，-c&#x3D;xxx参数也就是程序中的参数，和go run的参数一致。但是在docker run时，-c的路径是容器内的路径，所以如果容器内没有的话，需要挂载，容器内目录必须是绝对路径，宿主机目录不存在时会生成。通过-v挂载，<code>-v 宿主机路径:容器内路径</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker run -v /home/ftpuser/flora-gopacket-service/config.yml:/usr/src/app/config.yml packet-go2 -c=/usr/src/app/config.yml<br></code></pre></td></tr></table></figure>
+
+<p>好像只有Dockerfile里运行命令的参数写ENTRYPOINT，-c才有效，上面的镜像对应的Dockerfile如下：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs Dockerfile"><span class="hljs-keyword">FROM</span> golang:<span class="hljs-number">1.18</span><br><span class="hljs-keyword">ENV</span> GO111MODULE=on \<br>    GOPROXY=https://goproxy.cn,direct \<br>		PORT=<span class="hljs-number">80</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> apt-get update &amp;&amp; <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;y&quot;</span> | apt-get upgrade</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> <span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;y&quot;</span> | apt-get install libpcap-dev</span><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /usr/src/app</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> go.mod go.sum ./</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> go mod download &amp;&amp; go mod verify</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> . .</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> go build -v -o /usr/local/bin/ ./...</span><br><span class="hljs-keyword">ENTRYPOINT</span><span class="language-bash"> [<span class="hljs-string">&quot;/usr/local/bin/flora-gopacket-service&quot;</span>] <span class="hljs-comment"># 注意这一行</span></span><br></code></pre></td></tr></table></figure>
+
+<p>基于alpine，可以构建出可以使用的gopacket服务，对应的镜像是：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell"> docker images|grep gopacket                                                                                                                2 ↵  10074  15:50:45<br>gopacket                   alpine-ok   6b9e79fe7834   About a minute ago   31.8MB<br></code></pre></td></tr></table></figure>
+
+<p>这个镜像是我在基于如下Dockerfile的容器的基础上改的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">FROM alpine:3.4<br>RUN mkdir /lib64 &amp;&amp; ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2<br>WORKDIR /usr/local/bin<br></code></pre></td></tr></table></figure>
+
+<p>改的操作如下：</p>
+<blockquote>
+<p>参考了下<a target="_blank" rel="noopener" href="https://github.com/knownsec/ksubdomain/issues/1"> libpcap.so.0.8相关报错</a></p>
+<p>解答：</p>
+<p>我是这样解决的：<br>先直接yum安装libpcap-devel：<br>yum install libpcap-devel<br>然后locate一下，发现了安装的是1.5.3版本，定位出&#x2F;usr&#x2F;lib64目录下的三个文件：<br>locate libpcap<br>&#x2F;usr&#x2F;lib64&#x2F;libpcap.so<br>&#x2F;usr&#x2F;lib64&#x2F;libpcap.so.1<br>&#x2F;usr&#x2F;lib64&#x2F;libpcap.so.1.5.3<br>然后cd到&#x2F;usr&#x2F;lib64目录下，ls看一下那三个文件，发现libpcap.so和libpcap.so.1都是libpcap.so.1.5.3的软链接文件。<br>既然这样，那就再建一个软链接文件就好了：<br>ln -s libpcap.so.1.5.3 libpcap.so.0.8</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker run -it zz    127 ↵  10068  15:20:16<br>/usr/local/bin # apk --help<br>apk-tools 2.12.7, compiled for x86_64.<br><br>usage: apk [&lt;OPTIONS&gt;...] COMMAND [&lt;ARGUMENTS&gt;...]<br><br>Package installation and removal:<br>  add        Add packages to WORLD and commit changes<br>  del        Remove packages from WORLD and commit changes<br><br>System maintenance:<br>  fix        Fix, reinstall or upgrade packages without modifying WORLD<br>  update     Update repository indexes<br>  upgrade    Install upgrades available from repositories<br>  cache      Manage the local package cache<br><br>Querying package information:<br>  info       Give detailed information about packages or repositories<br>  list       List packages matching a pattern or other criteria<br>  dot        Render dependencies as graphviz graphs<br>  policy     Show repository policy for packages<br>  search     Search for packages by name or description<br><br>Repository maintenance:<br>  index      Create repository index file from packages<br>  fetch      Download packages from global repositories to a local directory<br>  manifest   Show checksums of package contents<br>  verify     Verify package integrity and signature<br><br>Miscellaneous:<br>  audit      Audit system for changes<br>  stats      Show statistics about repositories and installations<br>  version    Compare package versions or perform tests on version strings<br><br>This apk has coffee making abilities.<br>For more information: man 8 apk<br>/usr/local/bin # apk add ^C<br>/usr/local/bin # apk^C<br>/usr/local/bin # locate libpcap<br>/bin/sh: locate: not found<br>/usr/local/bin # apk add libpcap libpcap-dev<br>fetch https://dl-cdn.alpinelinux.org/alpine/v3.14/main/x86_64/APKINDEX.tar.gz<br>fetch https://dl-cdn.alpinelinux.org/alpine/v3.14/community/x86_64/APKINDEX.tar.gz<br>(1/3) Installing libpcap (1.10.0-r0)<br>(2/3) Installing pkgconf (1.7.4-r0)<br>(3/3) Installing libpcap-dev (1.10.0-r0)<br>Executing busybox-1.33.1-r8.trigger<br>OK: 7 MiB in 17 packages<br>/usr/local/bin # locate libpcap<br>/bin/sh: locate: not found<br>/usr/local/bin # cd /usr/lib64/<br>/bin/sh: cd: can&#x27;t cd to /usr/lib64/: No such file or directory<br>/usr/local/bin # ls -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>/usr/local/bin # apk info -a  libpcap<br>libpcap-1.10.0-r0 description:<br>A system-independent interface for user-level packet capture<br><br>libpcap-1.10.0-r0 webpage:<br>https://www.tcpdump.org/<br><br>libpcap-1.10.0-r0 installed size:<br>256 KiB<br><br>libpcap-1.10.0-r0 depends on:<br>so:libc.musl-x86_64.so.1<br><br>libpcap-1.10.0-r0 provides:<br>so:libpcap.so.1=1.10.0<br><br>libpcap-1.10.0-r0 is required by:<br>libpcap-dev-1.10.0-r0<br><br>libpcap-1.10.0-r0 contains:<br>usr/lib/libpcap.so.1<br>usr/lib/libpcap.so.1.10.0<br><br>libpcap-1.10.0-r0 triggers:<br><br>libpcap-1.10.0-r0 has auto-install rule:<br><br>libpcap-1.10.0-r0 affects auto-installation of:<br><br>libpcap-1.10.0-r0 replaces:<br><br>libpcap-1.10.0-r0 license:<br>BSD-3-Clause<br><br>/usr/local/bin # ls<br>unix-flora-gopacket-service<br>/usr/local/bin #  apk info<br>musl<br>busybox<br>alpine-baselayout<br>alpine-keys<br>libcrypto1.1<br>libssl1.1<br>ca-certificates-bundle<br>libretls<br>ssl_client<br>zlib<br>apk-tools<br>scanelf<br>musl-utils<br>libc-utils<br>libpcap<br>pkgconf<br>libpcap-dev<br>/usr/local/bin # ls<br>unix-flora-gopacket-service<br>/usr/local/bin # ./unix-flora-gopacket-service <br>Error loading shared library libpcap.so.0.8: No such file or directory (needed by ./unix-flora-gopacket-service)<br>Error relocating ./unix-flora-gopacket-service: pcap_list_tstamp_types: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_promisc: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_tstamp_type_name_to_val: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_findalldevs: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_sendpacket: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_close: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_list_datalinks: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_live: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setdirection: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_geterr: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_fopen_offline_with_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_statustostr: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_buffer_size: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_compile: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_get_selectable_fd: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_next_ex: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_timeout: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_immediate_mode: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_freealldevs: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_stats: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_snaplen: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_lookupnet: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_datalink: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_free_datalinks: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_create: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_tstamp_type_val_to_name: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_offline_filter: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_activate: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setfilter: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_tstamp_type: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_val_to_name: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_free_tstamp_types: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_dead: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setnonblock: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_freecode: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_can_set_rfmon: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_name_to_val: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_snapshot: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_val_to_description: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_get_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_lib_version: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_rfmon: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_offline_with_tstamp_precision: symbol not found<br>/usr/local/bin # locate<br>/bin/sh: locate: not found<br>/usr/local/bin # apk add locate<br>ERROR: unable to select packages:<br>  locate (no such package):<br>    required by: world[locate]<br>/usr/local/bin # cd /usr<br>/usr # ls<br>bin      include  lib      local    sbin     share<br>/usr # cd lib<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpkgconf.so.3      libtls.so.2          pkgconfig<br>libcrypto.so.1.1     libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>libpcap.a            libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>/usr/lib # ls|grep libpcap<br>libpcap.a<br>libpcap.so<br>libpcap.so.1<br>libpcap.so.1.10.0<br>/usr/lib # ls -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>ls: /usr/lib64/libpcap.so: No such file or directory<br>ls: /usr/lib64/libpcap.so.0.8: No such file or directory<br>/usr/lib # ln  -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>ln: /usr/lib64/libpcap.so.0.8: No such file or directory<br>/usr/lib # l -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>/bin/sh: l: not found<br>/usr/lib # ln -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>ln: /usr/lib64/libpcap.so.0.8: No such file or directory<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpkgconf.so.3      libtls.so.2          pkgconfig<br>libcrypto.so.1.1     libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>libpcap.a            libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>/usr/lib # touch libpcap.so.0.8<br>/usr/lib # ln -S /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8<br>ln: /usr/lib64/libpcap.so.0.8: No such file or directory<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>libcrypto.so.1.1     libpcap.so.0.8       libpkgconf.so.3      libtls.so.2          pkgconfig<br>libpcap.a            libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>/usr/lib # rm libpcap.so.0.8<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpkgconf.so.3      libtls.so.2          pkgconfig<br>libcrypto.so.1.1     libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>libpcap.a            libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpkgconf.so.3      libtls.so.2          pkgconfig<br>libcrypto.so.1.1     libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>libpcap.a            libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>/usr/lib # cd ..<br>/usr # ls<br>bin      include  lib      local    sbin     share<br>/usr # cd lib/<br>/usr/lib # ls -S /usr/lib/libpcap.so /usr/lib/libpcap.so.0.8<br>ls: /usr/lib/libpcap.so.0.8: No such file or directory<br>/usr/lib/libpcap.so<br>/usr/lib # ln -S /usr/lib/libpcap.so /usr/lib/libpcap.so.0.8<br>ln: /usr/lib/libpcap.so.0.8: No such file or directory<br>/usr/lib # touch libpcap.so.0.8<br>/usr/lib # ln -S /usr/lib/libpcap.so /usr/lib/libpcap.so.0.8<br>ln: libpcap.so.0.8: File exists<br>/usr/lib # touch libpcap.so.0.8^C<br>/usr/lib # cd -<br>/usr<br>/usr # ls<br>bin      include  lib      local    sbin     share<br>/usr # cd /usr/local/bin<br>/usr/local/bin # ls<br>unix-flora-gopacket-service<br>/usr/local/bin # ./unix-flora-gopacket-service <br>Error loading shared library libpcap.so.0.8: Exec format error (needed by ./unix-flora-gopacket-service)<br>Error relocating ./unix-flora-gopacket-service: pcap_list_tstamp_types: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_promisc: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_tstamp_type_name_to_val: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_findalldevs: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_sendpacket: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_close: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_list_datalinks: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_live: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setdirection: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_geterr: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_fopen_offline_with_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_statustostr: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_buffer_size: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_compile: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_get_selectable_fd: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_next_ex: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_timeout: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_immediate_mode: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_freealldevs: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_stats: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_snaplen: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_lookupnet: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_datalink: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_free_datalinks: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_create: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_tstamp_type_val_to_name: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_offline_filter: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_activate: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setfilter: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_tstamp_type: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_val_to_name: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_free_tstamp_types: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_dead: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_setnonblock: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_freecode: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_can_set_rfmon: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_name_to_val: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_snapshot: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_datalink_val_to_description: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_get_tstamp_precision: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_lib_version: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_set_rfmon: symbol not found<br>Error relocating ./unix-flora-gopacket-service: pcap_open_offline_with_tstamp_precision: symbol not found<br>/usr/local/bin # cd /usr/lib/<br>/usr/lib # ls<br>engines-1.1          libpcap.so           libpcap.so.1.10.0    libssl.so.1.1        modules-load.d<br>libcrypto.so.1.1     libpcap.so.0.8       libpkgconf.so.3      libtls.so.2          pkgconfig<br>libpcap.a            libpcap.so.1         libpkgconf.so.3.0.0  libtls.so.2.0.3<br>/usr/lib # ls|grep lib<br>libcrypto.so.1.1<br>libpcap.a<br>libpcap.so<br>libpcap.so.0.8<br>libpcap.so.1<br>libpcap.so.1.10.0<br>libpkgconf.so.3<br>libpkgconf.so.3.0.0<br>libssl.so.1.1<br>libtls.so.2<br>libtls.so.2.0.3<br>/usr/lib # ls -l<br>total 796<br>drwxr-xr-x    2 root     root          4096 Jul 19 21:06 engines-1.1<br>lrwxrwxrwx    1 root     root            26 Jul 19 21:06 libcrypto.so.1.1 -&gt; ../../lib/libcrypto.so.1.1<br>-rw-r--r--    1 root     root        413414 Jan  4  2021 libpcap.a<br>lrwxrwxrwx    1 root     root            12 Aug  5 07:29 libpcap.so -&gt; libpcap.so.1<br>-rw-r--r--    1 root     root             0 Aug  5 07:42 libpcap.so.0.8<br>lrwxrwxrwx    1 root     root            17 Aug  5 07:29 libpcap.so.1 -&gt; libpcap.so.1.10.0<br>-rwxr-xr-x    1 root     root        247824 Jan  4  2021 libpcap.so.1.10.0<br>lrwxrwxrwx    1 root     root            19 Aug  5 07:29 libpkgconf.so.3 -&gt; libpkgconf.so.3.0.0<br>-rwxr-xr-x    1 root     root         64544 Mar 18  2021 libpkgconf.so.3.0.0<br>lrwxrwxrwx    1 root     root            23 Jul 19 21:06 libssl.so.1.1 -&gt; ../../lib/libssl.so.1.1<br>lrwxrwxrwx    1 root     root            15 Jul 19 21:06 libtls.so.2 -&gt; libtls.so.2.0.3<br>-rwxr-xr-x    1 root     root         71416 Mar 24 15:38 libtls.so.2.0.3<br>drwxr-xr-x    2 root     root          4096 Jul 19 21:06 modules-load.d<br>drwxr-xr-x    2 root     root          4096 Aug  5 07:29 pkgconfig<br>/usr/lib # ln -s libpcap.so.1.10.0 libpcap.so.0.8<br>ln: libpcap.so.0.8: File exists<br>/usr/lib # rm libpcap.so.0.8<br>/usr/lib # ln -s libpcap.so.1.10.0 libpcap.so.0.8<br>/usr/lib # cd /usr/local/bin<br>/usr/local/bin # ./unix-flora-gopacket-service <br>panic: load config file error: open config.yml: no such file or directory<br><br>goroutine 1 [running]:<br>main.main()<br>        /usr/src/app/main.go:23 +0xf6c<br>/usr/local/bin # <br></code></pre></td></tr></table></figure>
+
+<p>经过总结，最终完整可用的Dockerfile是</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs Dockerfile"><span class="hljs-keyword">FROM</span> alpine:<span class="hljs-number">3.4</span><br><br><span class="hljs-keyword">RUN</span><span class="language-bash"> apk update</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> <span class="hljs-built_in">mkdir</span> /lib64 &amp;&amp; <span class="hljs-built_in">ln</span> -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> apk add libpcap=1.7.4-r0 libpcap-dev=1.7.4-r0</span><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /usr/lib</span><br><span class="hljs-keyword">RUN</span><span class="language-bash"> <span class="hljs-built_in">ln</span> -s libpcap.so.1.7.4 libpcap.so.0.8</span><br><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /usr/local/bin</span><br><span class="hljs-keyword">COPY</span><span class="language-bash"> flora-gopacket-service .</span><br><br><span class="hljs-keyword">WORKDIR</span><span class="language-bash"> /usr/local/app</span><br><br><span class="hljs-keyword">ENTRYPOINT</span><span class="language-bash"> [<span class="hljs-string">&quot;flora-gopacket-service&quot;</span>]</span><br></code></pre></td></tr></table></figure>
+
+<p>那么这个flora-gopacket-service从哪里来呢？可以把项目复制到虚拟机上，然后执行go build，build出来了flora-gopacket-service，然后docker build -t xxx .即完成。</p>
+<p>或者可以在项目下用下面的Dockerfile构建出镜像，再从容器里把flora-gopacket-service复制出来</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs shell">FROM golang:1.18<br><br>ENV GO111MODULE=on \<br>    GOPROXY=https://goproxy.cn,direct \<br>		PORT=80<br><br>RUN apt-get update &amp;&amp; echo &quot;y&quot; | apt-get upgrade<br>RUN echo &quot;y&quot; | apt-get install libpcap-dev<br>WORKDIR /usr/src/app<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">RUN apt-get install libpcap-dev</span><br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">pre-copy/cache go.mod <span class="hljs-keyword">for</span> pre-downloading dependencies and only redownloading them <span class="hljs-keyword">in</span> subsequent builds <span class="hljs-keyword">if</span> they change</span><br>COPY go.mod go.sum ./<br>RUN go mod download &amp;&amp; go mod verify<br><br>COPY . .<br>RUN go build -v -o /usr/local/bin/ ./...<br><br>CMD [&quot;flora-gopacket-service&quot;]<br></code></pre></td></tr></table></figure>
+
+<p>基于这个镜像的可用<code>docker run</code>命令，注意要使用$PWD，使用.&#x2F;xxx或者直接xxx都不行，还有使用了host网络模式：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker run -d --net=host -v $PWD/config/config.yml:/usr/local/app/config.yml -v $PWD/logs:/usr/local/app/logs  -v $PWD/pcap_file:/usr/local/app/pcap_file last0 -c=/usr/local/app/config.yml<br></code></pre></td></tr></table></figure>
+
+<h2 id="构建轻量级的应用"><a href="#构建轻量级的应用" class="headerlink" title="构建轻量级的应用"></a>构建轻量级的应用</h2><p>可以使用alpine镜像，将二进制复制到镜像中。</p>
+<p>参考</p>
+<p><a target="_blank" rel="noopener" href="https://yeasy.gitbook.io/docker_practice/">Docker-从入门到实践</a>    未看完，TODO再看看</p>
+<h2 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h2><p><strong>linux查看操作系统版本的命令</strong>，可以在容器内执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">cat /proc/version<br></code></pre></td></tr></table></figure>
+
+<p>golang条件编译</p>
+<h2 id="go-build使用"><a href="#go-build使用" class="headerlink" title="go build使用"></a>go build使用</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs shell">GOOS=linux GOARCH=amd64 go build        <br><span class="hljs-meta prompt_"># </span><span class="language-bash">github.com/google/gopacket/pcap</span><br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:30:22: undefined: pcapErrorNotActivated<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:52:17: undefined: pcapTPtr<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:64:10: undefined: pcapPkthdr<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:103:6: undefined: pcapBpfProgram<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:110:7: undefined: pcapPkthdr<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:268:33: undefined: pcapErrorActivated<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:269:33: undefined: pcapWarningPromisc<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:270:33: undefined: pcapErrorNoSuchDevice<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:271:33: undefined: pcapErrorDenied<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:272:33: undefined: pcapErrorNotUp<br>../../../../go/pkg/mod/github.com/google/gopacket@v1.1.19/pcap/pcap.go:272:33: too many errors<br></code></pre></td></tr></table></figure>
+
+<p>在Mac上，gopacket交叉编译报错</p>
+<p>查了资料，说需要开启CGO，然后不能指定GOARCH</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs shell"> CGO_ENABLED=1 GOOS=linux go build<br><span class="hljs-meta prompt_"># </span><span class="language-bash">runtime/cgo</span><br>linux_syscall.c:67:13: error: implicit declaration of function &#x27;setresgid&#x27; is invalid in C99 [-Werror,-Wimplicit-function-declaration]<br>linux_syscall.c:67:13: note: did you mean &#x27;setregid&#x27;?<br>/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/usr/include/unistd.h:593:6: note: &#x27;setregid&#x27; declared here<br>linux_syscall.c:73:13: error: implicit declaration of function &#x27;setresuid&#x27; is invalid in C99 [-Werror,-Wimplicit-function-declaration]<br>linux_syscall.c:73:13: note: did you mean &#x27;setreuid&#x27;?<br>/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/usr/include/unistd.h:595:6: note: &#x27;setreuid&#x27; declared here<br></code></pre></td></tr></table></figure>
+
+<h2 id="我的小记🌟"><a href="#我的小记🌟" class="headerlink" title="我的小记🌟"></a>我的小记🌟</h2><p>启动docker<code>sudo systemctl start docker</code></p>
+<p>docker-compose重启</p>
+<p><code>docker-compose -f xxx.yml restart</code></p>
+<p>复制容器内的文件到主机：<code>docker cp filebeat:/usr/share/filebeat ./filebeat/</code></p>
+<p>docker run -net&#x3D;host指定网络模式为host只在linux上生效，<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/52555007/docker-mac-alternative-to-net-host">原文</a></p>
+<blockquote>
+<p>The host networking driver only works on Linux hosts, and is not supported on Docker for Mac, Docker for Windows, or Docker EE for Windows Server.</p>
+</blockquote>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4/" class="category-chain-item">运维</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>docker学习小记</div>
+      <div>https://rhythmnr.github.io/2022/09/01/docker学习小记/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年9月1日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/09/16/%E6%9B%B4%E6%94%B9%E9%80%9A%E8%BF%87docker%E8%BF%90%E8%A1%8C%E7%9A%84kibana%E7%9A%84%E6%98%BE%E7%A4%BA%E8%AF%AD%E8%A8%80/" title="更改通过docker运行的kibana的显示语言">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">更改通过docker运行的kibana的显示语言</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/08/17/gohangout%E9%98%85%E8%AF%BB/" title="gohangout项目代码阅读总结">
+                        <span class="hidden-mobile">gohangout项目代码阅读总结</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,753 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="背景我所实验的环境是一个集群，集群中，一共有N台机器，每台机器上有2个表，分别是分布式表和本地表。 分布式表和本地表的建表语句分别为： 12345678910CREATE TABLE table1(    &#96;id&#96; UInt64,    &#96;device&#96; Nested(        type String,        info String      ),    &#96;create_time&#96;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="clickhous分布式操作与错误复盘">
+<meta property="og:url" content="https://rhythmnr.github.io/2023/03/17/clickhouse%E5%88%86%E5%B8%83%E5%BC%8F%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="背景我所实验的环境是一个集群，集群中，一共有N台机器，每台机器上有2个表，分别是分布式表和本地表。 分布式表和本地表的建表语句分别为： 12345678910CREATE TABLE table1(    &#96;id&#96; UInt64,    &#96;device&#96; Nested(        type String,        info String      ),    &#96;create_time&#96;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317203948210.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317204706151.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317205139122.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20230317205450785.png">
+<meta property="article:published_time" content="2023-03-17T03:30:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.702Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20230317203948210.png">
+  
+  
+  <title>clickhous分布式操作与错误复盘 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="clickhous分布式操作与错误复盘"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-17 11:30" pubdate>
+          2023年3月17日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">clickhous分布式操作与错误复盘</h1>
+            
+            <div class="markdown-body">
+              
+              <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>我所实验的环境是一个集群，集群中，一共有N台机器，每台机器上有2个表，分别是分布式表和本地表。</p>
+<p>分布式表和本地表的建表语句分别为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> table1<br>(<br>    `id` UInt64,<br>    `device` Nested(<br>        type String,<br>        info String <br>     ),<br>    `create_time` DateTime<br>)<br>ENGINE <span class="hljs-operator">=</span> Distributed(<span class="hljs-string">&#x27;clusterxx&#x27;</span>, <span class="hljs-string">&#x27;flora&#x27;</span>, <span class="hljs-string">&#x27;table1_replica&#x27;</span>, rand())<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> table1_replica<br>(<br>    `id` UInt64,<br>    `device` Nested(<br>        type String,<br>        info String <br>     ),<br>    `create_time` DateTime<br>)<br>ENGINE <span class="hljs-operator">=</span> ReplicatedMergeTree(<span class="hljs-string">&#x27;/clickhouse/tables/&#123;layer&#125;-&#123;shard&#125;/database1/table1_replica&#x27;</span>, <span class="hljs-string">&#x27;&#123;replica&#125;&#x27;</span>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> toYYYYMM(create_time)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> create_time<br>TTL create_time <span class="hljs-operator">+</span> toIntervalDay(<span class="hljs-number">10</span>)<br>SETTINGS index_granularity <span class="hljs-operator">=</span> <span class="hljs-number">8192</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="alter"><a href="#alter" class="headerlink" title="alter"></a>alter</h2><p>在实际操作中，对于alter操作，可以指定ON CLUSTER，比如新增字段</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 <span class="hljs-keyword">ON</span> CLUSTER clusterxx <span class="hljs-keyword">drop</span> <span class="hljs-keyword">column</span> cc<br></code></pre></td></tr></table></figure>
+
+<p>或者</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1_replica <span class="hljs-keyword">ON</span> CLUSTER clusterxx <span class="hljs-keyword">drop</span> <span class="hljs-keyword">column</span> cc<br></code></pre></td></tr></table></figure>
+
+<p>那么实际执行的时候，会将任务分发到各个节点（会分发到N个节点，对应了N台机器），这样每台机器上的表（table1或者table1_replica）都新增了字段。不过默认情况下分布式任务不是同步的，实际上只是将任务分发到各个节点，至于各个节点什么时候执行看各自节点的情况，不会等所有节点都执行完毕才返回数据。</p>
+<h2 id="insert操作"><a href="#insert操作" class="headerlink" title="insert操作"></a>insert操作</h2><p>insert写入的过程中分为同步写和异步写，通过<code>insert_sync</code>来控制，该参数的值是由<code>insert_distributed_sync</code>配置的，默认为<code>false</code>。</p>
+<blockquote>
+<p>一批数据写入分布式表会被拆分成多份小批量的数据写入<code>Clickhouse</code>集群，大量的小<code>part</code>文件会增加集群后台<code>merge</code>线程池的压力，当<code>merge</code>的处理能力小于写入能力时，<code>Clickhouse</code>会禁止写入，所以写入<code>Clickhouse</code>期望是<strong>频率低批次大</strong>。</p>
+</blockquote>
+<p>insert操作也可以直接写到分布式表上，分布式表会将insert任务分派到各个节点，各个节点默认会异步写。如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shells">insert into table1 values(1, [&#x27;A&#x27;,&#x27;A&#x27;],[&#x27;1.1.1.1&#x27;, &#x27;2.2.2.2&#x27;], 2021-08-19 14:21:30&#x27;);  <br>insert into table1 values(2, [&#x27;A&#x27;,&#x27;A&#x27;],[&#x27;1.1.1.1&#x27;, &#x27;2.2.2.2&#x27;], 2021-08-20 14:21:30&#x27;);  <br></code></pre></td></tr></table></figure>
+
+<p>那么clickhouse会将操作分布到几个节点后返回，然后在几个节点上分别写。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>下面是一个我碰到的insert操作过程中和分布式任务相关的问题：</p>
+<p>操作步骤</p>
+<ol>
+<li><p>往分布式表插入一些数据，是比较多条的数据。类似于<code>insert into table1 values(1, [&#39;A&#39;,&#39;A&#39;],[&#39;1.1.1.1&#39;, &#39;2.2.2.2&#39;], 2021-08-19 14:21:30&#39;);  </code>1000条这样。</p>
+</li>
+<li><p>删除table1的device字段，先在每个节点上都执行</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 <span class="hljs-keyword">drop</span> <span class="hljs-keyword">column</span> device.type;<br><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 <span class="hljs-keyword">drop</span> <span class="hljs-keyword">column</span> device.info;<br></code></pre></td></tr></table></figure>
+
+<p>然后在每个节点执行：</p>
+ <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 drop_replica <span class="hljs-keyword">column</span> device.type;<br><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 drop_replica <span class="hljs-keyword">column</span> device.info;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>新增device字段，不过是String类型的：</p>
+<p>先在每个节点上都执行</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1 <span class="hljs-keyword">add</span> <span class="hljs-keyword">column</span> device String;<br></code></pre></td></tr></table></figure>
+
+<p>然后在每个节点上执行：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">alter</span> <span class="hljs-keyword">table</span> table1_replica <span class="hljs-keyword">add</span> <span class="hljs-keyword">column</span> device String;<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>发现问题：</p>
+<p>查询system.errors表，发现其中两台机器不断报错</p>
+<p>执行<code>select * from system.errors order by  last_error_time desc limit 10</code></p>
+<p>返回结果为：</p>
+<p><img src="/../images/image-20230317203948210.png" srcset="/img/loading.gif" lazyload alt="image-20230317203948210"></p>
+<p>完整信息为</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">No</span> such <span class="hljs-keyword">column</span> device.<span class="hljs-keyword">type</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">table</span> database1.table1_replica (xxxxxxxxxx-bf3c<span class="hljs-number">-414</span>d<span class="hljs-number">-82</span>f5-e184fe0304c6)<br></code></pre></td></tr></table></figure>
+
+<p>更为关键的是，每个两三分钟再次查询，这个NO_SUCH_COLUMN_IN_TABLE错误一直在更新，表现为value值增加，last_error_time更新为离当前时间更近的时间，而last_error还是No such column device.type的内容，这说明错误一直在发生。</p>
+</li>
+<li><p>查询 system.query_log确认 ，发现最近几分钟报错的都是上面的错误，大概每隔30秒会触发一次，看起来是insert失败后clickhouse一直在重试。</p>
+<blockquote>
+<p>ps:图片上的时间仅作为参考，因为是事后记录，资料部分丢失，所以时间不会严格按照时间发生的记录，理解意思即可。</p>
+</blockquote>
+</li>
+</ol>
+<p><img src="/../images/image-20230317204706151.png" srcset="/img/loading.gif" lazyload alt="image-20230317204706151"></p>
+<p>发现这些报错的initial_query_id都是相同的，initial_query_id表示这个操作是由哪个分布式任务触发的，且每一条报错的query_id和initial_query_id不一样，这表明这台机器的insert操作是其他机器派发下来的。</p>
+<p><img src="/../images/image-20230317205139122.png" srcset="/img/loading.gif" lazyload alt="image-20230317205139122"></p>
+<ol start="6">
+<li><p>确定这个initial_query_id是哪台机器上的，我在每台机器上都执行了</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">select</span> <span class="hljs-built_in">count</span>() <span class="hljs-keyword">from</span> system.query_log <span class="hljs-keyword">where</span> query_id <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;xxx&#x27;</span> <span class="hljs-operator">/</span><span class="hljs-operator">/</span> xx 就是上图标出来的initial_query_id<br></code></pre></td></tr></table></figure>
+
+<p>发现只有第一台返回了非0数据，表明这个操作是第一台派发下来的。但是第一台查询<code>select * from system.query_log where query_id = &#39;xxx&#39;</code>的两条数据的结果的Type分别为QueryStart和QueryFinish<img src="/../images/image-20230317205450785.png" srcset="/img/loading.gif" lazyload alt="image-20230317205450785"></p>
+<ol start="7">
+<li><p>原因确认：这是因为第一步的insert是非同步式分布任务，集群随机派发，把这个任务派发到了第一台节点上，第一台的分布式表table1把任务派发到N台节点的本地表table1_replica执行，因为分布式任务是非同步的，此时第一台立刻返回结果，剩下的几台准备执行被派发到的insert任务。结果此时我在每台挨个执行了删除字段的操作，出了出问题的那台，其他几台都是insert执行完毕了才delete字段，只有出问题的那台delete后执行了insert操作，此时必然会报错。然后clickhouse就不断重试。</p>
+</li>
+<li><p>尝试解决：相关的资料clickhouse讲得很少，我估计是有个不断重试insert的线程不断在重试。于是重启了出问题的那台机器，但是发现重启后这个问题依然存在 。那么这个重试程序应该是被持久化到硬盘上的。</p>
+</li>
+<li><p>因为定位不断重试insert的线程很麻烦，且考虑不精通clickhouse，手动停止重试任务会影响clickhouse的数据等，于是决定使用最简单的回滚方法，删除新增的string类型的 device字段，然后新增nested类型的device字段，此时重试任务重试成功了，报错 停止了。然后再删除Nested类型的device，把string类型的device加回来 。</p>
+<p>注意：首先先要执行<code>delete column device on cluster clusterxx drop column device</code> 操作所有机器的分布式表，然后上面所说的先删除device，添加Nested类型的device等一系列只要在出问题的机器的本地表执行就可以了。最后再在所有机器的分布式表添加string类型 的 device字段。</p>
+</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>ps：上面的问题导致的另一个后果是 表堆积</p>
+<p>下面2种情况会造成分布式表堆积：</p>
+<p>当DistributedSchedulePool的处理能力小于写入能力时，就会造成分布式表堆积，这时用户是查不到堆积的数据的，当堆积到一定的程度，集群是比较难恢复的，需要清除分布式表堆积的数据，用户是会丢失数据的，出现这种问题的原因其中一个原因是用户在StreamSql任务中配置的并发太高间隔太短，写入太猛造成的。</p>
+<p>用户在修改表结构的时候未停写，就可能会出现分布式表中还堆积着修改表结构之前的数据，当分发的时候，由于远端的表结构已经修改，就会分发失败，<code>Clickhouse</code>就会无限次重试，导致后续的数据也无法处理，从而堆积。</p>
+</blockquote>
+<p>参考</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_43115606/article/details/125612593">Clickhouse 分布式表的写入原理</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>clickhous分布式操作与错误复盘</div>
+      <div>https://rhythmnr.github.io/2023/03/17/clickhouse分布式操作日志/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月17日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/04/10/iperf3%E4%BD%BF%E7%94%A8/" title="iperf3使用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">iperf3使用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/17/SNMP%E5%8D%8F%E8%AE%AE%E7%AE%80%E4%BB%8B/" title="SNMP协议简介">
+                        <span class="hidden-mobile">SNMP协议简介</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

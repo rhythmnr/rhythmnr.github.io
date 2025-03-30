@@ -1,0 +1,891 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="NR">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="gopacket是用Golang开发的、Google出品的一个PF_RING和AF_PACKET和基于C语言的libpcap的网络数据包抓取和分析包。  不同的选项会使用不同的底层，比如大部分时候是基于libpcap的，有时候是基于PF_RING的，有时候是基于AF_PACKET的。具体是基于什么的主要取决于代码是怎么写的。 PF_RING和AF_PACKET都是网络套接字，   libpcap是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gopacket源代码部分阅读">
+<meta property="og:url" content="https://rhythmnr.github.io/2024/04/26/gopacket%E6%BA%90%E4%BB%A3%E7%A0%81%E9%98%85%E8%AF%BB/index.html">
+<meta property="og:site_name" content="written for my own">
+<meta property="og:description" content="gopacket是用Golang开发的、Google出品的一个PF_RING和AF_PACKET和基于C语言的libpcap的网络数据包抓取和分析包。  不同的选项会使用不同的底层，比如大部分时候是基于libpcap的，有时候是基于PF_RING的，有时候是基于AF_PACKET的。具体是基于什么的主要取决于代码是怎么写的。 PF_RING和AF_PACKET都是网络套接字，   libpcap是">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240425172341705.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240425172536911.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240425174555590.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240425174626515.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240425174821243.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240426112555437.png">
+<meta property="og:image" content="https://rhythmnr.github.io/images/image-20240426112958224.png">
+<meta property="article:published_time" content="2024-04-26T03:00:00.000Z">
+<meta property="article:modified_time" content="2025-03-29T14:34:36.719Z">
+<meta property="article:author" content="NR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rhythmnr.github.io/images/image-20240425172341705.png">
+  
+  
+  <title>gopacket源代码部分阅读 - written for my own</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"rhythmnr.github.io","root":"/","version":"1.8.14","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+
+  
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>自己敲击的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="gopacket源代码部分阅读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-04-26 11:00" pubdate>
+          2024年4月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          30k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          247 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">gopacket源代码部分阅读</h1>
+            
+            <div class="markdown-body">
+              
+              <p>gopacket是用Golang开发的、Google出品的一个<code>PF_RING</code>和<code>AF_PACKET</code>和基于C语言的libpcap的网络数据包抓取和分析包。</p>
+<blockquote>
+<p>不同的选项会使用不同的底层，比如大部分时候是基于libpcap的，有时候是基于PF_RING的，有时候是基于AF_PACKET的。具体是基于什么的主要取决于代码是怎么写的。</p>
+<p>PF_RING和AF_PACKET都是网络套接字，</p>
+</blockquote>
+<blockquote>
+<p>libpcap是C语言写的一个库，但是libpcap并不像前两者一样是套接字（socket）API的一部分。在linux系统或者IRIX系统，libpcap是基于套接字API实现的，比如Linux系统上是基于PF_PACKET套接字实现的。在<code>*BSD</code>, OS X, AIX, 和Solaris 11和之后的系统，是基于 BPF套接字实现的。在Solaris的早期版本和HP-UX系统，是基于STREAMS+DLPI。但是在<code>UN*Xes</code>系统中，因为系统没有提供用于包捕获的套接字，所以libpcap是通过其他机制实现的。</p>
+<p>在windows上 Winpcap做的事情和libpcap一样。</p>
+<p>原始socket是操作系统提供的API，可以由调用者自定义包的header，比如包的TCP header和IP header等等，然后发送包。</p>
+</blockquote>
+<p>通常最经常使用的是gopacket基于libpcap的抓包功能。下面也基于此介绍。因为是基于libpcap，故gopacket使用到了C代码，编译时需要开启CGO。libpcap是一个网络数据包捕获框架，应用极其广泛，tcpdump、wireshark都是基于libpcap的。</p>
+<p>因为在使用gopacket的过程中对其在libpcap的基础上做了哪些额外的功能和功能的实现比较好奇，故阅读了gopacket的源代码。其实也没有把源代码完全读完，只读了我自己比较感兴趣的部分，日后有时间可能会把其他部分都读完，读完了继续补充到本文。</p>
+<p>我阅读的部分主要是数据包抓取部分，数据包解码部分。还有一些这两部分之外的包，不过阅读得比较浅显没怎么看懂。下面介绍我读取的部分的内容。</p>
+<h2 id="数据包抓取"><a href="#数据包抓取" class="headerlink" title="数据包抓取"></a>数据包抓取</h2><p>调用gopacket的代码一般类似如下的示例代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>  device := <span class="hljs-string">&quot;en0&quot;</span><br>	handle, err := pcap.OpenLive(device, snaplen, promiscuous, <span class="hljs-number">-1</span>*time.Second)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	<span class="hljs-keyword">defer</span> handle.Close()<br>	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())<br>	<span class="hljs-keyword">for</span> packet := <span class="hljs-keyword">range</span> packetSource.Packets() &#123;<br>    <span class="hljs-comment">// do something</span><br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>可以看到每个数据包是通过packetSource.Packets()函数获取的，查看该函数及该函数调用的其他函数的实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *PacketSource)</span></span> Packets() <span class="hljs-keyword">chan</span> Packet &#123;<br>	<span class="hljs-keyword">if</span> p.c == <span class="hljs-literal">nil</span> &#123;<br>    <span class="hljs-comment">// channel 的大小在gopacket代码里被写死了，是固定的1000</span><br>		p.c = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> Packet, <span class="hljs-number">1000</span>)<br>		<span class="hljs-keyword">go</span> p.packetsToChannel()<br>	&#125;<br>	<span class="hljs-keyword">return</span> p.c<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *PacketSource)</span></span> packetsToChannel() &#123;<br>	<span class="hljs-keyword">defer</span> <span class="hljs-built_in">close</span>(p.c)<br>	<span class="hljs-keyword">for</span> &#123;<br>		packet, err := p.NextPacket()<br>		<span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> &#123;<br>			p.c &lt;- packet<br>			<span class="hljs-keyword">continue</span><br>		&#125;<br><br>		<span class="hljs-comment">// Immediately retry for temporary network errors</span><br>		<span class="hljs-keyword">if</span> nerr, ok := err.(net.Error); ok &amp;&amp; nerr.Temporary() &#123;<br>			<span class="hljs-keyword">continue</span><br>		&#125;<br><br>		<span class="hljs-comment">// Immediately retry for EAGAIN</span><br>		<span class="hljs-keyword">if</span> err == syscall.EAGAIN &#123;<br>			<span class="hljs-keyword">continue</span><br>		&#125;<br><br>		<span class="hljs-comment">// Immediately break for known unrecoverable errors</span><br>		<span class="hljs-keyword">if</span> err == io.EOF || err == io.ErrUnexpectedEOF ||<br>			err == io.ErrNoProgress || err == io.ErrClosedPipe || err == io.ErrShortBuffer ||<br>			err == syscall.EBADF ||<br>			strings.Contains(err.Error(), <span class="hljs-string">&quot;use of closed file&quot;</span>) &#123;<br>			<span class="hljs-keyword">break</span><br>		&#125;<br><br>		<span class="hljs-comment">// Sleep briefly and try again</span><br>		time.Sleep(time.Millisecond * time.Duration(<span class="hljs-number">5</span>))<br>	&#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *PacketSource)</span></span> NextPacket() (Packet, <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-comment">// ReadPacketData 返回从 pcap 句柄读取的下一个数据包，</span><br>	<span class="hljs-comment">// 以及与该数据包关联的错误代码。 如果数据包读取成功，则返回错误为零。</span><br>	data, ci, err := p.source.ReadPacketData()<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>	&#125;<br>	<span class="hljs-comment">// p.DecodeOptions 是在这个地方使用的</span><br>  <span class="hljs-comment">// NewPacket 里进行的主要是数据包的解码操作，除了在Decode选项的Lazy值为true时不会做解码操作</span><br>	packet := NewPacket(data, p.decoder, p.DecodeOptions)<br>	m := packet.Metadata()<br>	m.CaptureInfo = ci<br>	<span class="hljs-comment">// 如果捕获的长度小于实际传输的长度，那么表示被截断了，是不是gopacket的 snapshot_len 参数会对是否被截断有影响</span><br>	m.Truncated = m.Truncated || ci.CaptureLength &lt; ci.Length<br>	<span class="hljs-keyword">return</span> packet, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这里比较重要的部分就是p.source.ReadPacketData()的实现，跳转过去后发现其定义是一个interface</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> PacketDataSource <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// ReadPacketData returns the next packet available from this data source.</span><br>	<span class="hljs-comment">// It returns:</span><br>	<span class="hljs-comment">//  data:  The bytes of an individual packet.</span><br>	<span class="hljs-comment">//  ci:  Metadata about the capture</span><br>	<span class="hljs-comment">//  err:  An error encountered while reading packet data.  If err != nil,</span><br>	<span class="hljs-comment">//    then data/ci will be ignored.</span><br>	ReadPacketData() (data []<span class="hljs-type">byte</span>, ci CaptureInfo, err <span class="hljs-type">error</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>那么对于最开始的示例代码，代码执行时是如何实现这个interface的呢？那么需要定位到p.source的具体的值是什么。首先往上一行，查看<code>packetSource := gopacket.NewPacketSource(handle, handle.LinkType())</code>的NewPacketSource函数的实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewPacketSource</span><span class="hljs-params">(source PacketDataSource, decoder Decoder)</span></span> *PacketSource &#123;<br>	<span class="hljs-keyword">return</span> &amp;PacketSource&#123;<br>		source:  source,<br>		decoder: decoder,<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个函数很简单，无法定位到p.source的值具体是什么。</p>
+<p>再查看上一行代码<code>handle, err := pcap.OpenLive(device, snaplen, promiscuous, -1*time.Second)</code>的实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">OpenLive</span><span class="hljs-params">(device <span class="hljs-type">string</span>, snaplen <span class="hljs-type">int32</span>, promisc <span class="hljs-type">bool</span>, timeout time.Duration)</span></span> (handle *Handle, _ <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-keyword">var</span> pro <span class="hljs-type">int</span><br>	<span class="hljs-keyword">if</span> promisc &#123;<br>		pro = <span class="hljs-number">1</span><br>	&#125;<br><br>	p, err := pcapOpenLive(device, <span class="hljs-type">int</span>(snaplen), pro, timeoutMillis(timeout))<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>	&#125;<br>	p.timeout = timeout<br>	p.device = device<br><br>	ifc, err := net.InterfaceByName(device)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-comment">// The device wasn&#x27;t found in the OS, but could be &quot;any&quot;</span><br>		<span class="hljs-comment">// Set index to 0</span><br>		p.deviceIndex = <span class="hljs-number">0</span><br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		p.deviceIndex = ifc.Index<br>	&#125;<br><br>	p.nanoSecsFactor = <span class="hljs-number">1000</span> <span class="hljs-comment">// 直接翻译为纳秒因子</span><br><br>	<span class="hljs-comment">// Only set the PCAP handle into non-blocking mode if we have a timeout</span><br>	<span class="hljs-comment">// greater than zero. If the user wants to block forever, we&#x27;ll let libpcap</span><br>	<span class="hljs-comment">// handle that.</span><br>	<span class="hljs-comment">// 仅当超时大于零时，才将 PCAP 句柄设置为非阻塞模式。 如果用户想要永远阻塞，我们会让 libpcap 来处理。</span><br>	<span class="hljs-keyword">if</span> p.timeout &gt; <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">if</span> err := p.setNonBlocking(); err != <span class="hljs-literal">nil</span> &#123;<br>			p.pcapClose()<br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>		&#125;<br>	&#125;<br><br>	<span class="hljs-keyword">return</span> p, <span class="hljs-literal">nil</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">pcapOpenLive</span><span class="hljs-params">(device <span class="hljs-type">string</span>, snaplen <span class="hljs-type">int</span>, pro <span class="hljs-type">int</span>, timeout <span class="hljs-type">int</span>)</span></span> (*Handle, <span class="hljs-type">error</span>) &#123;<br>	buf := (*C.char)(C.calloc(errorBufferSize, <span class="hljs-number">1</span>)) <span class="hljs-comment">// C.calloc 分配内存</span><br>	<span class="hljs-keyword">defer</span> C.free(unsafe.Pointer(buf))              <span class="hljs-comment">// C.free 释放内存</span><br><br>	dev := C.CString(device)<br>	<span class="hljs-comment">// 释放变量 dev 的内存</span><br>	<span class="hljs-keyword">defer</span> C.free(unsafe.Pointer(dev))<br><br>	cptr := C.pcap_open_live(dev, C.<span class="hljs-type">int</span>(snaplen), C.<span class="hljs-type">int</span>(pro), C.<span class="hljs-type">int</span>(timeout), buf)<br>	<span class="hljs-comment">// cptr 是一个指针</span><br>	<span class="hljs-comment">// 将这个指针存储在 cptr 变量中意味着你可以通过 cptr 来访问被打开的实时捕获会话的相关信息和函数。</span><br>	<span class="hljs-comment">// 这种方式允许你在 Go 代码中使用 C 代码中定义的结构和函数，这在需要与 C 语言库进行交互的情况下非常有用。</span><br>	<span class="hljs-comment">// 在后续读取数据包时，通常不会涉及到复制操作，因为 cptr 是指向 pcap_t 结构的指针，而不是结构本身。</span><br>	<span class="hljs-keyword">if</span> cptr == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, errors.New(C.GoString(buf))<br>	&#125;<br>	<span class="hljs-keyword">return</span> &amp;Handle&#123;cptr: cptr&#125;, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>可以看出，在打开网卡的时候就已经调用了很多的C的代码。最终返回的是Handle struct类型的值。所以示例代码中的，上面需要定位的实现了PacketDataSource interface必然是Handle struct，查看其实现：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 如果包已经被成功读取了，那么错误为空</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *Handle)</span></span> ReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>) &#123;<br>	p.mu.Lock()<br>	err = p.getNextBufPtrLocked(&amp;ci)<br>	<span class="hljs-keyword">if</span> err == <span class="hljs-literal">nil</span> &#123;<br>		data = <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, ci.CaptureLength)<br>		<span class="hljs-comment">// 使用 unsafe.Pointer 将 p.bufptr 的指针转换为 unsafe.Pointer 类型的指针，</span><br>		<span class="hljs-comment">// 然后再将其转换为指向一个长度为 2^30 (即 1GB) 字节的数组的指针 (*[1 &lt;&lt; 30]byte)。</span><br>		<span class="hljs-comment">// 接着，使用切片操作 [:]，将整个数组转换为切片</span><br><br>		<span class="hljs-comment">// 这一行代码的作用是将 p.bufptr 指向的内存数据复制到 data 切片中，以便后续对数据进行处理和分析。</span><br>		<span class="hljs-comment">// 最终，data 切片中将包含 p.bufptr 指向的内容</span><br>		<span class="hljs-comment">// 原来是直接读取内存的指针，复制的数据包的内容</span><br>		<span class="hljs-built_in">copy</span>(data, (*(*[<span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">30</span>]<span class="hljs-type">byte</span>)(unsafe.Pointer(p.bufptr)))[:])<br>	&#125;<br>	p.mu.Unlock()<br>	<span class="hljs-keyword">if</span> err == NextErrorTimeoutExpired &#123;<br>		<span class="hljs-comment">// runtime.Gosched() 的作用是手动触发 Go 调度器的一次调度</span><br>		<span class="hljs-comment">// 调用 runtime.Gosched() 时，它会主动让出 CPU，让其他就绪状态的 goroutine 有机会执行。</span><br>		<span class="hljs-comment">// 当读取数据包时发生了超时，即等待数据包超时时，当前的 goroutine 会调用 runtime.Gosched() 主动让出 CPU。</span><br><br>		<span class="hljs-comment">// 数据包超时是指在一定时间内没有从网络接口中成功读取到数据包</span><br>		<span class="hljs-comment">// 在一定时间内没有成功读取到数据包即视为超时。例如，设置超时时间为 1 秒，表示如果在 1 秒内没有读取到数据包，就认为发生了超时。</span><br>		runtime.Gosched()<br>	&#125;<br>	<span class="hljs-keyword">return</span><br>&#125;<br><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *Handle)</span></span> getNextBufPtrLocked(ci *gopacket.CaptureInfo) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">if</span> !p.isOpen() &#123;<br>		<span class="hljs-keyword">return</span> io.EOF<br>	&#125;<br><br>	<span class="hljs-comment">// set after we have call waitForPacket for the first time</span><br>	<span class="hljs-keyword">var</span> waited <span class="hljs-type">bool</span><br><br>	<span class="hljs-comment">// stop 为 0 表示没有停止，使用原子读取</span><br>	<span class="hljs-comment">// 只要 stop 为 0 的时候就循环执行</span><br>	<span class="hljs-keyword">for</span> atomic.LoadUint64(&amp;p.stop) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-comment">// try to read a packet if one is immediately available</span><br>		<span class="hljs-comment">// pcapNextPacketEx 尝试从底层的 libpcap 读取数据包</span><br>		result := p.pcapNextPacketEx()<br><br>		<span class="hljs-keyword">switch</span> result &#123;<br>		<span class="hljs-keyword">case</span> NextErrorOk:<br>			<span class="hljs-comment">// 获取数据包的时间戳中的秒数部分，并将其赋值给 sec 变量。</span><br>			sec := p.pkthdr.getSec()<br>			<span class="hljs-comment">// p.pkthdr.getUsec() 方法获取数据包的时间戳中的微秒数部分</span><br>			<span class="hljs-comment">// convert micros to nanos</span><br>			<span class="hljs-comment">// 将毫秒转换为纳秒</span><br>			nanos := <span class="hljs-type">int64</span>(p.pkthdr.getUsec()) * p.nanoSecsFactor<br><br>			<span class="hljs-comment">// 使用 time.Unix 方法将秒数部分和纳秒数部分组合成一个时间戳</span><br>			ci.Timestamp = time.Unix(sec, nanos)<br>			<span class="hljs-comment">// p.pkthdr.getCaplen() 方法获取数据包的捕获长度（即实际捕获到的数据包长度）</span><br>			ci.CaptureLength = p.pkthdr.getCaplen()<br>			<span class="hljs-comment">// 调用 p.pkthdr.getLen() 方法获取数据包的长度（即数据包的原始长度）</span><br><br>			<span class="hljs-comment">// 捕获长度和原始长度的区别在于捕获长度是实际被网络接口捕获到的数据包的长度，</span><br>			<span class="hljs-comment">// 可能会小于或等于数据包的原始长度，而原始长度是数据包在网络上传输时的完整长度。</span><br>			ci.Length = p.pkthdr.getLen()<br>			ci.InterfaceIndex = p.deviceIndex<br><br>			<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>		<span class="hljs-keyword">case</span> NextErrorNoMorePackets:<br>			<span class="hljs-comment">// 没有更多的数据包可读了</span><br>			<span class="hljs-comment">// no more packets, return EOF rather than libpcap-specific error</span><br>			<span class="hljs-keyword">return</span> io.EOF<br>		<span class="hljs-keyword">case</span> NextErrorTimeoutExpired:<br>			<span class="hljs-comment">// we&#x27;ve already waited for a packet and we&#x27;re supposed to time out</span><br>			<span class="hljs-comment">//</span><br>			<span class="hljs-comment">// we should never actually hit this if we were passed BlockForever</span><br>			<span class="hljs-comment">// since we should block on C.pcap_next_ex until there&#x27;s a packet</span><br>			<span class="hljs-comment">// to read.</span><br>			<span class="hljs-keyword">if</span> waited &amp;&amp; p.timeout &gt; <span class="hljs-number">0</span> &#123;<br>				<span class="hljs-keyword">return</span> result<br>			&#125;<br><br>			<span class="hljs-comment">// wait for packet before trying again</span><br>			p.waitForPacket()<br>			waited = <span class="hljs-literal">true</span><br>		<span class="hljs-keyword">default</span>:<br>			<span class="hljs-keyword">return</span> result<br>		&#125;<br>	&#125;<br><br>	<span class="hljs-comment">// stop must be set</span><br>	<span class="hljs-keyword">return</span> io.EOF<br>&#125;<br><br><br><span class="hljs-comment">// 其他补充：golang 一般会在栈上分配内存，因为栈上内存的分配和回收更快</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *Handle)</span></span> pcapNextPacketEx() NextError &#123;<br>	<span class="hljs-comment">// This horrible magic allows us to pass a ptr-to-ptr to pcap_next_ex</span><br>	<span class="hljs-comment">// without causing that ptr-to-ptr to itself be allocated on the heap.</span><br>	<span class="hljs-comment">// Since Handle itself survives through the duration of the pcap_next_ex</span><br>	<span class="hljs-comment">// call, this should be perfectly safe for GC stuff, etc.</span><br>	<span class="hljs-comment">// 强制类型转换</span><br>	<span class="hljs-comment">// pcap_next_ex 是 libpcap 的从网络接口中读取下一个数据包的函数</span><br>	<span class="hljs-comment">// 由于 pcap_next_ex 函数的参数需要传递指向指针的指针，</span><br>	<span class="hljs-comment">// 为了避免在堆上分配内存，这段代码使用了一种技巧来传递指针的地址而不会分配额外的内存。</span><br>	<span class="hljs-keyword">return</span> NextError(C.pcap_next_ex_escaping(<br>		<span class="hljs-comment">// p.cptr 是 Handle 结构中的一个指向 pcap_t 结构的指针</span><br>		p.cptr,<br>		<span class="hljs-comment">// 使用unsafe.Pointer 先转换为 unsafe.Pointer 类型，</span><br>		<span class="hljs-comment">// 然后使用 uintptr 将这些指针转换为整数。</span><br>		<span class="hljs-comment">// C.uintptr_t 将整数转换为 C 语言中的 uintptr_t 类型。</span><br><br>		<span class="hljs-comment">// 通常情况下，pcap_next_ex 函数会修改传入参数所指向的内存，</span><br>		<span class="hljs-comment">// 以填充数据包的信息。因此，p.pkthdr 和 p.bufptr 可能会被修改为新的值，</span><br>		<span class="hljs-comment">// 以包含从网络接口中读取到的数据包的信息。</span><br>		C.uintptr_t(<span class="hljs-type">uintptr</span>(unsafe.Pointer(&amp;p.pkthdr))),<br>		C.uintptr_t(<span class="hljs-type">uintptr</span>(unsafe.Pointer(&amp;p.bufptr)))))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>一路照下来，最核心的就是pcapNextPacketEx函数，这个函数的功能就是读取下一个数据包，但是本质上还是调用C的函数。</p>
+<p><strong>所以gopacket的数据包抓取是通过对C的代码的调用实现的，且实现过程中使用了指针没有涉及到内存分配，已经是比较优秀的处理方法了。</strong></p>
+<h2 id="数据包解码"><a href="#数据包解码" class="headerlink" title="数据包解码"></a>数据包解码</h2><p>如果把“数据包抓取”部分读完，就会知道数据包解码部分是在下面源代码里的NewPacket函数中做的（除了Lazy为true时）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *PacketSource)</span></span> NextPacket() (Packet, <span class="hljs-type">error</span>) &#123;<br>	<span class="hljs-comment">// ReadPacketData 返回从 pcap 句柄读取的下一个数据包，</span><br>	<span class="hljs-comment">// 以及与该数据包关联的错误代码。 如果数据包读取成功，则返回错误为零。</span><br>	data, ci, err := p.source.ReadPacketData()<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>, err<br>	&#125;<br>	<span class="hljs-comment">// p.DecodeOptions 是在这个地方使用的</span><br>  <span class="hljs-comment">// NewPacket 里进行的主要是数据包的解码操作，除了在Decode选项的Lazy值为true时不会做解码操作</span><br>	packet := NewPacket(data, p.decoder, p.DecodeOptions)<br>	m := packet.Metadata()<br>	m.CaptureInfo = ci<br>	<span class="hljs-comment">// 如果捕获的长度小于实际传输的长度，那么表示被截断了，是不是gopacket的 snapshot_len 参数会对是否被截断有影响</span><br>	m.Truncated = m.Truncated || ci.CaptureLength &lt; ci.Length<br>	<span class="hljs-keyword">return</span> packet, <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>下面介绍NewPacket的实现，和gopacket解码的实现。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewPacket</span><span class="hljs-params">(data []<span class="hljs-type">byte</span>, firstLayerDecoder Decoder, options DecodeOptions)</span></span> Packet &#123;<br>	<span class="hljs-comment">// NoCopy 表示是否直接操作数据包的原始数据，操作原始数据可能会影响原始包</span><br>	<span class="hljs-keyword">if</span> !options.NoCopy &#123;<br>		dataCopy := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(data))<br>		<span class="hljs-built_in">copy</span>(dataCopy, data)<br>		data = dataCopy<br>	&#125;<br>	<span class="hljs-keyword">if</span> options.Lazy &#123;<br>		p := &amp;lazyPacket&#123;<br>			packet: packet&#123;data: data, decodeOptions: options&#125;,<br>			next:   firstLayerDecoder,<br>		&#125;<br>		p.layers = p.initialLayers[:<span class="hljs-number">0</span>]<br>		<span class="hljs-comment">// Crazy craziness:</span><br>		<span class="hljs-comment">// If the following return statemet is REMOVED, and Lazy is FALSE, then</span><br>		<span class="hljs-comment">// eager packet processing becomes 17% FASTER.  No, there is no logical</span><br>		<span class="hljs-comment">// explanation for this.  However, it&#x27;s such a hacky micro-optimization that</span><br>		<span class="hljs-comment">// we really can&#x27;t rely on it.  It appears to have to do with the size the</span><br>		<span class="hljs-comment">// compiler guesses for this function&#x27;s stack space, since one symptom is</span><br>		<span class="hljs-comment">// that with the return statement in place, we more than double calls to</span><br>		<span class="hljs-comment">// runtime.morestack/runtime.lessstack.  We&#x27;ll hope the compiler gets better</span><br>		<span class="hljs-comment">// over time and we get this optimization for free.  Until then, we&#x27;ll have</span><br>		<span class="hljs-comment">// to live with slower packet processing.</span><br>		<span class="hljs-comment">// 设置为 lazy 则直接返回</span><br>		<span class="hljs-keyword">return</span> p<br>	&#125;<br>	p := &amp;eagerPacket&#123;<br>		packet: packet&#123;data: data, decodeOptions: options&#125;,<br>	&#125;<br>	<span class="hljs-comment">// layers 置为空</span><br>	p.layers = p.initialLayers[:<span class="hljs-number">0</span>]<br>	p.initialDecode(firstLayerDecoder)<br>	<span class="hljs-keyword">return</span> p<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>返回值Packet时一个interface，eagerPacket struct和lazyPacket struct都实现了该interface。这里只介绍Lazy为false的情况，Lazy为true时gopacket的处理比较巧妙，下文会在“解码数据包时的一些选项的作用”详细介绍Lazy为true的情况。</p>
+<p>Lazy为false时，会执行到p.initialDecode(firstLayerDecoder)，这也是最关键的调用：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *eagerPacket)</span></span> initialDecode(dec Decoder) &#123;<br>	<span class="hljs-keyword">defer</span> p.recoverDecodeError()<br>	<span class="hljs-comment">// p 即 eagerPacket 实现了 gopacket.PacketBuilder interface</span><br>	err := dec.Decode(p.data, p)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		p.addFinalDecodeError(err, <span class="hljs-literal">nil</span>)<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Decode跳转过去是一个interface：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Decoder <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// Decode decodes the bytes of a packet, sending decoded values and other</span><br>	<span class="hljs-comment">// information to PacketBuilder, and returning an error if unsuccessful.  See</span><br>	<span class="hljs-comment">// the PacketBuilder documentation for more details.</span><br>	Decode([]<span class="hljs-type">byte</span>, PacketBuilder) <span class="hljs-type">error</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>实现了该interface的是gopacket中所有定义的协议，下面以数据链路层PPP协议的实现为例：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Decoder calls PPPTypeMetadata.DecodeWith&#x27;s decoder.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a PPPType)</span></span> Decode(data []<span class="hljs-type">byte</span>, p gopacket.PacketBuilder) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">return</span> PPPTypeMetadata[a].DecodeWith.Decode(data, p)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>PPPTypeMetadata的定义为[65536]EnumMetadata，调用<code>Decode(data, p)</code>最终执行的是PPP协议实现的如下函数：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">decodePPP</span><span class="hljs-params">(data []<span class="hljs-type">byte</span>, p gopacket.PacketBuilder)</span></span> <span class="hljs-type">error</span> &#123;<br>	ppp := &amp;PPP&#123;&#125;<br>	offset := <span class="hljs-number">0</span><br>	<span class="hljs-keyword">if</span> data[<span class="hljs-number">0</span>] == <span class="hljs-number">0xff</span> &amp;&amp; data[<span class="hljs-number">1</span>] == <span class="hljs-number">0x03</span> &#123;<br>		offset = <span class="hljs-number">2</span><br>		ppp.HasPPTPHeader = <span class="hljs-literal">true</span><br>	&#125;<br>	<span class="hljs-keyword">if</span> data[offset]&amp;<span class="hljs-number">0x1</span> == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">if</span> data[offset+<span class="hljs-number">1</span>]&amp;<span class="hljs-number">0x1</span> == <span class="hljs-number">0</span> &#123;<br>			<span class="hljs-keyword">return</span> errors.New(<span class="hljs-string">&quot;PPP has invalid type&quot;</span>)<br>		&#125;<br>		ppp.PPPType = PPPType(binary.BigEndian.Uint16(data[offset : offset+<span class="hljs-number">2</span>]))<br>		ppp.Contents = data[offset : offset+<span class="hljs-number">2</span>]<br>		ppp.Payload = data[offset+<span class="hljs-number">2</span>:]<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		ppp.PPPType = PPPType(data[offset])<br>		ppp.Contents = data[offset : offset+<span class="hljs-number">1</span>]<br>		ppp.Payload = data[offset+<span class="hljs-number">1</span>:]<br>	&#125;<br>	p.AddLayer(ppp)<br>	p.SetLinkLayer(ppp)<br>	<span class="hljs-keyword">return</span> p.NextDecoder(ppp.PPPType)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个函数在ppp.go文件里。</p>
+<p>decodePPP就是按照PPP协议的规定，第几个字节存储的是什么东西这样，读取所有存储PPP协议的字段，解析出PPP协议的各个字段的值。这里需要注意下PPPType的值，PPPType这里存储的是PPP协议上一层协议的类型。然后调用了p.NextDecoder(ppp.PPPType)，NextDecoder的实现如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *eagerPacket)</span></span> NextDecoder(next Decoder) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">if</span> next == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> errNilDecoder<br>	&#125;<br>	d := p.last.LayerPayload()<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(d) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>	&#125;<br>	<span class="hljs-comment">// Since we&#x27;re eager, immediately call the next decoder.</span><br>	<span class="hljs-keyword">return</span> next.Decode(d, p)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>可以看到，这里用了LayerPayload()的值来解码，解码所用的协议正是ppp.PPPType也就是PPP上一层的协议。LayerPayload()的值不包括PPP的头部，是PPP的Payload，也就是PPP协议的上一层的所有内容，上一层的协议的头部信息和Payload。</p>
+<p>上一层协议会和PPP协议类似，调用Decode函数，继续解码。</p>
+<h3 id="解码数据包时的一些选项的作用"><a href="#解码数据包时的一些选项的作用" class="headerlink" title="解码数据包时的一些选项的作用"></a>解码数据包时的一些选项的作用</h3><p>DecodeOptions在gopacket的源代码中定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// DecodeOptions tells gopacket how to decode a packet.</span><br><span class="hljs-keyword">type</span> DecodeOptions <span class="hljs-keyword">struct</span> &#123;<br>	<span class="hljs-comment">// Lazy decoding decodes the minimum number of layers needed to return data</span><br>	<span class="hljs-comment">// for a packet at each function call.  Be careful using this with concurrent</span><br>	<span class="hljs-comment">// packet processors, as each call to packet.* could mutate the packet, and</span><br>	<span class="hljs-comment">// two concurrent function calls could interact poorly.</span><br>	Lazy <span class="hljs-type">bool</span><br>	<span class="hljs-comment">// NoCopy decoding doesn&#x27;t copy its input buffer into storage that&#x27;s owned by</span><br>	<span class="hljs-comment">// the packet.  If you can guarantee that the bytes underlying the slice</span><br>	<span class="hljs-comment">// passed into NewPacket aren&#x27;t going to be modified, this can be faster.  If</span><br>	<span class="hljs-comment">// there&#x27;s any chance that those bytes WILL be changed, this will invalidate</span><br>	<span class="hljs-comment">// your packets.</span><br>	NoCopy <span class="hljs-type">bool</span><br>	<span class="hljs-comment">// SkipDecodeRecovery skips over panic recovery during packet decoding.</span><br>	<span class="hljs-comment">// Normally, when packets decode, if a panic occurs, that panic is captured</span><br>	<span class="hljs-comment">// by a recover(), and a DecodeFailure layer is added to the packet detailing</span><br>	<span class="hljs-comment">// the issue.  If this flag is set, panics are instead allowed to continue up</span><br>	<span class="hljs-comment">// the stack.</span><br>	SkipDecodeRecovery <span class="hljs-type">bool</span><br>	<span class="hljs-comment">// DecodeStreamsAsDatagrams enables routing of application-level layers in the TCP</span><br>	<span class="hljs-comment">// decoder. If true, we should try to decode layers after TCP in single packets.</span><br>	<span class="hljs-comment">// This is disabled by default because the reassembly package drives the decoding</span><br>	<span class="hljs-comment">// of TCP payload data after reassembly.</span><br>	DecodeStreamsAsDatagrams <span class="hljs-type">bool</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>里面一共有4个选项。下面介绍其中比较重要的3个。</p>
+<h4 id="Nocopy选项"><a href="#Nocopy选项" class="headerlink" title="Nocopy选项"></a>Nocopy选项</h4><p>在设置 <code>NoCopy</code> 选项为 <code>true</code> 时，<code>gopacket</code> 将尽量避免在解析数据包时进行内存拷贝操作。启用 <code>NoCopy</code> 选项后，<code>gopacket</code> 将尝试使用零拷贝技术，直接在原始数据包的内存中进行操作，避免不必要的内存拷贝操作，从而提高解析性能。在处理大量数据包时，启用 <code>NoCopy</code> 选项可以显著减少内存开销和CPU消耗，尤其是对于大型数据包或高速网络流量的处理</p>
+<p>Nocopy选项在使用时一般是类似这样使用的，就是在DecodeOptions里指定Nocopy的值：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go">handle, err := pcap.OpenOffline(file)<br><span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>	fmt.Println(<span class="hljs-string">&quot;.....err......&quot;</span>, err)<br>&#125;<br><span class="hljs-keyword">defer</span> handle.Close()<br>packetSource := gopacket.NewPacketSource(handle, handle.LinkType())<br>packetSource.DecodeOptions.NoCopy = <span class="hljs-literal">false</span><br><span class="hljs-keyword">for</span> packet := <span class="hljs-keyword">range</span> packetSource.Packets() &#123;<br>   <span class="hljs-comment">// do something</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>那么Nocopy到底有什么作用呢？</p>
+<p>Nocopy在gopacket源代码的使用处如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewPacket</span><span class="hljs-params">(data []<span class="hljs-type">byte</span>, firstLayerDecoder Decoder, options DecodeOptions)</span></span> Packet &#123;<br>	<span class="hljs-comment">// NoCopy 表示是否直接操作数据包的原始数据，操作原始数据可能会影响原始包</span><br>	<span class="hljs-keyword">if</span> !options.NoCopy &#123;<br>		dataCopy := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(data))<br>		<span class="hljs-built_in">copy</span>(dataCopy, data)<br>		data = dataCopy<br>	&#125;<br></code></pre></td></tr></table></figure>
+
+<p>因为之后对data的更改会影响到调用NewPacket处的data的数据，即最原始的data。想要原始的data不被修改可以设置Nocopy为false。因为调用处传递的data是一个切片。</p>
+<p>下面测试下函数内修改[]byte数组对原始值的影响：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>	<span class="hljs-keyword">var</span> s []<span class="hljs-type">byte</span><br>	s = []<span class="hljs-type">byte</span>&#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&#125;<br>	testChange(s)<br>	fmt.Println(<span class="hljs-string">&quot;......after testChange.....&quot;</span>, s)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">testChange</span><span class="hljs-params">(s []<span class="hljs-type">byte</span>)</span></span> &#123;<br>	s[<span class="hljs-number">0</span>] = <span class="hljs-number">9</span><br>	s = <span class="hljs-built_in">append</span>(s, <span class="hljs-number">4</span>)<br>	fmt.Println(<span class="hljs-string">&quot;......finish testChange.....&quot;</span>, s)<br>&#125;<br><span class="hljs-comment">// 运行结果为：</span><br><span class="hljs-comment">// ......finish testChange..... [9 2 3 4]</span><br><span class="hljs-comment">// ......after testChange..... [9 2 3]</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在 Go 语言中，切片是一个引用类型，<strong>传递给函数时是按值传递的，但仍然是传递的引用的拷贝。这意味着在函数中修改切片的元素会影响到原始切片，但如果在函数内部重新分配了切片</strong>，则不会影响到原始切片。</p>
+<p>修改了切片的第一个元素为 9，这会影响到原始切片。但是，在函数内部使用 <code>append</code> 函数追加一个元素时，实际上创建了一个新的切片，并将新切片的引用赋值给了 <code>s</code>，但这不会影响到原始切片。</p>
+</blockquote>
+<h4 id="DecodeStreamsAsDatagrams选项"><a href="#DecodeStreamsAsDatagrams选项" class="headerlink" title="DecodeStreamsAsDatagrams选项"></a>DecodeStreamsAsDatagrams选项</h4><p>DecodeStreamsAsDatagrams直接翻译为：将流解码为数据报</p>
+<p>用于指示解码器将所有的流（streams）都作为数据报（datagrams）处理。</p>
+<p>通常情况下，流是指基于连接的协议（如 TCP）中的数据流，而数据报是指基于无连接的协议（如 UDP）中的独立数据包。</p>
+<p>当设置 <code>DecodeStreamsAsDatagrams</code> 选项时，解码器会将所有的流都当作数据报处理，即将所有的数据包视为独立的数据报，而不考虑它们的连接关系。这在一些特定场景下可能会有用，例如处理不基于连接的协议数据时，或者需要对每个数据包进行独立处理时。</p>
+<h4 id="SkipDecodeRecovery选项"><a href="#SkipDecodeRecovery选项" class="headerlink" title="SkipDecodeRecovery选项"></a>SkipDecodeRecovery选项</h4><p>当设置为 <code>true</code> 时，<code>SkipDecodeRecovery</code> 将告诉 <code>gopacket</code> 在解析数据包时不进行恢复处理。通常情况下，如果 <code>gopacket</code> 在解析数据包时遇到错误或异常情况，它会尝试进行恢复处理，以尽可能多地解析出有效的数据。这种恢复处理可能包括尝试从错误中恢复，忽略部分损坏的数据，并尝试继续解析。</p>
+<p>但是，在某些情况下，可能希望完全避免 <code>gopacket</code> 的恢复处理，而是直接在解析过程中忽略任何错误或异常情况，并接受可能的数据丢失或不完整。这时，可以将 <code>SkipDecodeRecovery</code> 设置为 <code>true</code>，告诉 <code>gopacket</code> 在解析数据包时不进行任何恢复处理，直接返回解析错误。</p>
+<p>总的来说，设置 <code>SkipDecodeRecovery</code> 为 <code>true</code> 可以提高解析性能，但同时也可能导致更多的解析错误或数据丢失。因此，在使用时需要根据具体情况进行权衡和选择。</p>
+<h4 id="Lazy选项"><a href="#Lazy选项" class="headerlink" title="Lazy选项"></a>Lazy选项</h4><p>Lazy选项设置为true来实现数据包的延迟解析。不设置为true即默认情况下，gopacket会在接收到数据包后立刻解析然后接收下一个数据包。如果设置为true，则会接收到数据包后不解析然后立刻接收下一个数据包，数据包的解析操作会在需要访问这些字段和数据时才进行解析。这样可以减少解析过程中的内存和CPU消耗，并提高性能。</p>
+<p>举例来说，可能只对数据包的部分字段感兴趣，比如源地址、目的地址和协议类型等。启用 <code>Lazy</code> 选项后，<code>gopacket</code> 将只解析这些字段，而对于其他字段，只有在获取他们值的时候才会触发解析数据包的操作，且只解析尽可能少的数据，即不做多余的操作。</p>
+<p>Lazy选项使用时可参考如下的方式使用：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go">handle, err := pcap.OpenOffline(file)<br><span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>	fmt.Println(<span class="hljs-string">&quot;.....err......&quot;</span>, err)<br>&#125;<br><span class="hljs-keyword">defer</span> handle.Close()<br>packetSource := gopacket.NewPacketSource(handle, handle.LinkType())<br>packetSource.DecodeOptions.NoCopy = <span class="hljs-literal">false</span><br><span class="hljs-keyword">for</span> packet := <span class="hljs-keyword">range</span> packetSource.Packets() &#123;<br>   <span class="hljs-comment">// do something</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>gopacket源代码涉及到Lazy选项的代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewPacket</span><span class="hljs-params">(data []<span class="hljs-type">byte</span>, firstLayerDecoder Decoder, options DecodeOptions)</span></span> Packet &#123;<br>	<span class="hljs-keyword">if</span> !options.NoCopy &#123;<br>		dataCopy := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(data))<br>		<span class="hljs-built_in">copy</span>(dataCopy, data)<br>		data = dataCopy<br>	&#125;<br>	<span class="hljs-keyword">if</span> options.Lazy &#123;<br>		p := &amp;lazyPacket&#123;<br>			packet: packet&#123;data: data, decodeOptions: options&#125;,<br>			next:   firstLayerDecoder,<br>		&#125;<br>		p.layers = p.initialLayers[:<span class="hljs-number">0</span>]<br>    <span class="hljs-keyword">return</span> p<br>	&#125;<br>	p := &amp;eagerPacket&#123;<br>		packet: packet&#123;data: data, decodeOptions: options&#125;,<br>	&#125;<br>	p.layers = p.initialLayers[:<span class="hljs-number">0</span>]<br>	p.initialDecode(firstLayerDecoder)<br>	<span class="hljs-keyword">return</span> p<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>PS：我这里贴出来的源代码在gopacket的基础上可能删掉了一部分注释，因为gopacket有的地方源代码的注释写得特别长，我直接把原来的注释贴在这里会让篇幅显得太长了。</p>
+</blockquote>
+<p>根据上面的代码可以看出，如果Lazy为true，那么就不会执行p.initialDecode(firstLayerDecoder)，initialDecode的作用就是尽可能的对包进行解码，把每一层的内容都分析出来。</p>
+<p>所以如果Lazy为false，那么会在NewPacket中执行p.initialDecode，也就是每捕获到一个包之后会立即对包解码，把所有层的协议内容都分析出来，然后才会去捕获下一个包。<strong>Lazy设置为true时，则捕获到包之后不会对包进行解码就立即去捕获下一个包。</strong>因为多了一个对包进行解码的操作，所以Lazy为false时捕获包的速率必然不如Lazy设置为true的时候快。</p>
+<p> 那么Lazy顾名思义就是延迟对包进行解码，那么gopacket是如何实现延迟解码的呢？gopacket的延迟解码是延迟到了什么程度呢？gopacket的包解码的延迟操作还有可优化的空间吗？下面解释下这些问题。</p>
+<p>NewPacket定义了返回的类型必须是Packet interface。由NewPacket函数可以看出，如果Lazy为true时，返回的是lazyPacket类型的struct。Lazy为false时，返回的是eagerPacket类型的struct。lazyPacket struct和eagerPacket struct都实现了Packet interface。lazyPacket顾名思义，就是延迟包对包进行延迟解码操作。eagerPacket顾名思义，就是急切包即需要对包第一时间立即做出解码操作。</p>
+<p>lazyPacket struct的定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// lazyPacket does lazy decoding on its packet data.  On construction it does</span><br><span class="hljs-comment">// no initial decoding.  For each function call, it decodes only as many layers</span><br><span class="hljs-comment">// as are necessary to compute the return value for that function.</span><br><span class="hljs-comment">// lazyPacket implements Packet and PacketBuilder.</span><br><span class="hljs-keyword">type</span> lazyPacket <span class="hljs-keyword">struct</span> &#123;<br>	packet<br>	next Decoder<br>&#125;<br><br><span class="hljs-comment">// packet 实现了 gopacket.PacketBuilder interface</span><br><span class="hljs-comment">// packet contains all the information we need to fulfill the Packet interface,</span><br><span class="hljs-comment">// and its two &quot;subclasses&quot; (yes, no such thing in Go, bear with me),</span><br><span class="hljs-comment">// eagerPacket and lazyPacket, provide eager and lazy decoding logic around the</span><br><span class="hljs-comment">// various functions needed to access this information.</span><br><span class="hljs-keyword">type</span> packet <span class="hljs-keyword">struct</span> &#123;<br>	<span class="hljs-comment">// data contains the entire packet data for a packet</span><br>	data []<span class="hljs-type">byte</span><br>	<span class="hljs-comment">// initialLayers is space for an initial set of layers already created inside</span><br>	<span class="hljs-comment">// the packet.</span><br>	<span class="hljs-comment">// 存储已经创建好了的各层数据</span><br>	initialLayers [<span class="hljs-number">6</span>]Layer<br>	<span class="hljs-comment">// layers contains each layer we&#x27;ve already decoded</span><br>	layers []Layer<br>	<span class="hljs-comment">// last is the last layer added to the packet</span><br>	last Layer<br>	<span class="hljs-comment">// metadata is the PacketMetadata for this packet</span><br>	metadata PacketMetadata<br><br>	decodeOptions DecodeOptions<br><br>	<span class="hljs-comment">// Pointers to the various important layers</span><br>	link        LinkLayer<br>	network     NetworkLayer<br>	transport   TransportLayer<br>	application ApplicationLayer<br>	failure     ErrorLayer<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>由lazyPacket的注释可以看出，lazyPacket对于每个函数调用，它仅解码计算该函数的返回值所需的层数。也就是当尝试访问数据包的某一层内容时，lazyPacket只会解码到需要的那一层，而不会再继续解码上一层的数据。总结下来就是只在需要的时候只返回需要的内容，不会返回需要更多额外操作的内容，这就是所谓的Lazy的含义。</p>
+<p>下面以调用时常用的Layer(t LayerType)函数为例，lazyPacket的此函数为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *lazyPacket)</span></span> Layer(t LayerType) Layer &#123;<br>	<span class="hljs-keyword">for</span> _, l := <span class="hljs-keyword">range</span> p.layers &#123;<br>		<span class="hljs-comment">// 数据包之前已经被解码了的情况下，遍历已经解码了的各层</span><br>    <span class="hljs-comment">// 一旦发现需要的数据层，立刻返回</span><br>		<span class="hljs-keyword">if</span> l.LayerType() == t &#123;<br>			<span class="hljs-keyword">return</span> l<br>		&#125;<br>	&#125;<br>	numLayers := <span class="hljs-built_in">len</span>(p.layers)<br>	<span class="hljs-comment">// p.next 为空的时候，表示所有能解码的都解码完毕了</span><br>	<span class="hljs-keyword">for</span> p.next != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-comment">// 只解码一层，不会包整个包都解码完分析完</span><br>		p.decodeNextLayer()<br>		<span class="hljs-keyword">for</span> _, l := <span class="hljs-keyword">range</span> p.layers[numLayers:] &#123;<br>			<span class="hljs-keyword">if</span> l.LayerType() == t &#123;<br>				<span class="hljs-keyword">return</span> l<br>			&#125;<br>		&#125;<br>		numLayers = <span class="hljs-built_in">len</span>(p.layers)<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这里Layer函数一旦发现传入的t参数需要的层，会立刻停止解码。</p>
+<p>p.layers 为 []Layer 类型，存储的是已经解码出来的各层数据，如果后续继续解码上层，会把解码出来的层的信息继续追加到p.layers 里。p.next表示了接下来要解码的是什么协议。</p>
+<p>那么p.next是如何获取到的呢？首先是p.decodeNextLayer()的调用。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *lazyPacket)</span></span> decodeNextLayer() &#123;<br>	<span class="hljs-keyword">if</span> p.next == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	d := p.data<br>	<span class="hljs-keyword">if</span> p.last != <span class="hljs-literal">nil</span> &#123;<br>		d = p.last.LayerPayload()<br>	&#125;<br>	next := p.next<br>	p.next = <span class="hljs-literal">nil</span><br>	<span class="hljs-comment">// We&#x27;ve just set p.next to nil, so if we see we have no data, this should be</span><br>	<span class="hljs-comment">// the final call we get to decodeNextLayer if we return here.</span><br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(d) == <span class="hljs-number">0</span> &#123;<br>		<span class="hljs-keyword">return</span><br>	&#125;<br>	<span class="hljs-keyword">defer</span> p.recoverDecodeError()<br>	err := next.Decode(d, p)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		p.addFinalDecodeError(err, <span class="hljs-literal">nil</span>)<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个函数里的重点就是Decode函数，Decode跳转过去的定义处为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> PacketBuilder <span class="hljs-keyword">interface</span> &#123;<br>	DecodeFeedback<br>	<span class="hljs-comment">// AddLayer should be called by a decoder immediately upon successful</span><br>	<span class="hljs-comment">// decoding of a layer.</span><br>	AddLayer(l Layer)<br>	<span class="hljs-comment">// The following functions set the various specific layers in the final</span><br>	<span class="hljs-comment">// packet.  Note that if many layers call SetX, the first call is kept and all</span><br>	<span class="hljs-comment">// other calls are ignored.</span><br>	SetLinkLayer(LinkLayer)<br>	SetNetworkLayer(NetworkLayer)<br>	SetTransportLayer(TransportLayer)<br>	SetApplicationLayer(ApplicationLayer)<br>	SetErrorLayer(ErrorLayer)<br>	<span class="hljs-comment">// NextDecoder should be called by a decoder when they&#x27;re done decoding a</span><br>	<span class="hljs-comment">// packet layer but not done with decoding the entire packet.  The next</span><br>	<span class="hljs-comment">// decoder will be called to decode the last AddLayer&#x27;s LayerPayload.</span><br>	<span class="hljs-comment">// Because of this, NextDecoder must only be called once all other</span><br>	<span class="hljs-comment">// PacketBuilder calls have been made.  Set*Layer and AddLayer calls after</span><br>	<span class="hljs-comment">// NextDecoder calls will behave incorrectly.</span><br>	NextDecoder(next Decoder) <span class="hljs-type">error</span><br>	<span class="hljs-comment">// DumpPacketData is used solely for decoding.  If you come across an error</span><br>	<span class="hljs-comment">// you need to diagnose while processing a packet, call this and your packet&#x27;s</span><br>	<span class="hljs-comment">// data will be dumped to stderr so you can create a test.  This should never</span><br>	<span class="hljs-comment">// be called from a production decoder.</span><br>	DumpPacketData()<br>	<span class="hljs-comment">// DecodeOptions returns the decode options</span><br>	DecodeOptions() *DecodeOptions<br>&#125;<br><br><span class="hljs-keyword">type</span> Decoder <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// Decode decodes the bytes of a packet, sending decoded values and other</span><br>	<span class="hljs-comment">// information to PacketBuilder, and returning an error if unsuccessful.  See</span><br>	<span class="hljs-comment">// the PacketBuilder documentation for more details.</span><br>	Decode([]<span class="hljs-type">byte</span>, PacketBuilder) <span class="hljs-type">error</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>gopacket里定义的所有协议，包括以太网协议，IPv4协议，IPv6协议，TCP协议都实现了Decoder interface。</p>
+<p>下面以数据链路层的以太网协议的实现为例：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Decoder calls EthernetTypeMetadata.DecodeWith&#x27;s decoder.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(a EthernetType)</span></span> Decode(data []<span class="hljs-type">byte</span>, p gopacket.PacketBuilder) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">return</span> EthernetTypeMetadata[a].DecodeWith.Decode(data, p)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>EthernetTypeMetadata的定义为 [65536]EnumMetadata，存储了数据链路层所有可能的协议。</p>
+<p>最终调用的Decode(data, p)其实是每个协议定义的入参为([]byte, PacketBuilder)，返回值为 error 的函数。以Ethernet协议为例，其实现是：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">decodeEthernet</span><span class="hljs-params">(data []<span class="hljs-type">byte</span>, p gopacket.PacketBuilder)</span></span> <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-comment">// 此时接收到的 data 是完整的数据包的内容</span><br>	eth := &amp;Ethernet&#123;&#125;<br>	err := eth.DecodeFromBytes(data, p)<br>	<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> err<br>	&#125;<br>	<span class="hljs-comment">// AddLayer 同时会把 eth设置为 last</span><br>	p.AddLayer(eth)<br>	<span class="hljs-comment">// 设置链路层的信息</span><br>	p.SetLinkLayer(eth)<br>	<span class="hljs-comment">// eth 的 payload 是除了以太网头部的其他内容，包括 IP层头，TCP层头及以上层的内容</span><br>	<span class="hljs-comment">// 这里的 eth.EthernetType 可能是 IPv4</span><br>	<span class="hljs-comment">// NextDecoder 对于 lazyPacket 来说，只是将 eth.EthernetType 赋只给 p.next</span><br>	<span class="hljs-comment">// 对于 eagerPacket 来说，则会进行解码操作</span><br>	<span class="hljs-keyword">return</span> p.NextDecoder(eth.EthernetType)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这里的重点是DecodeFromBytes函数，DecodeFromBytes的实现为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(eth *Ethernet)</span></span> DecodeFromBytes(data []<span class="hljs-type">byte</span>, df gopacket.DecodeFeedback) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(data) &lt; <span class="hljs-number">14</span> &#123;<br>		<span class="hljs-keyword">return</span> errors.New(<span class="hljs-string">&quot;Ethernet packet too small&quot;</span>)<br>	&#125;<br>	eth.DstMAC = net.HardwareAddr(data[<span class="hljs-number">0</span>:<span class="hljs-number">6</span>])<br>	eth.SrcMAC = net.HardwareAddr(data[<span class="hljs-number">6</span>:<span class="hljs-number">12</span>])<br>	eth.EthernetType = EthernetType(binary.BigEndian.Uint16(data[<span class="hljs-number">12</span>:<span class="hljs-number">14</span>]))<br>	eth.BaseLayer = BaseLayer&#123;data[:<span class="hljs-number">14</span>], data[<span class="hljs-number">14</span>:]&#125;<br>	eth.Length = <span class="hljs-number">0</span><br>	<span class="hljs-keyword">if</span> eth.EthernetType &lt; <span class="hljs-number">0x0600</span> &#123;<br>		eth.Length = <span class="hljs-type">uint16</span>(eth.EthernetType)<br>		eth.EthernetType = EthernetTypeLLC<br>		<span class="hljs-keyword">if</span> cmp := <span class="hljs-built_in">len</span>(eth.Payload) - <span class="hljs-type">int</span>(eth.Length); cmp &lt; <span class="hljs-number">0</span> &#123;<br>			df.SetTruncated()<br>		&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> cmp &gt; <span class="hljs-number">0</span> &#123;<br>			<span class="hljs-comment">// Strip off bytes at the end, since we have too many bytes</span><br>			eth.Payload = eth.Payload[:<span class="hljs-built_in">len</span>(eth.Payload)-cmp]<br>		&#125;<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>DecodeFromBytes其实就是读取固定的几个字节，这几个字节的内容是按照了Ethernet协议的标准存储的。故解析固定的字节可以得到Ethernet协议的一些字段，比如源Mac地址，目的Mac地址等等。这里最需要注意的就是EthernetType(binary.BigEndian.Uint16(data[12:14]))，第12到第14个字节存储的信息是Ethernet协议上一层的协议的表示，可能是IPv4协议，或者是IPv6协议，故eth.EthernetType的值为上一层的协议的标识。</p>
+<p>最后执行的p.NextDecoder(eth.EthernetType)的实现如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(p *lazyPacket)</span></span> NextDecoder(next Decoder) <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-keyword">if</span> next == <span class="hljs-literal">nil</span> &#123;<br>		<span class="hljs-keyword">return</span> errNilDecoder<br>	&#125;<br>	p.next = next<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>代码很简单，就是把上一层协议赋值给p.next。这里赋值的作用于上面的<code>func (p *lazyPacket) Layer(t LayerType) Layer </code>函数里<code>for p.next != nil &#123;</code>部分，<code>for p.next != nil </code>会使用p.next继续解码，如果p.next为IPv4协议或者IPv6协议，会使用p.next为IPv4协议或者IPv6协议会类似EthernetType，对应实现的，用IPv4协议或者IPv6协议实现的Decode函数进行解码，得到IPv4协议或者IPv6协议的内容。</p>
+<h3 id="差不多每一层有字段记录上一层的协议"><a href="#差不多每一层有字段记录上一层的协议" class="headerlink" title="差不多每一层有字段记录上一层的协议"></a>差不多每一层有字段记录上一层的协议</h3><p>对包进行解码时如何知晓当前层的上一层是什么协议呢？其实每一层有字段记录上一层的协议。</p>
+<p>比如数据链路层有的协议会记录上一层即网络层使用的协议是什么，比如这里就用两个字节记录了上一层的协议是IPv4协议。</p>
+<p><img src="/../images/image-20240425172341705.png" srcset="/img/loading.gif" lazyload alt="image-20240425172341705"></p>
+<p>gopacket的以太网的解码操作也有对应的代码：</p>
+<p><img src="/../images/image-20240425172536911.png" srcset="/img/loading.gif" lazyload alt="image-20240425172536911"></p>
+<p>第51行读取了对应的字节的内容，转换成了对应的协议，这里获取到的值就是IPv4，赋值给了EthernetType字段。</p>
+<p>除了数据链路层，网络层的IP协议也会记录上一层传输层用的是什么协议</p>
+<p><img src="/../images/image-20240425174555590.png" srcset="/img/loading.gif" lazyload alt="image-20240425174555590"></p>
+<p>在gopacket代码中也有对应的，</p>
+<p><img src="/../images/image-20240425174626515.png" srcset="/img/loading.gif" lazyload alt="image-20240425174626515"></p>
+<p>这里的DecodeFromBytes传入的data不是完整的数据包的内容了，而是除掉了数据链路层的头部，用的是以下部分：</p>
+<p><img src="/../images/image-20240425174821243.png" srcset="/img/loading.gif" lazyload alt="image-20240425174821243"></p>
+<h3 id="解码什么时候停止"><a href="#解码什么时候停止" class="headerlink" title="解码什么时候停止"></a>解码什么时候停止</h3><p>以gopacket定义的Payload协议为例：</p>
+<p><img src="/../images/image-20240426112555437.png" srcset="/img/loading.gif" lazyload alt="image-20240426112555437"></p>
+<p>以UDP为例，在找不到对应类型的情况下都会使用Payload作为协议类型：</p>
+<p><img src="/../images/image-20240426112958224.png" srcset="/img/loading.gif" lazyload alt="image-20240426112958224"></p>
+<h2 id="其他包和文件阅读"><a href="#其他包和文件阅读" class="headerlink" title="其他包和文件阅读"></a>其他包和文件阅读</h2><p>这部分写得比较随意，因为有不少因为源代码实在太难了，读不懂，就记录了我自己看懂的部分。可能比较随意。没什么有总结性和可参考性的内容，阅读时可以跳过。</p>
+<h3 id="examples-x2F-arpscan-x2F-arpscan-go"><a href="#examples-x2F-arpscan-x2F-arpscan-go" class="headerlink" title="examples&#x2F;arpscan&#x2F;arpscan.go"></a>examples&#x2F;arpscan&#x2F;arpscan.go</h3><p>序列化就是自定义数据各层，然后将各层数据放到*pcap.Handle类型的handle里，使用  handle.WritePacketData(buf.Bytes()) 来写入handle里</p>
+<p>序列化的调用参考这个函数：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">writeARP</span><span class="hljs-params">(handle *pcap.Handle, iface *net.Interface, addr *net.IPNet)</span></span> <span class="hljs-type">error</span> &#123;<br>	<span class="hljs-comment">// Set up all the layers&#x27; fields we can.</span><br>	eth := layers.Ethernet&#123;<br>		SrcMAC:       iface.HardwareAddr,<br>		DstMAC:       net.HardwareAddr&#123;<span class="hljs-number">0xff</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0xff</span>, <span class="hljs-number">0xff</span>&#125;,<br>		EthernetType: layers.EthernetTypeARP,<br>	&#125;<br>	arp := layers.ARP&#123;<br>		AddrType:          layers.LinkTypeEthernet,<br>		Protocol:          layers.EthernetTypeIPv4,<br>		HwAddressSize:     <span class="hljs-number">6</span>,<br>		ProtAddressSize:   <span class="hljs-number">4</span>,<br>		Operation:         layers.ARPRequest,<br>		SourceHwAddress:   []<span class="hljs-type">byte</span>(iface.HardwareAddr),<br>		SourceProtAddress: []<span class="hljs-type">byte</span>(addr.IP),<br>		DstHwAddress:      []<span class="hljs-type">byte</span>&#123;<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>&#125;,<br>	&#125;<br>	<span class="hljs-comment">// Set up buffer and options for serialization.</span><br>	buf := gopacket.NewSerializeBuffer()<br>	opts := gopacket.SerializeOptions&#123;<br>		FixLengths:       <span class="hljs-literal">true</span>,<br>		ComputeChecksums: <span class="hljs-literal">true</span>,<br>	&#125;<br>	<span class="hljs-comment">// Send one packet for every address.</span><br>	<span class="hljs-keyword">for</span> _, ip := <span class="hljs-keyword">range</span> ips(addr) &#123;<br>		arp.DstProtAddress = []<span class="hljs-type">byte</span>(ip)<br>		gopacket.SerializeLayers(buf, opts, &amp;eth, &amp;arp)<br>		<span class="hljs-keyword">if</span> err := handle.WritePacketData(buf.Bytes()); err != <span class="hljs-literal">nil</span> &#123;<br>			<span class="hljs-keyword">return</span> err<br>		&#125;<br>	&#125;<br>	<span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>一些gopacket里定义的东西如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 设置缓冲区和序列化选项</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewSerializeBuffer</span><span class="hljs-params">()</span></span> SerializeBuffer &#123;<br>	<span class="hljs-keyword">return</span> &amp;serializeBuffer&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 序列化选项</span><br><span class="hljs-keyword">type</span> SerializeOptions <span class="hljs-keyword">struct</span> &#123;<br>	<span class="hljs-comment">// FixLengths 确定在序列化期间，层是否应修复取决于有效负载的任何长度字段的值。</span><br>	FixLengths <span class="hljs-type">bool</span><br>	<span class="hljs-comment">// ComputeChecksums 确定在序列化期间各层是否应根据其有效负载重新计算校验和</span><br>	ComputeChecksums <span class="hljs-type">bool</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="examples-x2F-bidirectional-x2F-arpscan-go"><a href="#examples-x2F-bidirectional-x2F-arpscan-go" class="headerlink" title="examples&#x2F;bidirectional&#x2F;arpscan.go"></a>examples&#x2F;bidirectional&#x2F;arpscan.go</h3><p>bidirectional直接翻译为双向</p>
+<p>这块好像是关于tcpassembly的，是只针对TCP的重组</p>
+<p>streamPool :&#x3D; tcpassembly.NewStreamPool(streamFactory)</p>
+<p>tcpassembly.NewStreamPool需要传递的值是一个interface：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 程序集使用 StreamFactory 为每个新的 TCP 会话创建一个新的流</span><br><span class="hljs-keyword">type</span> StreamFactory <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// 对于给定的TCP key，New函数应该返回一个新的流</span><br>	New(netFlow, tcpFlow gopacket.Flow) Stream<br>&#125;<br><br><span class="hljs-comment">// assembly逻辑的执行顺序为：</span><br><span class="hljs-comment">// 1.通过StreamFactory.New创建流</span><br><span class="hljs-comment">// 2. 调用Reassembled 0次或多次，按顺序传入重组后的TCP数据</span><br><span class="hljs-comment">// 3. 调用 Re assemblyComplete 一次，之后该流将被程序集解除引用。</span><br><span class="hljs-keyword">type</span> Stream <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// Reassembled被调用零次或多次。 assembly 保证在所有调用期间传入的所有 Reassemble 对象的集合按照它们在 TCP 流中出现的顺序呈现。</span><br>	Reassembled([]Reassembly)<br>	<span class="hljs-comment">// 当程序集确定此流不再有数据时，将调用 ReassembleComplete，因为看到了 FIN 或 RST 数据包，或者因为流已超时，没有任何新数据包数据（由于调用 FlushOlderThan）。</span><br>	ReassemblyComplete()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="afpacket包"><a href="#afpacket包" class="headerlink" title="afpacket包"></a>afpacket包</h3><p>TPacket struct，gpt说：TPacket 包提供了对 Linux TPACKETv3 捕获模式的支持。TPACKETv3 是一种高性能的数据包捕获模式，常用于高速网络流量分析和数据包处理。</p>
+<p>相关代码备份：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewTPacket</span><span class="hljs-params">(opts ...<span class="hljs-keyword">interface</span>&#123;&#125;)</span></span> (h *TPacket, err <span class="hljs-type">error</span>) <br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(h *TPacket)</span></span> ReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="bsdbpf包"><a href="#bsdbpf包" class="headerlink" title="bsdbpf包"></a>bsdbpf包</h3><p>关于BPF的Options的设置</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewBPFSniffer</span><span class="hljs-params">(iface <span class="hljs-type">string</span>, options *Options)</span></span> (*BPFSniffer, <span class="hljs-type">error</span>) <br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(b *BPFSniffer)</span></span> ReadPacketData() ([]<span class="hljs-type">byte</span>, gopacket.CaptureInfo, <span class="hljs-type">error</span>) <br></code></pre></td></tr></table></figure>
+
+<h3 id="bytediff包"><a href="#bytediff包" class="headerlink" title="bytediff包"></a>bytediff包</h3><p>这是关于输出格式的设置</p>
+<h3 id="defrag-x2F-lcmdefrag"><a href="#defrag-x2F-lcmdefrag" class="headerlink" title="defrag&#x2F;lcmdefrag"></a>defrag&#x2F;lcmdefrag</h3><p>defrag直接翻译为碎片整理</p>
+<h3 id="dumpcommand"><a href="#dumpcommand" class="headerlink" title="dumpcommand"></a>dumpcommand</h3><p>这是一个示例程序</p>
+<h3 id="ip4defrag"><a href="#ip4defrag" class="headerlink" title="ip4defrag"></a>ip4defrag</h3><p>defrag直接翻译为碎片整理</p>
+<h3 id="layers"><a href="#layers" class="headerlink" title="layers"></a>layers</h3><p>定义了各层的协议，好像都实现了以下的方法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(arp *ARP)</span></span> LayerType() gopacket.LayerType &#123; <span class="hljs-keyword">return</span> LayerTypeARP &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(arp *ARP)</span></span> DecodeFromBytes(data []<span class="hljs-type">byte</span>, df gopacket.DecodeFeedback) <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(arp *ARP)</span></span> NextLayerType() gopacket.LayerType <br></code></pre></td></tr></table></figure>
+
+<h3 id="macs"><a href="#macs" class="headerlink" title="macs"></a>macs</h3><p>定义mac地址的一些常量</p>
+<h3 id="pcap"><a href="#pcap" class="headerlink" title="pcap"></a>pcap</h3><p>关于通过调用C语言来抓网卡的数据包</p>
+<h3 id="pcapgo"><a href="#pcapgo" class="headerlink" title="pcapgo"></a>pcapgo</h3><p>NgReader 结构体用于从 Netgraph 接口读取数据包。Netgraph 是 FreeBSD 和一些其他 BSD 系统中的一种通用内核级网络处理框架，它允许用户通过定义节点和连接来构建网络拓扑，并在节点之间传递数据。</p>
+<p>NgWriter struct</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// NgInterface holds all the information of a pcapng interface.</span><br><span class="hljs-keyword">type</span> NgInterface <span class="hljs-keyword">struct</span><br></code></pre></td></tr></table></figure>
+
+<p>pcapng 是一种新的数据包捕获文件格式，它是 pcap 格式的一个扩展，提供了更多的功能和灵活性。pcapng 文件格式支持更多的元数据、多个数据包流、更好的时间戳精度等功能，使得它在网络流量分析和数据包捕获方面更加强大和灵活。</p>
+<p>read.go 文件：Reader 包装了一个底层 io.Reader 以读取 PCAP 格式的数据包数据。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *Reader)</span></span> ReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>)<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *Reader)</span></span> ZeroCopyReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>) <br></code></pre></td></tr></table></figure>
+
+<p>snoop.go:直接翻译为窥探，</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> SnoopReader <span class="hljs-keyword">struct</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewSnoopReader</span><span class="hljs-params">(r io.Reader)</span></span> (*SnoopReader, <span class="hljs-type">error</span>) <br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *SnoopReader)</span></span> ReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>) <br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(r *SnoopReader)</span></span> ZeroCopyReadPacketData() (data []<span class="hljs-type">byte</span>, ci gopacket.CaptureInfo, err <span class="hljs-type">error</span>)<br></code></pre></td></tr></table></figure>
+
+<p>write.go：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Writer <span class="hljs-keyword">struct</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewWriter</span><span class="hljs-params">(w io.Writer)</span></span> *Writer <br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(w *Writer)</span></span> WriteFileHeader(snaplen <span class="hljs-type">uint32</span>, linktype layers.LinkType) <span class="hljs-type">error</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(w *Writer)</span></span> WritePacket(ci gopacket.CaptureInfo, data []<span class="hljs-type">byte</span>) <span class="hljs-type">error</span> <br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">//  f, _ := os.Create(&quot;/tmp/file.pcap&quot;)</span><br><span class="hljs-comment">//  w := pcapgo.NewWriter(f)</span><br><span class="hljs-comment">//  w.WriteFileHeader(65536, layers.LinkTypeEthernet)  // new file, must do this.</span><br><span class="hljs-comment">//  w.WritePacket(gopacket.CaptureInfo&#123;...&#125;, data1)</span><br><span class="hljs-comment">//  f.Close()</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="pfring"><a href="#pfring" class="headerlink" title="pfring"></a>pfring</h3><p>Ring struct</p>
+<p>Ring 结构体代表了一个环形缓冲区，用于存储数据包。环形缓冲区是一种循环队列的数据结构，它具有固定大小的缓冲区，可以循环存储和读取数据，当缓冲区的末尾被写满时，新的数据会从缓冲区的开头重新开始写入。</p>
+<h3 id="reassembly"><a href="#reassembly" class="headerlink" title="reassembly"></a>reassembly</h3><p>memory.go：StreamPool struct StreamPool 结构体代表了一个用于管理流的池。流在网络数据包分析中是一个重要的概念，它代表了两个端点之间的通信会话，可以根据一系列的数据包来重构出完整的通信流程。</p>
+<p>tcpassembly.go：直接翻译为TCP集会</p>
+<p>tcpcheck.go：通过一些选项对TCP包进行检验？？？？？？好像也没啥用？？？</p>
+<h3 id="routing"><a href="#routing" class="headerlink" title="routing"></a>routing</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Router根据内核的路由表实现简单的IPv4/IPv6路由。 这个路由库的功能很少，在某些情况下实际上可能会错误地路由，但它应该在大多数情况下都可以工作。</span><br><span class="hljs-keyword">type</span> Router <span class="hljs-keyword">interface</span> &#123;<br>	Route(dst net.IP) (iface *net.Interface, gateway, preferredSrc net.IP, err <span class="hljs-type">error</span>)<br>	RouteWithSrc(input net.HardwareAddr, src, dst net.IP) (iface *net.Interface, gateway, preferredSrc net.IP, err <span class="hljs-type">error</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个包里有一个strcut实现了这个interface，可以通过<code>func New() (Router, error)</code>调用返回这个struct实现的interface</p>
+<h3 id="tcpassembly"><a href="#tcpassembly" class="headerlink" title="tcpassembly"></a>tcpassembly</h3><blockquote>
+<p>gopacket里<strong>Reassembly</strong>和<strong>Assembly</strong>的介绍：</p>
+<p>Reassembly 主要用于处理分段传输或 IP 分片重组，将多个数据包片段组装成完整的数据包；</p>
+<p>而 Assembly 则主要用于处理单个数据包的分解，将单个数据包分解成多个数据包片段。</p>
+</blockquote>
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/34085818/is-libpcap-implemented-by-socket-api">Is libpcap implemented by socket API?</a></p>
+
+              
+            </div>
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/golang/" class="category-chain-item">golang</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/golang/%E7%BD%91%E7%BB%9C/" class="category-chain-item">网络</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>gopacket源代码部分阅读</div>
+      <div>https://rhythmnr.github.io/2024/04/26/gopacket源代码阅读/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>NR</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年4月26日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/05/13/%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8raw%20socket/" title="翻译：一份如何使用raw scoekt的指南">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">翻译：一份如何使用raw scoekt的指南</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/04/23/hping3%E7%AE%80%E4%BB%8B%E4%B8%8E%E5%9F%BA%E6%9C%AC%E7%9A%84%E4%BD%BF%E7%94%A8/" title="hping3简介与基本的使用">
+                        <span class="hidden-mobile">hping3简介与基本的使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.0/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script>
+  (function() {
+    var enableLang = CONFIG.code_language.enable && CONFIG.code_language.default;
+    var enableCopy = CONFIG.copy_btn;
+    if (!enableLang && !enableCopy) {
+      return;
+    }
+
+    function getBgClass(ele) {
+      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+    }
+
+    var copyTmpl = '';
+    copyTmpl += '<div class="code-widget">';
+    copyTmpl += 'LANG';
+    copyTmpl += '</div>';
+    jQuery('.markdown-body pre').each(function() {
+      var $pre = jQuery(this);
+      if ($pre.find('code.mermaid').length > 0) {
+        return;
+      }
+      if ($pre.find('span.line').length > 0) {
+        return;
+      }
+
+      var lang = '';
+
+      if (enableLang) {
+        lang = CONFIG.code_language.default;
+        if ($pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2 && $pre.children().hasClass('hljs')) {
+          lang = $pre[0].children[0].classList[1];
+        } else if ($pre[0].getAttribute('data-language')) {
+          lang = $pre[0].getAttribute('data-language');
+        } else if ($pre.parent().hasClass('sourceCode') && $pre[0].children.length > 0 && $pre[0].children[0].classList.length >= 2) {
+          lang = $pre[0].children[0].classList[1];
+          $pre.parent().addClass('code-wrapper');
+        } else if ($pre.parent().hasClass('markdown-body') && $pre[0].classList.length === 0) {
+          $pre.wrap('<div class="code-wrapper"></div>');
+        }
+        lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
+      }
+      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
+        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
+
+      if (enableCopy) {
+        Fluid.utils.createScript('https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js', function() {
+          var clipboard = new window.ClipboardJS('.copy-btn', {
+            target: function(trigger) {
+              var nodes = trigger.parentNode.childNodes;
+              for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].tagName === 'CODE') {
+                  return nodes[i];
+                }
+              }
+            }
+          });
+          clipboard.on('success', function(e) {
+            e.clearSelection();
+            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+            setTimeout(function() {
+              e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+            }, 2000);
+          });
+        });
+      }
+    });
+  })();
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
